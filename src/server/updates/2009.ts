@@ -102,7 +102,7 @@ export const UPDATES_2009: Update[] = [
     date: '2009-01-19',
     miscComments: ['Members can now see a special badge on their own player card'],
     fileChanges: {
-      'play/v2/client/interface.swf': 'recreation:interfaces/membership_badge.swf'
+      'play/v2/interface/interface.swf': 'recreation:interfaces/membership_badge.swf'
     }
   },
   {
@@ -155,7 +155,7 @@ export const UPDATES_2009: Update[] = [
     date: '2009-01-29',
     miscComments: ['The membership badge can now be seen in other player cards'],
     fileChanges: {
-      'play/v2/client/interface.swf': 'recreation:interfaces/membership_badge_2.swf'
+      'play/v2/interface/interface.swf': 'archives:ClientInterface-February2009.swf'
     },
     roomComment: 'The sign in the Attic is updated',
     temp: {
@@ -471,7 +471,8 @@ export const UPDATES_2009: Update[] = [
     rooms: {
       stage: 'archives:Stage2011Aug17.swf',
       plaza: 'recreation:plaza_team_blue_play.swf'
-    }
+    },
+    dateReference: 'pet-furniture-rename1'
   },
   {
     date: '2009-02-20',
@@ -538,11 +539,7 @@ export const UPDATES_2009: Update[] = [
     rooms: {
       pet: 'archives:RoomsPet_4.swf'
     },
-    localChanges: {
-      'catalogues/adopt.swf': {
-        'en': 'archives:Mar2009Adopt.swf'
-      }
-    },
+    puffleCatalog: 'archives:Mar2009Adopt.swf',
     clothingCatalog: 'archives:Mar2009.swf',
     temp: {
       const: {
@@ -709,7 +706,7 @@ export const UPDATES_2009: Update[] = [
     date: '2009-03-24',
     miscComments: ['The membership badge now features levels'],
     fileChanges: {
-      'play/v2/client/interface.swf': 'recreation:interfaces/membership_badge_3.swf'
+      'play/v2/interface/interface.swf': 'archives:ClientInterface-June2009.swf'
     }
   },
   {
@@ -739,10 +736,20 @@ export const UPDATES_2009: Update[] = [
     },
     rooms: {
       // game upgrades
-      mtn: 'archives:RoomsMtn-January2010.swf',
       cove: 'archives:RoomsCove.swf',
       dock: 'archives:RoomsDock_1.swf',
       lodge: 'archives:RoomsLodge.swf'
+    },
+    gameUpgrades: {
+      newItems: [
+        701,
+        702,
+        703,
+        711,
+        712,
+        321
+      ],
+      removed: []
     },
     martialArtworks: 'archives:MAMar2009.swf',
     sportCatalog: 'archives:SASMar2009.swf'
@@ -815,7 +822,13 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-04-03',
-    clothingCatalog: 'archives:PSApr2009.swf'
+    clothingCatalog: 'archives:PSApr2009.swf',
+    miscComments: ['The collectible pin icon in the newspaper changes'],
+    localChanges: {
+      'news/20090402/20090402.swf': {
+        en: 'archives:ENNews181.swf'
+      }
+    }
   },
   {
     date: '2009-04-06',
@@ -868,12 +881,32 @@ export const UPDATES_2009: Update[] = [
     petFurniture: 'archives:April2009Pets.swf'
   },
   {
+    date: '2009-04-24',
+    roomComment: 'Game Upgrades are added to the Ski Hill',
+    rooms: {
+      mtn: 'archives:RoomsMtn-January2010.swf'
+    },
+    gameUpgrades: {
+      newItems: [
+        5021,
+        5047,
+        5046
+      ],
+      removed: []
+    }
+  },
+  {
     date: '2009-05-01',
     clothingCatalog: 'archives:May2009.swf',
     temp: {
       const: {
         rooms: {
-          cave: 'recreation:medieval_09_const_cave.swf'
+          cave: 'recreation:medieval_09_const_cave.swf',
+          town: 'archives:RoomsTown-MedievalParty2010Pre.swf',
+          village: 'archives:RoomsVillage-MedievalParty2010Const.swf',
+          forts: 'archives:RoomsForts-MedievalParty2010Const.swf',
+          plaza: 'archives:RoomsPlaza-MedievalParty2010Const.swf',
+          beach: 'archives:MedievalParty2011ConstBeach.swf'
         }
       }
     }
@@ -962,7 +995,7 @@ export const UPDATES_2009: Update[] = [
         },
         localChanges: {
           'catalogues/party.swf': {
-            'en': 'archives:ENCataloguesParty-MedievalParty2009.swf'
+            'en': ['archives:ENCataloguesParty-MedievalParty2009.swf', 'party_catalogue']
           }
         }
       }
@@ -1023,7 +1056,7 @@ export const UPDATES_2009: Update[] = [
       ]
     },
     rooms: {
-      stage: 'archives:RoomsStage-February2011.swf',
+      stage: 'recreation:stage_viking_no_pin.swf',
       plaza: 'recreation:plaza_haunting_of_the_viking_opera.swf'
     }
   },
@@ -1033,7 +1066,18 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-05-22',
-    migrator: 'recreation:pirate_catalog/09_05.swf'
+    migrator: 'recreation:pirate_catalog/09_05.swf',
+    miscComments: ['Rockhopper arrives with plants'],
+    temp: {
+      'rockhopper-plants': {
+        rooms: {
+          ship: 'archives:RoomsShip-AdventureParty2009Const.swf',
+          shiphold: 'archives:RoomsHold-AdventureParty2009Const.swf',
+          shipnest: 'archives:RoomsNest-AdventureParty2009Const.swf',
+          beach: 'archives:RoomsBeach2-AdventureParty2009Const.swf'
+        }
+      }
+    }
   },
   {
     date: '2009-05-28',
@@ -1048,31 +1092,40 @@ export const UPDATES_2009: Update[] = [
     date: '2009-05-29',
     iglooList: [
       { display: 'Flipper Stomper', id: 244, pos: [3, 1] },
-      { display: 'Coconut', id: 215, pos: [5, 1] },
-      { display: 'Catchin\' Waves Theme', id: 113, pos: [6, 1] },
-      { display: 'Puffle Ragtime', id: 261, pos: [7, 1] },
-      { display: 'Summer Song', id: 216, pos: [1, 2] },
+      { display: 'Coconut', id: 215, pos: [6, 1] },
+      { display: 'Catchin\' Waves Theme', id: 113, pos: [7, 1] },
+      { display: 'Puffle Ragtime', id: 261, pos: [1, 2] },
+      { display: 'Summer Song', id: 216, pos: [2, 2] },
       { display: 'Mix Maestro', id: 242, pos: [6, 2] },
       { display: 'Water Kongo', id: 217, pos: [7, 2] }
-    ]
+    ],
+    miscComments: ['A new startscreen is added for the upcoming party'],
+    temp: {
+      'rockhopper-plants': {
+        startscreens: ['archives:AdventureParty2009ENLoginScreen1.swf']
+      }
+    }
   },
   {
     date: '2009-06-01',
-    migrator: false
+    migrator: false,
+    temp: {
+      'rockhopper-plants': {
+        rooms: {
+          beach: 'archives:RoomsBeach-AdventureParty2009Const.swf'
+        }
+      }
+    }
   },
   {
     date: '2009-06-05',
     temp: {
       const: {
         rooms: {
-          beach: 'archives:RoomsBeach-AdventureParty2009Const.swf',
-          shipnest: 'archives:RoomsNest-AdventureParty2009Const.swf',
           cove: 'archives:RoomsCove-AdventureParty2009Const.swf',
           dock: 'archives:RoomsDock-AdventureParty2009Const.swf',
           forest: 'archives:RoomsForest-AdventureParty2009Const.swf',
-          ship: 'archives:RoomsShip-AdventureParty2009Const.swf',
           plaza: 'archives:RoomsPlaza-AdventureParty2009Const.swf',
-          shiphold: 'archives:RoomsHold-AdventureParty2009Const.swf',
           forts: 'archives:RoomsForts-AdventureParty2009Const.swf',
           town: 'archives:RoomsTown-AdventureParty2009Const.swf'
         }
@@ -1081,6 +1134,7 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-06-12',
+    end: ['rockhopper-plants'],
     temp: {
       party: {
         partyName: 'Adventure Party',
@@ -1114,7 +1168,13 @@ export const UPDATES_2009: Update[] = [
           town: 267,
           party: 267
         },
-        startscreens: ['archives:AdventureParty2009ENLoginScreen1.swf', 'archives:AdventureParty2009ENLoginScreen2.swf']
+        startscreens: ['archives:AdventureParty2009ENLoginScreen1.swf', 'archives:AdventureParty2009ENLoginScreen2.swf'],
+        scavengerHunt2010: {
+          iconFileId: 'recreation:adventure_09/hunt_icon.swf',
+        },
+        globalChanges: {
+          'scavenger_hunt/hunt_ui.swf': ['recreation:adventure_09/hunt_ui.swf', 'easter_egg_hunt', 'easter_hunt']
+        }
       }
     },
     stagePlay: {
@@ -1150,6 +1210,17 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-06-26',
+    // temporary, as this is the earliest it can work at the moment
+    dayOfFun: 'start',
+
+    // day in which composite paths are no longer used
+    dateReference: 'composite-paths',
+    fileChanges: {
+      'play/v2/client/load.swf': 'fix:ClientLoad2009-06-26.swf',
+      'play/v2/client/shell.swf': 'archives:ClientShell_June_2009.swf',
+      'play/v2/client/interface.swf': 'archives:ClientInterface-June2009.swf'
+    },
+    indexHtml: 'classic-cpip-2',
     iglooList: [
       { display: 'Viking Opera', id: 41, pos: [1, 1] },
       { display: 'Mountain Dojo', id: 21, pos: [2, 1] },
@@ -1159,6 +1230,14 @@ export const UPDATES_2009: Update[] = [
     rooms: {
       // game upgrades
       dance: 'archives:RoomsDance_2.swf'
+    },
+    gameUpgrades: {
+      newItems: [
+        5037,
+        5039,
+        5038
+      ],
+      removed: []
     }
   },
   {
@@ -1260,6 +1339,14 @@ export const UPDATES_2009: Update[] = [
       { display: 'All-Access Pass', id: 272, pos: [3, 2] },
       { display: 'Rocking Pizza', id: 271, pos: [5, 2] }
     ]
+  },
+  {
+    date: '2009-08-05',
+    // in this shell, the penguin string changes
+    dateReference: 'string-verify',
+    fileChanges: {
+      'play/v2/client/shell.swf': 'archives:ClientShell2009-08-05.swf'
+    }
   },
   {
     date: '2009-08-07',
@@ -1536,6 +1623,16 @@ export const UPDATES_2009: Update[] = [
     }
   },
   {
+    date: '2009-09-12',
+    dayOfFun: 'end'
+  },
+  {
+    date: '2009-09-13',
+    fileChanges: {
+      'play/v2/client/login.swf': 'approximation:login_no_101_days_of_fun.swf'
+    }
+  },
+  {
     date: '2009-09-14',
     migrator: false,
     end: ['party'],
@@ -1574,6 +1671,8 @@ export const UPDATES_2009: Update[] = [
         },
         globalChanges: {
           'scavenger_hunt/hunt_ui.swf': ['archives:Sensei_Fire_Hunt_hunt_closeup.swf', 'easter_egg_hunt', 'easter_hunt'],
+          'telescope/empty.swf': 'recreation:fire_hunt/telescope.swf',
+          'binoculars/empty.swf': 'recreation:fire_hunt/binoculars.swf'
         },
         scavengerHunt2010: {
           iconFileId: 'archives:Sensei_Fire_Hunt_hunt_icon.swf'
@@ -1848,8 +1947,16 @@ export const UPDATES_2009: Update[] = [
           party: 253,
           party2: 252
         },
+        prices: {
+          9045: 0
+        },
         globalChanges: {
-          'rooms/NOTLS3EN.swf': 'archives:RoomsNOTLS3EN-HalloweenParty2009.swf'
+          'rooms/NOTLS3EN.swf': 'archives:RoomsNOTLS3EN-HalloweenParty2009.swf',
+          'scavenger_hunt/hunt_ui.swf': ['recreation:halloween_2009/hunt_ui.swf', 'halloween_hunt'],
+          'telescope/empty.swf': 'unknown:halloween_telescope.swf'
+        },
+        scavengerHunt2010: {
+          iconFileId: 'recreation:halloween_2008/hunt_icon.swf'
         }
       }
     }
@@ -2030,14 +2137,14 @@ export const UPDATES_2009: Update[] = [
           rink: 'archives:RoomsRink-WinterParty.swf',
           party: 'archives:RoomsParty-WinterParty.swf',
           party2: 'archives:RoomsParty2-WinterParty.swf',
-          party3: 'fix:RoomsParty3-WinterParty.swf',
-          party4: 'fix:RoomsParty4-WinterParty.swf',
-          party5: 'fix:RoomsParty5-WinterParty.swf',
-          party6: 'fix:RoomsParty6-WinterParty.swf',
+          party3: 'archives:RoomsParty3-WinterParty.swf',
+          party4: 'archives:RoomsParty4-WinterParty.swf',
+          party5: 'archives:RoomsParty5-WinterParty.swf',
+          party6: 'archives:RoomsParty6-WinterParty.swf',
           party7: 'archives:RoomsParty7-WinterParty.swf',
           party8: 'archives:RoomsParty8-WinterParty.swf',
           party9: 'archives:RoomsParty9-WinterParty.swf',
-          party10: 'fix:RoomsParty10-WinterParty.swf',
+          party10: 'archives:RoomsParty10-WinterParty.swf',
           party11: 'archives:RoomsParty11-WinterParty.swf'
         },
         music: {
@@ -2058,7 +2165,7 @@ export const UPDATES_2009: Update[] = [
         },
         localChanges: {
           'close_ups/maze_map.swf': {
-            'en': 'archives:ENClose_upsMaze_map-WinterParty.swf'
+            'en': ['archives:ENClose_upsMaze_map-WinterParty.swf', 'maze_map']
           }
         }
       }
@@ -2168,7 +2275,10 @@ export const UPDATES_2009: Update[] = [
           village: 254,
           party: 281
         },
-        startscreens: ['archives:StartscreenChristmas-HolidayParty2009.swf']
+        startscreens: ['archives:StartscreenChristmas-HolidayParty2009.swf'],
+        globalChanges: {
+          'telescope/empty.swf': 'recreation:telescope_holiday.swf'
+        }
       }
     }
   },

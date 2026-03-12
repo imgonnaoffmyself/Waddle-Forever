@@ -1,14 +1,14 @@
 import { ITEMS } from "../../game-logic/items";
 import { Handler } from "..";
 import { Handle } from "../handles";
-import { findInVersion } from "../../../server/game-data";
-import { PARTY_OP_TIMELINE } from "../../../server/timelines/epf";
+import { findInVersion } from "@server/game-data";
+import { PARTY_OP_TIMELINE } from "@server/timelines/epf";
 
 const handler = new Handler();
 
 // check if is an epf agent
 handler.xt(Handle.GetEpfStatus, (client) => {
-  client.sendXt('epfga', client.penguin.isAgent ? 1 : 0);
+  client.sendXt('epfga', client.penguin.hasItem(8009) ? 1 : 0);
 });
 
 // check if there is an active field ops

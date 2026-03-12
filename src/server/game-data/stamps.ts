@@ -23,7 +23,8 @@ export enum CategoryID {
   IceFishing = 52,
   Pizzatron = 54,
   TreasureHunt = 56,
-  Pufflescape = 57
+  Pufflescape = 57,
+  SmoothieSmash = 58
 }
 
 export enum StampRoom {
@@ -39,7 +40,8 @@ export enum StampRoom {
   SystemDefender = 950,
   PuffleLaunch = 955,
   PuffleScape = 957,
-  CardJitsu = 998
+  CardJitsu = 998,
+  SmoothieSmash = 959
 }
 
 export const STAMP_ROOMS: Record<number, StampRoom> = {
@@ -56,6 +58,7 @@ export const STAMP_ROOMS: Record<number, StampRoom> = {
   [CategoryID.PuffleLaunch]: StampRoom.PuffleLaunch,
   [CategoryID.Pufflescape]: StampRoom.PuffleScape,
   [CategoryID.CardJitsu]: StampRoom.CardJitsu,
+  [CategoryID.SmoothieSmash]: StampRoom.SmoothieSmash
 }
 
 export type StampCategory = {

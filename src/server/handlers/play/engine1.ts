@@ -909,6 +909,11 @@ handler.xt(Handle.UpdateIglooMusic2007, (client, music) => {
 // Logging in
 handler.post('/php/login.php', (server, body) => {
   const { Username } = body;
+
+  if (server.settings.no_create_via_login && !server.penguinExists(Username)) {
+    return 'e=100';
+  }
+
   const penguin = server.getPenguinFromName(Username);
 
   const virtualDate = server.getVirtualDate(43);
@@ -919,7 +924,7 @@ handler.post('/php/login.php', (server, body) => {
     crumb: Client.engine1Crumb(penguin),
     k1: 'a',
     c: penguin.coins,
-    s: 0, // SAFE MODE TODO in future?
+    s: penguin.isSafeChat ? 1 : 0,
     // jd uses non virtual date, there simulating age delta it with real time
     jd: getDateString(Date.now() - (server.getVirtualDate(0).getTime() - penguin.virtualRegistration)),
     ed: '10000-1-1', // EXPIRACY DATE TODO what is it for?

@@ -1,10 +1,10 @@
 /** Module handles information of all the files stored in the media folder */
 
 import path from "path";
-import { IS_DEV } from "../../common/constants";
+import { IS_DEV } from "@common/constants";
 import { PACKAGE_INFO } from "./package-info";
 import { PackageName } from "./packages";
-import { DEFAULT_DIRECTORY, getFilesInDirectory, iterateEntries } from "../../common/utils";
+import { DEFAULT_DIRECTORY, getFilesInDirectory, iterateEntries } from "@common/utils";
 
 /**
  * File reference is a term used in this code base to refer a string in the format
@@ -142,35 +142,6 @@ const FILE_DOCUMENTATIONS: Record<string, FileDocumentation[]> = {
 Manually added the party99.swf entry for medieval 08 (technically the path was party.swf, this may be changed at some point)`
     },
     {
-      file: 'RoomsParty3-WinterParty.swf',
-      comment: `All the rooms in the Winter Party party that are marked as fix are because of an issue that i could
-not figure out with the game engine. When the room SWF loads, the player position
-obtained from the jr packet should have already been placed inside the penguin's mc coordinates
-however, for a mysterious reason, that is not the case, and engine.swf only updates it after
-the room checks, so I did a workaround of checking if _x != 0 as well since that
-is the default value
-this issue was broken with both the 2010 engine and the 2009 engine,
-indicating the issue might lie within shell.swf, or another SWF
-until those client files can be implemented, this party will have this workaround fix
-the issue in question is not being able to walk past the intersections of blue and orange paths`
-    },
-    {
-      file: 'RoomsParty4-WinterParty.swf',
-      comment: 'Winter Party room fix'
-    },
-    {
-      file: 'RoomsParty5-WinterParty.swf',
-      comment: 'Winter Party room fix'
-    },
-    {
-      file: 'RoomsParty6-WinterParty.swf',
-      comment: 'Winter Party room fix'
-    },
-    {
-      file: 'RoomsParty10-WinterParty.swf',
-      comment: 'Winter Party room fix'
-    },
-    {
       file: 'ArtworkRoomsCoffee2.swf',
       comment: `Chat291.swf compatibility fixes
 However, the auto-sitting doesnt seem to work with chat291 anyways, so that
@@ -247,6 +218,22 @@ would need to investigated`
     {
       file: 'PlayStartSwfStart.swf',
       comment: 'Removed the tracking service, which downloads an external SWF which has no useful functionality. Required for truly offline play'
+    },
+    {
+      file: 'Paper86.swf',
+      comment: 'Adds all missing items from April to mid-July 2008.'
+    },
+    {
+      file: 'ClientLoad2009-06-26.swf',
+      comment: 'Removed domain check.'
+    },
+    {
+      file: 'ClientLoginJun2009.swf',
+      comment: 'Removed hardcoded domains'
+    },
+    {
+      file: 'load2008-08-15.swf',
+      comment: 'Found in various old trainers. Domain check has likely been removed. Further changes to fix paths, including in shell.'
     }
   ],
   [APPROXIMATION]: [
@@ -522,6 +509,22 @@ so that it works with newer clients (newer being around 2007)`,
     {
       file: 'club_penguin_2011.swf',
       comment: 'The vanilla media club_penguin.swf, but with the background changed to white to match the website'
+    },
+    {
+      file: 'login_no_101_days_of_fun.swf',
+      comment: 'By Randomon, removed 101 days of fun on start screen. not accurate for all dates, needs more research'
+    },
+    {
+      file: 'en.txt',
+      comment: 'removed all versions'
+    },
+    {
+      file: 'global.txt',
+      comment: 'removed all versions'
+    },
+    {
+      file: 'system.txt',
+      comment: 'removed all versions'
     }
   ],
   [RECREATION]: [
@@ -829,7 +832,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'summer_kickoff_2007/town.swf',
-      comment: 'made by Victando'
+      comment: 'Made by Doubleuman'
     },
     {
       file: 'summer_kickoff_2007/mtn.swf',
@@ -1233,7 +1236,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'pirate_party/coffee.swf',
-      comment: 'Made by Cyan'
+      comment: 'Made by Cyan, fixed by lifeofgames477 (removed clickable chalkboard)'
     },
     {
       file: 'pet_nov07.swf',
@@ -1301,11 +1304,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'interfaces/2008_july.swf',
-      comment: 'Made by Blue Kirby. Theoretical first Post-CPIP interface, built on top of the recreation from January 2009 but without the membership badge'
-    },
-    {
-      file: 'interfaces/membership_badge_3.swf',
-      comment: 'Made by Blue Kirby. Built on top of the October 2009 interface but removing the owned igloos functionality'
+      comment: 'Made by Blue Kirby. Theoretical first Post-CPIP interface, built on top of Feb 2009 interface, removing membership badge. Also removed showTutorialPrompt function call'
     },
     {
       file: 'interfaces/2010_may.swf',
@@ -1314,10 +1313,6 @@ Unknown if its teleporting to village functions would be accurate`
     {
       file: 'interfaces/2010_july.swf',
       comment: 'Made by Blue Kirby. Built on top of the modified lgeacy media interface, removing the owned igloos functionality'
-    },
-    {
-      file: 'client_igloo_cpip.swf',
-      comment: 'Made by Blue Kirby, edit which removes the owned igloos button'
     },
     {
       file: 'startscreen/cpip.swf',
@@ -1450,10 +1445,6 @@ Unknown if its teleporting to village functions would be accurate`
     {
       file: 'april_fools_2007/beach.swf',
       comment: 'Made by Doubleuman'
-    },
-    {
-      file: 'catalog/adopt_cpip.swf',
-      comment: 'Made by Blue Kirby'
     },
     {
       file: 'catalog/costume_cpip.swf',
@@ -1721,11 +1712,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'interfaces/membership_badge.swf',
-      comment: 'Made by Blue Kirby, interface where the membership badge is only seen by the player itself'
-    },
-    {
-      file: 'interfaces/membership_badge_2.swf',
-      comment: 'Made by Blue Kirby, interface where the membership badge is seen by all, but with only the basic level available'
+      comment: 'Made by Blue Kirby, interface where the membership badge is only seen by the player itself, based on Feb 09 interface'
     },
     {
       file: 'dojoext.swf',
@@ -1821,15 +1808,19 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'old_interface/old_toolbar.swf',
-      comment: 'Made by Doubleuman, interface71 changed to have the old toolbar'
+      comment: 'Made by Doubleuman, interface71 changed to have the old toolbar, and further modified by lifeofgames477 to add the old logo'
     },
     {
       file: 'old_interface/new_toolbar.swf',
-      comment: 'Made by Doubleuman, interface71 with emotes from when laughing emote was updated'
+      comment: 'Made by Doubleuman, interface71 with emotes from when laughing emote was updated, and further modified by lifeofgames477 to add the old logo'
     },
     {
       file: 'old_interface/skull_heart_removed.swf',
       comment: 'Made by Doubleuman, interface71 with emotes from when the skull and heart emotes were removed'
+    },
+    {
+      file: 'old_interface/skull_heart_removed_old_logo.swf',
+      comment: 'Originally the skull_heart_removed recreation, but with the old log added by lifeofgames477'
     },
     {
       file: 'old_interface/new_emotes_no_heart.swf',
@@ -1938,6 +1929,110 @@ Unknown if its teleporting to village functions would be accurate`
     {
       file: 'summer_kickoff_2007/coffee.swf',
       comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'christmas_06/beach.swf',
+      comment: 'Originally made by Fabi (uploaded by Boo), fixed by lifeofgames477 for pre-CPIP'
+    },
+    {
+      file: 'summer_kickoff_2007/book.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'stage_viking_no_pin.swf',
+      comment: 'Made by Blue Kirby, removed the pin from the archived file'
+    },
+    {
+      file: 'rink_vector_precpip.swf',
+      comment: 'Made by ChrisCPI, vectorized ice rink before blue sky'
+    },
+    {
+      file: 'halloween_2006/coffee.swf',
+      comment: 'Made by VampLovr54'
+    },
+    {
+      file: 'halloween_2006/town.swf',
+      comment: 'Made by lifeofgames477'
+    },
+    {
+      file: 'coffee_precpip_clickable_sign.swf',
+      comment: 'Made by ItzAle'
+    },
+    {
+      file: 'forest_2008_sky.swf',
+      comment: 'Made by ItzAle'
+    },
+    {
+      file: 'medieval_2010/poster.swf',
+      comment: 'Made by Bemy'
+    },
+    {
+      file: 'dojo_november_2008.swf',
+      comment: 'Made by ItzAle, removed the instructions from Jeoy\'s recreation'
+    },
+    {
+      file: 'rink_2008_sky.swf',
+      comment: 'Made by lifeofgames477. Used the vectorized recreation from ChrisCPI and changed the sky'
+    },
+    {
+      file: 'summer_kickoff_2007/cove.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'summer_kickoff_2007/cove_update.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'adventure_09/hunt_icon.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'adventure_09/hunt_ui.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'winter_fiesta_2007/pizza.swf',
+      comment: 'Made by Cyan'
+    },
+    {
+      file: 'lake_no_ladder.swf',
+      comment: 'Made by Resol van Lemy'
+    },
+    {
+      file: 'halloween_2008/hunt_icon.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'halloween_2008/hunt_ui.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'halloween_2009/hunt_ui.swf',
+      comment: 'Made by Doubleuman'
+    },
+    {
+      file: 'fire_hunt/telescope.swf',
+      comment: 'Made by lifeofgames477'
+    },
+    {
+      file: 'fire_hunt/binoculars.swf',
+      comment: 'Made by lifeofgames477'
+    },
+    {
+      file: 'help.swf',
+      comment: 'Made by lifeofgames477'
+    },
+    {
+      file: 'airtower_cpip.swf',
+      comment: 'Moved Airtower code out of class file and added shell.getLoginServer() call'
+    },
+    {
+      file: 'engine_cpip.swf',
+      comment: 'Used the Jun 2009 engine as base. Made self-initialising. Changed .path to .file_path. Added showInterface call after roomInitiated. Changed myMediaPath assigning for game_mc'
+    },
+    {
+      file: 'telescope_holiday.swf',
+      comment: 'Made by ItzAle, from the 2012 telescope as a base'
     }
   ],
   [MOD]: [
@@ -1969,24 +2064,16 @@ Originally from solero legacy-media, modified to work in the flat domain any por
       comment: 'Copy of boots.swf but in 30 FPS'
     },
     {
-      file: 'dependencies_scavenger_hunt.json',
-      comment: 'File to load the Scavenger Hunt. Should be integrated in the future'
-    },
-    {
       file: 'dynamic_igloo_music.swf',
       comment: 'File that loads the igloo music from a XML file. Originally by Ben, refined by Randomno to include bold names and remove pagination'
-    },
-    {
-      file: 'fair_dependencies.json',
-      comment: 'File to load the Fair dependency. Should be refactor as an "icon" dependency instead, similarly to Pre-CPIP eggs'
     },
     {
       file: 'fair_icon_adder.swf',
       comment: 'Modified from Ben\'s scavenger hunt mod'
     },
     {
-      file: 'load30.swf',
-      comment: 'Copy of the pre-CPIP load.swf, but in 30 FPS, and the code for loading the chat swf slightly altered to accommodate for it'
+      file: 'idle_cancel.swf',
+      comment: 'A custom dependency that removes the idle disconnect timer. Only loads when the "remove_idle" setting is active.'
     },
     {
       file: 'news_config.xml',
@@ -1995,6 +2082,14 @@ Originally from solero legacy-media, modified to work in the flat domain any por
     {
       file: 'scavenger_hunt_2010.swf',
       comment: 'By Ben, SWF that adds the scavenger hunt icon'
+    },
+    {
+      file: 'load.swf',
+      comment: 'From mammoth. Used dynamic constant replacement. Overrides the XMLSocket.connect function to always connect to IP:WORLD PORT (because of the hardcoded values in join.swf); Overrides the LoadVars.sendAndLoad function to omit "support.clubpenguin.com" from the url (also for join.swf); Overrides String.split to make it think the URL is play.clubpenguin.com (Can be used to bypass domain checks and reduce the amount of modified SWFs).'
+    },
+    {
+      file: 'load30.swf',
+      comment: 'Copy of tool:load.swf, but in 30 FPS, and the code for loading the chat swf slightly altered to accommodate for it'
     }
   ],
   [UNKNOWN]: [
@@ -2102,7 +2197,7 @@ function enforceDocumentationCorrectness(): void {
       documentedFiles.add(cleanPath(doc.file))
     });
     files.forEach((file) => {
-      if (!documentedFiles.has(file)) {
+      if (!documentedFiles.has(file) && !file.endsWith('.DS_Store')) {
         missingFiles.push(path.join(key, file));
       }
     })

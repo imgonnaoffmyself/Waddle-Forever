@@ -6,14 +6,16 @@ export const PRE_CPIP_STATIC_FILES: Record<string, string> = {
   'games/puffle.swf': 'mammoth:games/puffle.swf',
   'games/fish.swf': 'mammoth:games/fish.swf',
   'games/sled.swf': 'archives:SledRacing2006.swf',
-  'load.swf': 'mammoth:load.swf',
   'artwork/news/newsfan.swf': 'archives:NewsFan.swf',
   'artwork/news/newsbeta.swf': 'recreation:news_beta.swf',
   'chat299.swf': 'fix:Chat299.swf',
   'chat506.swf': 'unknown:chat506.swf',
   'crumbs21.swf': 'slippers07:media/crumbs21.swf',
-  'paper86.swf': 'slippers07:media/paper86.swf',
+  'join/join11.swf': 'archives:Join11.swf',
+  'paper86.swf': 'fix:Paper86.swf',
   'join/join13.swf': 'slippers07:media/join/join13.swf',
+  'join/join14.swf': 'archives:Join19.swf',
+  'join/join19.swf': 'archives:Join19.swf',
   'interface/errors4.swf': 'slippers07:media/interface/errors4.swf',
   // coins for change for the only pre CPIP party!
   'artwork/forms/coinsforchange.swf': 'archives:ChristmasParty2007CoinsForChange.swf',
@@ -68,7 +70,6 @@ export const PRE_CPIP_STATIC_FILES: Record<string, string> = {
   'artwork/tools/817.swf': 'archives:AwardsEN817.swf',
   'artwork/tools/818.swf': 'archives:AwardsEN818.swf',
   'artwork/rooms/1026/danceNotice.swf': 'recreation:halloween_2007/dance_notice.swf',
-  'artwork/catalogue/adopt0703.swf': 'archives:Pets_0703.swf',
   'artwork/cards/1.swf': 'archives:ArtworkCards1.swf',
   'artwork/cards/2.swf': 'archives:ArtworkCards2.swf',
   'artwork/cards/3.swf': 'archives:ArtworkCards3.swf',
@@ -140,7 +141,7 @@ export const PRE_CPIP_STATIC_FILES: Record<string, string> = {
   'games/mine/mine.swf': 'fix:CartSurfer2006.swf',
   'games/mine.swf': 'fix:CartSurfer2006.swf',
   'games/waves/game.swf': 'archives:CatchinWavesGame.swf',
-  'artwork/tools/telescope0.swf': 'slegacy:media/play/v2/content/global/telescope/empty.swf',
+  'artwork/tools/telescope0.swf': 'archives:ArtworkToolsTelescope0.swf',
   'games/quests/q1/quest.swf': 'slegacy:media/play/v2/games/quests/q1/quest.swf',
   'games/quests/q1/common/misc/items.swf': 'slegacy:media/play/v2/games/quests/q1/common/misc/items.swf',
   'games/quests/q1/common/misc/items2.swf': 'slegacy:media/play/v2/games/quests/q1/common/misc/items2.swf',
@@ -225,5 +226,6 @@ export const PRE_CPIP_STATIC_FILES: Record<string, string> = {
   'artwork/forms/agent1.swf': 'recreation:agent1.swf',
   'artwork/tools/phone2.swf': 'archives:ArtworkToolsPhone1.swf',
   'artwork/books/journal.swf': 'recreation:journal1.swf',
-  'artwork/rooms/shiphold.swf': 'recreation:shiphold.swf'
+  'artwork/rooms/shiphold.swf': 'recreation:shiphold.swf',
+  'artwork/tools/binoculars1.swf': 'archives:ArtworkToolsBinoculars1.swf'
 };

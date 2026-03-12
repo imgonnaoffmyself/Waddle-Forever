@@ -686,7 +686,7 @@ export const BOILER_ROOM_PAPERS: BoilerRoomPaper[] = [
   },
   {
     title: 'APRIL FOOLS PARTY',
-    file: 'archives:ENNews181.swf'
+    file: 'archives:ENNews181Original.swf'
   },
   {
     title: 'PRESENTING THE TOP PLAYS!',
@@ -1449,6 +1449,7 @@ export const AS3_PAPERS: As3Newspaper[] = [
     title: 'BOX DIMENSION CAN\'T BE MAPPED',
     askBack: 'archives:News285AskAuntArcticBack.swf',
     askFront: 'archives:News285AskAuntArcticFront.swf',
+    featureMore: null,
     featureStory: 'archives:News285FeatureStory.swf',
     headerBack: 'archives:News285HeaderBack.swf',
     headerFront: 'archives:News285HeaderFront.swf',
@@ -2153,7 +2154,7 @@ export const AS3_PAPERS: As3Newspaper[] = [
     dividersFront: null
   },
   {
-    title: 'NINJA HIDEOUT OPEN TO ALL!',
+    title: 'NINJA HIDEOUT OPEN TO ALL',
     headerFront: 'archives:News319HeaderFront.swf',
     featureStory: 'archives:News319FeatureStory.swf',
     supportStory: 'archives:News319SupportStory.swf',
@@ -2173,7 +2174,7 @@ export const AS3_PAPERS: As3Newspaper[] = [
     dividersFront: null
   },
   {
-    title: 'COINS FOR CHANGE IS COMING!',
+    title: 'COINS FOR CHANGE SOON!',
     headerFront: 'archives:News320HeaderFront.swf',
     featureStory: 'archives:News320FeatureStory.swf',
     supportStory: 'archives:News320SupportStory.swf',
@@ -2213,7 +2214,7 @@ export const AS3_PAPERS: As3Newspaper[] = [
     dividersFront: null
   },
   {
-    title: 'DONATE YE TREASURE TO COINS FOR CHANGE',
+    title: 'DONATE YE TREASURE!',
     headerFront: 'archives:News322HeaderFront.swf',
     featureStory: 'archives:News322FeatureStory.swf',
     supportStory: 'archives:News322SupportStory.swf',
@@ -2233,7 +2234,7 @@ export const AS3_PAPERS: As3Newspaper[] = [
     dividersFront: null
   },
   {
-    title: 'COINS FOR CHANGE FILLS THE LIGHTHOUSE!',
+    title: 'COINS FILL LIGHTHOUSE!',
     headerFront: 'archives:News323HeaderFront.swf',
     featureStory: 'archives:News323FeatureStory.swf',
     supportStory: 'archives:News323SupportStory.swf',

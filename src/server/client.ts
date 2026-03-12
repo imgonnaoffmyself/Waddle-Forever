@@ -24,6 +24,7 @@ import { MASCOTS } from './game-data/mascots';
 import { Table } from './handlers/play/table';
 import { FindFourTable } from './handlers/play/find-four';
 import { MancalaTable } from './handlers/play/mancala';
+import { ITEM_RELEASES } from './timelines/items';
 
 type ServerType = 'Login' | 'World';
 
@@ -129,7 +130,7 @@ class MatchmakingRoom {
   private _matchmaker: MatchMaker;
   private _players: Client[];
   private _time = 0;
-  private _timer: NodeJS.Timer
+  private _timer: NodeJS.Timeout;
 
   constructor(matchmaker: MatchMaker) {
     this._matchmaker = matchmaker;
@@ -348,7 +349,7 @@ class Bakery {
 
   private _multiplierPenguins: Set<number> = new Set();
   private _multiplierCount: number = 0;
-  private _countInterval: NodeJS.Timer | null = null;
+  private _countInterval: NodeJS.Timeout | null = null;
 
   private _server: Server;
 
@@ -519,6 +520,9 @@ export class Server {
 
   private _buddyProtocol: BuddyProtocol | undefined;
 
+  private _puckPosition: Vector;
+  private _puckPositionParty: Vector;
+
   private _bakery: Bakery;
 
   private _tables: Map<number, Table>;
@@ -536,6 +540,8 @@ export class Server {
     this._bakery = new Bakery(this);
     this._tables = new Map<number, Table>();
     this._tableSectators = new Set<number>();
+    this._puckPosition = new Vector(0, 0);
+    this._puckPositionParty = new Vector(0, 0);
     this.createMascots();
     this.init();
   }
@@ -547,6 +553,7 @@ export class Server {
       room.waddles.set(waddle.waddleId, new WaddleRoom(waddle.waddleId, waddle.seats, waddle.game));
     });
     this.setBuddyProtocol();
+    this.resetPuckPosition();
   }
 
   setBuddyProtocol() {
@@ -585,6 +592,28 @@ export class Server {
     this.init();
   }
 
+  get puckPosition() {
+    return this._puckPosition.vector;
+  }
+
+  get puckPositionParty() {
+    return this._puckPositionParty.vector;
+  }
+
+  resetPuckPosition() {
+    if (isLower(this.settings.version, getDate('old-rink'))) {
+      // Earlier rinks had the puck on the main stage of the room
+      // instead of in the "game" mc later on
+      this.puckPosition[0] = 397;
+      this.puckPosition[1] = 240;
+    } else {
+      this.puckPosition[0] = 0;
+      this.puckPosition[1] = 0;
+    }
+    this.puckPositionParty[0] = 0;
+    this.puckPositionParty[1] = 0;
+  }
+
   setCardMatchmaker(matchMaker: MatchMaker) {
     this._cardMatchmaking = matchMaker;
   }
@@ -604,6 +633,10 @@ export class Server {
     return this._playersById.get(id);
   }
 
+  penguinExists(name: string): boolean {
+    return db.penguinExists(name);
+  }
+
   /** Remove a player from the online map */
   untrackPlayer(id: number): void {
     this._playersById.delete(id);
@@ -613,7 +646,7 @@ export class Server {
     const date = this.getVirtualDate(0).getTime();
 
     if (data === undefined) {
-      data = Client.create(capitalizeName(name), {
+      data = Client.create(name, 1, {
         is_member: this.settings.always_member,
         virtualRegistrationTimestamp: date
       });
@@ -742,12 +775,23 @@ export class Server {
   getItemsFiltered(items: number[]) {
     // pre-cpip engines have limited items, after
     // that global_crumbs allow having all the items
+
     if (isLower(this.settings.version, getDate('cpip'))) {
       const itemSet = findInVersionStrict(this.settings.version, CLIENT_ITEMS_TIMELINE)
-      return items.filter((value) => itemSet.has(value));
-    } else {
-      return items;
+      items = items.filter((value) => itemSet.has(value));
     }
+
+    // if (this.settings.inventory_accuracy) {
+    //   return items.filter(id => {
+    //     const entry = ITEM_RELEASES.get(id);
+    //     if (entry === undefined) {
+    //       return false;
+    //     } else {
+    //       return isGreaterOrEqual(this.settings.version, entry);
+    //     }
+    //   });
+    // }
+    return items;
   }
 
   getAllPlayersInfo() {
@@ -957,10 +1001,13 @@ export class Client {
     if (isEngine1(this.version)) {
       return Client.engine1Crumb(this.penguin, { x: this.x, y: this.y, frame: this.frame });
     } else {
+      // meant to be approval, but always approved (1), TODO: non approved names in the future
+      const approval = isGreaterOrEqual(this.version, getDate('string-verify')) ? [1] : []
+
       return [
         this.penguin.id,
         this.name,
-        1, // meant to be approval, but always approved, TODO: non approved names in the future
+        ...approval, 
         this.penguin.color,
         this.penguin.head,
         this.penguin.face,
@@ -1079,9 +1126,9 @@ export class Client {
     }
   }
 
-  update (): void {
+  update (forceSave?: boolean): void {
     if (!this.isBot) {
-      this.penguin.update()
+      this.penguin.update(forceSave)
     }
   }
 
@@ -1112,11 +1159,13 @@ export class Client {
     this._server.trackPlayer(id, this);
   }
 
-  static create (name: string, params: DefaultPenguinParams = {}): [PenguinData, number] {
-    const defaultPenguin = Penguin.getDefault(0, name, params).serialize();
+  static create (name: string, color: number = 1, params: DefaultPenguinParams = {}): [PenguinData, number] {
+    const capitalizedName = capitalizeName(name);
+    const defaultPenguin = Penguin.getDefault(0, capitalizedName, params).serialize();
     return db.add<PenguinData>(Databases.Penguins, {
       ...defaultPenguin,
-      name,
+      name: capitalizedName,
+      color,
       mascot: 0
     });
   }
@@ -1446,7 +1495,7 @@ export class Client {
 
     const virtualDate = this.server.getVirtualDate(0);
     
-    this.sendXt('lp', this.penguinString, String(this.penguin.coins), 0, 1440, virtualDate.getTime(), this.age, 0, this.penguin.minutesPlayed, -1, 7, 1, 4, 3);
+  this.sendXt('lp', this.penguinString, String(this.penguin.coins), this.penguin.isSafeChat ? 1 : 0, 1440, virtualDate.getTime(), this.age, 0, this.penguin.minutesPlayed, -1, 7, 1, 4, 3);
   }
 
   getFurnitureString(): string {

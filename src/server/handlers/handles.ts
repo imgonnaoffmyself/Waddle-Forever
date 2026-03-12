@@ -1,4 +1,4 @@
-import { iterateEntries } from "../../common/utils";
+import { iterateEntries } from "@common/utils";
 
 /** Strings used to represent primitive types that can be used as an argument */
 export type TypePrimitiveIndicator = 'number' | 'string';
@@ -207,8 +207,12 @@ export enum Handle {
   GetBakeryState,
   SendEnterHopper,
   GetCookieInventory,
+  CheckNameOld,
   GetHockeyGame,
-  MoveHockeyPuck
+  MoveHockeyPuck,
+  MoveHockeyPuckOld,
+  UpdateHockeyGame,
+  BuyPowerCards
 };
 
 /** Map of all the handles and their valid arguments */
@@ -399,8 +403,12 @@ export const HANDLE_ARGUMENTS = {
   [Handle.GetBakeryState]: [],
   [Handle.SendEnterHopper]: ['string'],
   [Handle.GetCookieInventory]: [],
+  [Handle.CheckNameOld]: ['string'],
   [Handle.GetHockeyGame]: [],
-  [Handle.MoveHockeyPuck]: ['number', 'number', 'number', 'number', 'number']
+  [Handle.MoveHockeyPuck]: ['number', 'number', 'number', 'number', 'number'],
+  [Handle.MoveHockeyPuckOld]: ['number', 'number'],
+  [Handle.UpdateHockeyGame]: ['number'],
+  [Handle.BuyPowerCards]: []
 } as const;
 
 const HANDLER_MAPPING: HandlerMapping = {
@@ -587,6 +595,9 @@ const HANDLER_MAPPING: HandlerMapping = {
     'mdvl': {
       'retrieve': Handle.RetrieveMedieval2012,
       'msgviewed': Handle.Medieval2012ViewedMessage
+    },
+    'cd': {
+      'bpc': Handle.BuyPowerCards
     }
   },
   'z': {
@@ -599,7 +610,7 @@ const HANDLER_MAPPING: HandlerMapping = {
     'zc': Handle.SpyDrillsReward,
     'lw': Handle.LeaveWaddle,
     'gz': [Handle.EnterWaddleGame, Handle.GetTableGame, Handle.GetHockeyGame],
-    'uz': Handle.UpdateWaddleGameSeats,
+    'uz': [Handle.UpdateWaddleGameSeats, Handle.UpdateHockeyGame],
     'zm': [
       Handle.SledRaceAction,
       Handle.CardJitsuDeal,
@@ -609,7 +620,8 @@ const HANDLER_MAPPING: HandlerMapping = {
       Handle.CardJitsuFireChooseCard,
       Handle.CardJitsuFireInfoReady,
       Handle.CardJitsuFireChooseElement,
-      Handle.SendTableMove
+      Handle.SendTableMove,
+      Handle.MoveHockeyPuckOld
     ],
     'jmm': Handle.JoinMatchMaking,
     'jz': [Handle.JoinSled, Handle.JoinTableGame],
@@ -623,7 +635,8 @@ const HANDLER_MAPPING: HandlerMapping = {
   },
   'm': {
     'sm': Handle.SendMessageOld,
-    'ss': Handle.SendSafeMessageOldAlt
+    'ss': Handle.SendSafeMessageOldAlt,
+    'checkName': Handle.CheckNameOld
   },
   'r': {
     'or': Handle.OpenIglooOld,

@@ -1,5 +1,9 @@
-import { SettingsManager } from "../settings";
-import { getMediaFilePath } from "./files";
+import { findEarliestDateHitIndex, TimelineMap } from ".";
+import { iterateEntries } from "@common/utils";
+import { BooleanSettingKey, SettingsManager } from "../settings";
+import { START_DATE } from "../timelines/dates";
+import { UPDATES } from "../updates/updates";
+import { FileRef, getMediaFilePath } from "./files";
 
 type CompoundCheck = {
   check: (s: SettingsManager) => number | undefined;
@@ -13,9 +17,6 @@ type SimpleServer = [string, (s: SettingsManager) => boolean, string];
 type CompoundServer = [string, (s: SettingsManager) => number | undefined, Record<number, string>];
 
 const simpleFeatures: SimpleServer[] = [
-  ['load.swf', (s) => {
-    return s.settings.fps30
-  }, 'tool:load30.swf'],
   ['boots.swf', (s) => {
     return s.settings.fps30
   }, 'tool:boots30.swf'],
@@ -73,5 +74,56 @@ compoundFeatures.forEach((features) => {
     files
   });
 })
+
+// implementing routes that are date sensitive
+const dynamicFeatures = new Map<BooleanSettingKey, TimelineMap<string, FileRef | undefined>>();
+
+UPDATES.forEach((update) => {
+  if (update.update.specialRoute !== undefined) {
+    iterateEntries(update.update.specialRoute, (path, info) => {
+      const [fileRef, feature] = info;
+      let timelineMap = dynamicFeatures.get(feature);
+      if (timelineMap === undefined) {
+        timelineMap = new TimelineMap<string, FileRef | undefined>();
+        timelineMap.addDefault({ value: undefined, date: START_DATE });
+        dynamicFeatures.set(feature, timelineMap);
+      }
+      timelineMap.add(path, fileRef, update.date, update.end);
+    });
+  }
+});
+
+dynamicFeatures.forEach((timelineMap, feature) => {
+  const map = timelineMap.getVersionsMap();
+  map.forEach((versions, route) => {
+    if (specialServer.has(route)) {
+      throw new Error('Unsupported logic: route already exists in special server map');
+    }
+    const files: Record<number, FileRef> = {};
+    versions.forEach((fileRef, i) => {
+      if (fileRef.info !== undefined) {
+        files[i] = getMediaFilePath(fileRef.info);
+      }
+    });
+    specialServer.set(route, {
+      check: (s: SettingsManager) => {
+        if (!(feature in s.settings)) {
+          throw new Error(`Unsupported special feature: ${feature}`);
+        }
+        if (!s.settings[feature]) {
+          return undefined;
+        } else {
+          const version = findEarliestDateHitIndex(s.settings.version, versions);
+          if (version !== -1) {
+            return version;
+          } else {
+            return undefined;
+          }
+        }
+      },
+      files
+    });
+  });
+});
 
 export { specialServer };

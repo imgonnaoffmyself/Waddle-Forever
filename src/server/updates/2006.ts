@@ -197,9 +197,11 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-04-01',
+    dateReference: 'old-rink',
     rooms: {
       // unknown date, you can now walk to the audience in the rink
       // only evidence is after april fools party
+      // the date referene here is used to signal the old ice rink changed which influences the puck functionality
       // the file is also seemingly a debug file
       rink: 'fix:ArtworkRoomsRink12.swf'
     }
@@ -214,6 +216,8 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-04-14',
+    // Placeholder, as the April edition of Love Your Pet is lost
+    petFurniture: 'archives:Pets_0605.swf',
     iglooCatalog: 'archives:April2006Igloo.swf',
     temp: {
       party: {
@@ -347,6 +351,7 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-05-26',
+    petFurniture: 'archives:Pets_0605.swf',
     temp: {
       party: {
         partyName: 'Underground Opening Party',
@@ -383,7 +388,7 @@ export const UPDATES_2006: Update[] = [
     date: '2006-05-29',
     end: ['party'],
     rooms: {
-      boiler: 'archives:ArtworkRoomsCave13.swf',
+      cave: 'archives:ArtworkRoomsCave13.swf',
       shack: 'archives:ArtworkRoomsShack10.swf'
     },
     map: 'approximation:map_shack.swf'
@@ -464,6 +469,10 @@ export const UPDATES_2006: Update[] = [
     }
   },
   {
+    date: '2006-06-23',
+    petFurniture: 'archives:Pets_0606.swf',
+  },
+  {
     date: '2006-06-25',
     end: ['party']
   },
@@ -531,6 +540,10 @@ export const UPDATES_2006: Update[] = [
   {
     date: '2006-07-23',
     end: ['party']
+  },
+  {
+    date: '2006-07-26',
+    petFurniture: 'archives:Pets_0607.swf',
   },
   {
     date: '2006-08-04',
@@ -1167,7 +1180,114 @@ export const UPDATES_2006: Update[] = [
       981,
       982,
       983,
-      984
+      984,
+      125,
+      126,
+      127,
+      128,
+      139,
+      178,
+      187,
+      188,
+      189,
+      190,
+      196,
+      197,
+      198,
+      316,
+      713,
+      783,
+      784,
+      381,
+      382,
+      383,
+      384,
+      385,
+      386,
+      387,
+      388,
+      665,
+      666,
+      667,
+      668,
+      669,
+      670,
+      671,
+      672,
+      673,
+      674,
+      675,
+      676,
+      677,
+      678,
+      715,
+      716,
+      717,
+      718,
+      719,
+      723,
+      724,
+      725,
+      726,
+      727,
+      728,
+      730,
+      731,
+      732,
+      785,
+      786,
+      787,
+      788,
+      789,
+      790,
+      791,
+      792,
+      793,
+      794,
+      795,
+      796,
+      797,
+      798,
+      799,
+      830,
+      831,
+      832,
+      834,
+      835,
+      836,
+      837,
+      838,
+      839,
+      840,
+      841,
+      842,
+      843,
+      844,
+      845,
+      846,
+      985,
+      986,
+      987,
+      988,
+      989,
+      990,
+      991,
+      992,
+      993,
+      994,
+      995,
+      607,
+      608,
+      609,
+      610,
+      611,
+      612,
+      613,
+      614,
+      815,
+      816,
+      817,
+      818
     ]
   },
   {
@@ -1201,6 +1321,8 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-10-05',
+    // Placeholder date based on fla's last modified date
+    petFurniture: 'archives:Pets_0610.swf',
     constructionComment: 'A construction begins at the Plaza',
     end: ['town-launchpad'],
     temp: {
@@ -1229,6 +1351,13 @@ export const UPDATES_2006: Update[] = [
   {
     date: '2006-10-20',
     furnitureCatalog: 'archives:Furniture_0610.swf',
+  },
+  {
+    date: '2006-10-21',
+    roomComment: 'The Ice Rink is vectorized',
+    rooms: {
+      rink: 'recreation:rink_vector_precpip.swf'
+    }
   },
   {
     date: '2006-10-24',
@@ -1269,7 +1398,9 @@ export const UPDATES_2006: Update[] = [
           plaza: 'recreation:halloween_2006/plaza.swf',
           lodge: 'recreation:halloween_2006/lodge.swf',
           dance: 'recreation:halloween_2006/dance.swf',
-          forts: 'recreation:halloween_2006/forts.swf'
+          forts: 'recreation:halloween_2006/forts.swf',
+          coffee: 'recreation:halloween_2006/coffee.swf',
+          town: 'recreation:halloween_2006/town.swf'
         },
         music: {
           'town': 205,
@@ -1281,7 +1412,8 @@ export const UPDATES_2006: Update[] = [
           'plaza': 205,
           'lodge': 205,
           'dance': 205,
-          'forts': 205
+          'forts': 205,
+          coffee: 205
         }
       }
     }
@@ -1344,6 +1476,7 @@ export const UPDATES_2006: Update[] = [
     date: '2006-12-08',
     iglooList: true,
     iglooVersion: 44,
+    puffleCatalog: 'archives:Pets_0703.swf',
     roomComment: 'Red Puffles are now in the Pet Shop',
     rooms: {
       pet: 'archives:ArtworkRoomsPet43.swf'
@@ -1393,7 +1526,8 @@ export const UPDATES_2006: Update[] = [
           dock: 'recreation:christmas_06/dock.swf',
           forts: 'recreation:christmas_06/forts.swf',
           lodge: 'recreation:christmas_06/lodge.swf',
-          town: 'recreation:christmas_06/town.swf'
+          town: 'recreation:christmas_06/town.swf',
+          beach: 'recreation:christmas_06/beach.swf'
         },
         music: {
           beacon: 200,
@@ -1401,7 +1535,8 @@ export const UPDATES_2006: Update[] = [
           dock: 200,
           lodge: 400,
           town: 200,
-          forts: 200
+          forts: 200,
+          beach: 200
         }
       }
     }

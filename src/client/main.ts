@@ -7,15 +7,15 @@ import { startDiscordRPC } from "./discord";
 import loadFlashPlugin from "./flash-loader";
 import startMenu from "./menu";
 import createStore from "./store";
-import createWindow from "./window";
-import startServer from "../server/server";
-import settingsManager from "../server/settings";
+import createWindow, { loadMain } from "./window";
+import startServer from "@server/server";
+import settingsManager from "@server/settings";
 import { showWarning } from "./warning";
 import { setLanguageInStore } from "./discord/localization/localization";
 import electronIsDev from "electron-is-dev";
 import { AdminError, downloadMediaFolder, startMedia } from "./media";
-import { GlobalSettings } from '../common/utils';
-import { VERSION } from '../common/version';
+import { GlobalSettings } from '@common/utils';
+import { VERSION } from '@common/version';
 
 log.initialize();
 
@@ -144,6 +144,7 @@ app.on('ready', async () => {
     startDiscordRPC(store, mainWindow);
   }
 });
+
 
 app.on('window-all-closed', async () => {
   // On macOS it is common for applications and their menu bar

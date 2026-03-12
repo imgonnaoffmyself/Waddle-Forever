@@ -19,8 +19,6 @@ export const CPIP_AS3_STATIC_FILES: RouteRefMap = {
   'play/v2/games/book3/LimeGreenDojoClean.swf': 'slegacy:media/play/v2/games/book3/LimeGreenDojoClean.swf',
   'play/v2/games/feed/bootstrap.swf': 'slegacy:media/play/v2/games/feed/bootstrap.swf',
   'play/v2/games/feed/feed.swf': 'slegacy:media/play/v2/games/feed/feed.swf',
-  'play/v2/games/fish/bootstrap.swf': 'slegacy:media/play/v2/games/fish/bootstrap.swf',
-  'play/v2/games/fish/IceFishing.swf': 'slegacy:media/play/v2/games/fish/IceFishing.swf',
   'play/v2/games/hydro/bootstrap.swf': 'slegacy:media/play/v2/games/hydro/bootstrap.swf',
   'play/v2/games/hydro/HydroHopper.swf': 'slegacy:media/play/v2/games/hydro/HydroHopper.swf',
   'play/v2/games/jetpack/bootstrap.swf': 'slegacy:media/play/v2/games/jetpack/bootstrap.swf',

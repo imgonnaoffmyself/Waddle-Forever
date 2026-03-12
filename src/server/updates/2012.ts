@@ -20,6 +20,7 @@ export const UPDATES_2012: Update[] = [
   },
   {
     date: '2012-01-19',
+    roomComment: 'The Hidden Lake and Underwater are visually updated',
     temp: {
       const: {
         rooms: {
@@ -27,7 +28,12 @@ export const UPDATES_2012: Update[] = [
         }
       }
     },
-    furnitureCatalog: 'archives:JanFeb2012Furniture.swf'
+    rooms: {
+      lake: 'archives:RoomsLake-Early2012.swf',
+      underwater: 'archives:RoomsUnderwater-11Feb2014.swf'
+    },
+    furnitureCatalog: 'archives:JanFeb2012Furniture.swf',
+    dateReference: 'furniture-catalog-name'
   },
   {
     date: '2012-01-26',
@@ -221,6 +227,9 @@ export const UPDATES_2012: Update[] = [
         },
         mapNote: 'archives:RockhoppersQuestParty_map_note.swf'
       }
+    },
+    globalChanges: {
+      'telescope/telescope.swf': 'archives:TelescopeEmpty.swf'
     }
   },
   {
@@ -266,6 +275,7 @@ export const UPDATES_2012: Update[] = [
   },
   {
     date: '2012-03-15',
+    petFurniture: 'archives:ENCataloguesPetsMar2012.swf',
     temp: {
       party: {
         partyName: 'Puffle Party',
@@ -558,6 +568,9 @@ export const UPDATES_2012: Update[] = [
     temp: {
       party: {
         partyName: 'Medieval Party',
+        specialRoute: {
+          'play/v2/content/global/rooms/party24.swf': ['archives:RoomsParty24-11Feb2014.swf', 'medieval_sound_fix']
+        },
         rooms: {
           'attic': 'archives:MedievalParty2012attic.swf',
           'beach': 'archives:MedievalParty2012beach.swf',
@@ -739,13 +752,14 @@ export const UPDATES_2012: Update[] = [
     temp: {
       const: {
         rooms: {
-          'dock': 'archives:MarvelSuperheroTakeoverConsDock.swf',
-
-          rink: 'archives:RoomsRink-Mar2013.swf',
-          forts: 'archives:RoomsForts_4.swf',
-          town: 'archives:RoomsTown_4.swf'
+          'dock': 'archives:MarvelSuperheroTakeoverConsDock.swf'
         }
       }
+    },
+    rooms: {
+      rink: 'archives:RoomsRink-Mar2013.swf',
+      forts: 'archives:RoomsForts_4.swf',
+      town: 'archives:RoomsTown_4.swf'
     },
     furnitureCatalog: 'archives:June2012Furniture.swf',
     sportCatalog: 'archives:Jun2012Sport.swf',
@@ -929,6 +943,10 @@ export const UPDATES_2012: Update[] = [
             en: ['archives:UltimateJamScavengerHunt.swf', 'w.party.announcement', 'scavenger_hunt']
           }
         },
+        globalChanges: {
+          'telescope/telescope.swf': 'archives:Telescope-MusicJam2016.swf',
+          'binoculars/empty.swf': 'archives:Binoculars-MusicJam2016.swf'
+        },
         mapNote: 'archives:UltimateJam_Party_map_note.swf',
         partyIconFile: 'archives:UltimateJamScavengerHuntIcon.swf'
       }
@@ -1066,7 +1084,7 @@ export const UPDATES_2012: Update[] = [
           "description": "Smoothie Smash",
           "parent_group_id": 8,
           "display": "Games : Smoothie Smash",
-          "group_id": 58,
+          "group_id": CategoryID.SmoothieSmash,
           "stamps": [
             {
               "stamp_id": 453,
@@ -1445,6 +1463,9 @@ export const UPDATES_2012: Update[] = [
           },
           'membership/party9.swf': {
             'en': 'archives:ENMembershipPartyHalloween2012.swf'
+          },
+          'close_ups/party_poster.swf': {
+            'en': ['archives:HalloweenParty2012CloseUpsPoster.swf', 'party_poster']
           }
         },
         fileChanges: {
@@ -1521,7 +1542,8 @@ export const UPDATES_2012: Update[] = [
       plaza: 'archives:RoomsPlaza_2-Play8.swf'
     },
     music: {
-      pizza: 344
+      pizza: 344,
+      shop: 321
     },
     stagePlay: {
       name: 'Ruby and the Ruby',
@@ -1602,6 +1624,10 @@ export const UPDATES_2012: Update[] = [
           'archives:OperationBlackout2012Pre-Awareness.swf',
           'archives:SwfEpf-billboard-3-save-island.swf'
         ],
+        globalChanges: {
+          'binoculars/empty.swf': 'archives:Halloween2012BinocularsStormy.swf',
+          'telescope/telescope.swf': 'archives:Halloween2012TelescopeStormy.swf'
+        },
         localChanges: {
           'party/catalogue.swf': {
             en: ['archives:OperationBlackoutCatalogParty.swf', 'party_catalogue']
@@ -1876,9 +1902,6 @@ export const UPDATES_2012: Update[] = [
 
       stage: 'archives:ENRoomsStage-Dec2012.swf'
     },
-    music: {
-      shop: 321
-    },
     stagePlay: {
       name: 'A Humbug Holiday',
       costumeTrunk: 'archives:ENDecember2012Costume.swf'
@@ -2018,6 +2041,10 @@ export const UPDATES_2012: Update[] = [
           'close_ups/timer.swf': {
             en: ['archives:HolidayParty2012TimerEN.swf', "w.p1212.holiday.avatar.timerPopup"]
           }
+        },
+        globalChanges: {
+          'telescope/telescope.swf': 'archives:Telescope-HolidayParty2015.swf',
+          'binoculars/empty.swf': 'archives:Binoculars-HolidayParty2015.swf'
         },
         fileChanges: {
           'play/v2/content/global/content/interface.swf': 'archives:ClientInterfaceHolidayParty2012.swf',

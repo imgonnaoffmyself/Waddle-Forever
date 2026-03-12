@@ -1,8 +1,8 @@
-import { iterateEntries } from "../../common/utils";
-import { Action, createBytecode, createJsonDeclaration, PCodeRep } from "../../common/flash/avm1";
-import { emitSwf } from "../../common/flash/emitter";
-import { LOCAL_PATHS } from "../game-data/local-paths";
-import { Version } from "./versions";
+import { iterateEntries } from "@common/utils";
+import { Action, createBytecode, createJsonDeclaration, PCodeRep } from "@common/flash/avm1";
+import { emitCrumbSwf } from "@common/flash/emitter";
+import { LOCAL_PATHS, makeLocalPathsComposite } from "../game-data/local-paths";
+import { isLower, Version } from "./versions";
 import { SAFE_MESSAGES } from "../game-data/safe-messages";
 import { MASCOT_MESSAGES } from "../game-data/mascot-messages";
 import { TOUR_GUIDE_MESSAGES } from "../game-data/tour-guide-messages";
@@ -14,23 +14,48 @@ import { LOCAL_PATHS_TIMELINE, HUNT_TIMELINE } from "../timelines/crumbs";
 import { getMapForDate } from "../timelines";
 import { findInVersionStrict } from "../game-data";
 import { STAGE_TIMELINE } from "../timelines/stage";
+import serverList from "../servers";
+import { getDate } from "@server/timelines/dates";
 
 function getLocalPaths(version: Version) {
   const code: PCodeRep = [];
 
   const paths = getMapForDate(LOCAL_PATHS_TIMELINE, version);
+  const useCompositePaths = isLower(version, getDate('composite-paths'));
 
-  iterateEntries({...LOCAL_PATHS, ...paths}, (key, path) => {
-    if (path !== null && path !== undefined) {
+  if (useCompositePaths) {
+    const newPaths: Record<string, string> = {};
+    iterateEntries(paths, (key, value) => {
+      if (value !== undefined && value !== null) {
+        newPaths[key] = value;
+      }
+    });
+    const compositePaths = makeLocalPathsComposite({ ...LOCAL_PATHS, ...newPaths });
+    iterateEntries(compositePaths, (key, value) => {
+      const [base, path] = value;
       code.push(
         [Action.Push, "local_paths"],
         Action.GetVariable,
-        [Action.Push, key],
+        [Action.Push, key, base],
+        Action.GetVariable,
         [Action.Push, path],
+        Action.Add2,
         Action.SetMember
-      );
-    }
-  });
+      )
+    });
+  } else {
+    iterateEntries({...LOCAL_PATHS, ...paths}, (key, path) => {
+      if (path !== null && path !== undefined) {
+        code.push(
+          [Action.Push, "local_paths"],
+          Action.GetVariable,
+          [Action.Push, key],
+          [Action.Push, path],
+          Action.SetMember
+        );
+      }
+    });
+  }
 
   return code;
 }
@@ -212,6 +237,30 @@ function getIglooCrumbs() {
   return code;
 }
 
+function getServerCrumbs() {
+  const code: PCodeRep = [
+    [Action.Push, "servers"],
+    [Action.Push, 0],
+    [Action.Push, "Object"],
+    Action.NewObject,
+    Action.DefineLocal
+  ];
+
+  serverList.forEach(server => {
+    code.push(
+      [Action.Push, "servers"],
+      Action.GetVariable,
+      [Action.Push, server.id],
+      [Action.Push, "name"],
+      [Action.Push, server.name],
+      [Action.Push, 1],
+      Action.InitObject,
+      Action.SetMember
+    )
+  })
+
+  return code;
+}
 
 function getLangError(): PCodeRep {
   return [
@@ -3781,11 +3830,12 @@ export function getLocalCrumbsSwf(version: Version): Buffer {
     [Action.Push, 1],
     Action.InitArray,
     Action.SetMember,
+    ...getServerCrumbs(),
     ...getStageScript(version),
     ...getHuntCrumbs(version)
   ];
 
   const bytecode = [...treverseMessages, ...createBytecode(code)];
 
-  return Buffer.from(emitSwf(new Uint8Array(bytecode)));
+  return Buffer.from(emitCrumbSwf(new Uint8Array(bytecode)));
 }

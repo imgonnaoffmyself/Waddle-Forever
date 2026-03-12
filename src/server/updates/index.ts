@@ -1,4 +1,4 @@
-import { iterateEntries } from "../../common/utils";
+import { iterateEntries } from "@common/utils";
 import { FileRef } from "../game-data/files";
 import { GameName } from "../game-data/games";
 import { RoomName } from "../game-data/rooms";
@@ -6,6 +6,7 @@ import { getStagePlayMusic, StageName, StageScript } from "../game-data/stage-pl
 import { StampUpdates } from "../game-data/stamps";
 import { WaddleRoomInfo } from "../game-logic/waddles";
 import { Version } from "../routes/versions"
+import { BooleanSettingKey } from "../settings";
 
 /** Array of either file to a start screen, or a pair [startscreen name, file] */
 type Startscreens = Array<FileRef | [string, FileRef]>;
@@ -77,6 +78,13 @@ export type WorldStamp = {
 
 export type PartyOp = 'battle-of-doom';
 
+export type CatalogItems = {
+  file?: FileRef;
+  newItems: number[];
+  removedItems: number[];
+  announce?: false;
+}
+
 export type CPUpdate = {
   map?: FileRef;
   /** Pin period indicator */
@@ -85,17 +93,22 @@ export type CPUpdate = {
   pinRoomUpdate?: FileRef;
 
   /** If a new catalog was released this day: its file */
-  clothingCatalog?: FileRef;
+  clothingCatalog?: FileRef | CatalogItems;
   /** If a new catalog was released this day: its file */
   furnitureCatalog?: FileRef;
   /** If a new catalog was released this day: its file */
   iglooCatalog?: FileRef;
   /** If a new catalog was released this day: its file */
   postcardCatalog?: FileRef;
-  sportCatalog?: FileRef;
+  sportCatalog?: FileRef | CatalogItems;
   hairCatalog?: FileRef;
   petFurniture?: FileRef;
-  martialArtworks?: FileRef;
+  puffleCatalog?: FileRef;
+  martialArtworks?: FileRef | CatalogItems;
+
+  /** List of items added to the elite gear catalog */
+  eliteGearItems?: number[];
+  gameUpgrades?: { newItems: number[]; removed: number[] };
 
   stampUpdates?: StampUpdates
 
@@ -114,6 +127,9 @@ export type CPUpdate = {
   frames?: Partial<Record<RoomName, number>>;
 
   memberRooms?: Partial<Record<RoomName, boolean>>;
+
+  /** Map a route to the file used on that date, and the setting that needs to be TRUE in order for this file to be used */
+  specialRoute?: Record<string, [FileRef, BooleanSettingKey]>;
 
   /**
    * 'irregular': A new issue is released
@@ -201,7 +217,7 @@ export type CPUpdate = {
     script?: StageScript;
     hide?: true;
     notPremiere?: true;
-    costumeTrunk: FileRef | null;
+    costumeTrunk: FileRef | CatalogItems;
   } & CPUpdate;
 
   /** An update of a stage script that is independent from the normal workflow of plays */
@@ -217,6 +233,8 @@ export type CPUpdate = {
   /** For pre-cpip clients, in which items are stored in chat.swf, supply all items available in the chat.swf of that day */
   clientFiles?: number[];
   removeClientFiles?: number[];
+
+  dayOfFun?: 'start' | 'end';
 } & ({
   partyName: string;
   decorated?: false;
@@ -248,7 +266,8 @@ export type Event = 'party' |
   'attic-snow' |
   'telescope-bottle' |
   'storm' |
-  'box-plants';
+  'box-plants' |
+  'rockhopper-plants';
 
 export type DateReference = 'cpip' |
   'as3' |
@@ -257,7 +276,15 @@ export type DateReference = 'cpip' |
   'igloo-music' |
   'stamps-release' |
   'placeholder-2016' |
-  'vr-room';
+  'vr-room' |
+  'old-rink' |
+  'string-verify' |
+  'composite-paths' |
+  'igloo-catalog-name' |
+  'adopt-catalog-name' |
+  'pet-furniture-rename1' |
+  'pet-furniture-rename2' |
+  'furniture-catalog-name';
 
 export type Update = {
   date: Version;

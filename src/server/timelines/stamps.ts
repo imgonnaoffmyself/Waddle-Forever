@@ -20,7 +20,8 @@ export const GAME_STAMPS: Record<StampRoom, number[]> = {
   [StampRoom.SystemDefender]: [],
   [StampRoom.PuffleLaunch]: [],
   [StampRoom.PuffleScape]: [],
-  [StampRoom.CardJitsu]: []
+  [StampRoom.CardJitsu]: [],
+  [StampRoom.SmoothieSmash]: []
 }
 
 let first = true;

@@ -37,12 +37,14 @@ export const UPDATES_2007: Update[] = [
         rooms: {
           'village': 'archives:Village40.swf',
           forts: 'recreation:winter_fiesta_2007/forts.swf',
-          coffee: 'recreation:winter_fiesta_2007/coffee.swf'
+          coffee: 'recreation:winter_fiesta_2007/coffee.swf',
+          pizza: 'recreation:winter_fiesta_2007/pizza.swf'
         },
         music: {
           'village': 206,
           forts: 206,
-          coffee: 206
+          coffee: 206,
+          pizza: 206
         }
       }
     }
@@ -57,7 +59,7 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-01-26',
-    // Love Your Pet catalog here
+    petFurniture: 'archives:Jan2007Pets.swf',
     iglooVersion: 47,
     roomComment: 'Tours are now present in the Plaza',
     rooms: {
@@ -320,7 +322,7 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-05-11',
-    // Love Your Pet catalog here
+    petFurniture: 'archives:May2007Pets.swf',
     iglooVersion: 54,
   },
   {
@@ -416,7 +418,9 @@ export const UPDATES_2007: Update[] = [
           berg: 'recreation:summer_kickoff_2007/berg.swf',
           forest: 'recreation:summer_kickoff_2007/forest.swf',
           plaza: 'recreation:summer_kickoff_2007/plaza.swf',
-          coffee: 'recreation:summer_kickoff_2007/coffee.swf'
+          coffee: 'recreation:summer_kickoff_2007/coffee.swf',
+          book: 'recreation:summer_kickoff_2007/book.swf',
+          cove: 'recreation:summer_kickoff_2007/cove.swf'
         },
         music: {
           'town': 204,
@@ -431,7 +435,20 @@ export const UPDATES_2007: Update[] = [
           'village': 204,
           'plaza': 204,
           'forest': 204,
-          'coffee': 215
+          'coffee': 215,
+          'book': 215,
+          'cove': 204
+        }
+      }
+    }
+  },
+  {
+    date: '2007-06-12',
+    temp: {
+      party: {
+        update: 'The Cove is updated',
+        rooms: {
+          cove: 'recreation:summer_kickoff_2007/cove_update.swf'
         }
       }
     }
@@ -444,7 +461,7 @@ export const UPDATES_2007: Update[] = [
     iglooCatalog: 'archives:Igloo_0706.swf',
     temp: {
       party: {
-        update: 'The Beach and the Dance Club are updated',
+        update: 'The Beach and Night Club are updated',
         rooms: {
           beach: 'recreation:summer_kickoff_2007/beach_update.swf',
           dance: 'recreation:summer_kickoff_2007/dance_update.swf'
@@ -564,6 +581,27 @@ export const UPDATES_2007: Update[] = [
     },
     frames: {
       sport: 2
+    },
+    sportCatalog: {
+      file: 'archives:Sport_0709.swf',
+      newItems: [
+        349,
+        461,
+        220,
+        406,
+        405,
+        254,
+        255,
+        701,
+        702,
+        703,
+        711,
+        712,
+        919,
+        921,
+        965
+      ],
+      removedItems: []
     }
   },
   {
@@ -746,7 +784,8 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-11-02',
-    clothingCatalog: 'archives:PenguinStyleNov2007.swf'
+    clothingCatalog: 'archives:PenguinStyleNov2007.swf',
+    sportCatalog: 'archives:Sport_0711.swf'
   },
   {
     date: '2007-11-08',
@@ -846,11 +885,28 @@ export const UPDATES_2007: Update[] = [
           "message": "Blast off!"
         }
       ],
-      costumeTrunk: 'archives:SpaceAdventurePlanetXCostumeTrunk.swf'
+      costumeTrunk: {
+        file: 'archives:SpaceAdventurePlanetXCostumeTrunk.swf',
+        newItems: [
+          458,
+          268,
+          245,
+          122,
+          276,
+          120,
+          266,
+          489,
+          984
+        ],
+        removedItems: []
+      }
     },
     rooms: {
       plaza: 'archives:ArtworkRoomsPlaza47.swf',
-      stage: 'archives:SpaceAdventure1Stage.swf'
+      stage: 'archives:SpaceAdventure1Stage.swf',
+
+      // because of chat 604, sport shop with snow and sports
+      shop: 'archives:ArtworkRoomsShop46.swf'
     },
     map: 'archives:Map2007Plaza.swf'
   },
@@ -888,7 +944,8 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-11-30',
-    // Love Your Pet catalog here
+    petFurniture: 'archives:Pet_0711.swf',
+    puffleCatalog: 'archives:ENNov2007.swf',
     iglooVersion: 71,
     roomComment: 'Yellow Puffles are now in the Pet Shop',
     rooms: {
@@ -896,12 +953,17 @@ export const UPDATES_2007: Update[] = [
     },
     miscComments: ['Some emotes are removed'],
     fileChanges: {
-      'interface.swf': 'recreation:old_interface/skull_heart_removed.swf'
-    }
+      'interface.swf': 'recreation:old_interface/skull_heart_removed_old_logo.swf'
+    },
+    dateReference: 'adopt-catalog-name'
   },
   {
     date: '2007-12-07',
-    clothingCatalog: 'archives:Clothing_0712.swf'
+    clothingCatalog: 'archives:Clothing_0712.swf',
+    miscComments: ['The logo in the startscreen is updated'],
+    fileChanges: {
+      'interface.swf': 'recreation:old_interface/skull_heart_removed.swf'
+    }
   },
   {
     date: '2007-12-08',

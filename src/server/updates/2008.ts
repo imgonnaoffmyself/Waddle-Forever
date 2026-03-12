@@ -394,6 +394,10 @@ export const UPDATES_2008: Update[] = [
     }
   },
   {
+    date: '2008-02-28',
+    sportCatalog: 'archives:Sport_0802.swf'
+  },
+  {
     date: '2008-02-29',
     miscComments: ['More pieces show up at the Beach'],
     temp: {
@@ -626,10 +630,17 @@ export const UPDATES_2008: Update[] = [
     }
   },
   {
-    roomComment: 'The skyboxes are updated in the Pizza Parlor',
+    roomComment: 'The skyboxes are updated in some rooms, and the Coffee Shop has a clickable sign',
     date: '2008-04-14',
     rooms: {
-      pizza: 'recreation:pizza_2008.swf'
+      pizza: 'recreation:pizza_2008.swf',
+      coffee: 'recreation:coffee_precpip_clickable_sign.swf',
+      forest: 'recreation:forest_2008_sky.swf',
+      rink: 'recreation:rink_2008_sky.swf'
+    },
+    fileChanges: {
+      'artwork/tools/telescope0.swf': 'archives:TelescopeEmpty2010.swf',
+      'artwork/tools/binoculars1.swf': 'archives:BinocularsNormal.swf'
     }
   },
   { 
@@ -663,6 +674,7 @@ export const UPDATES_2008: Update[] = [
   {
     date: '2008-04-25',
     end: ['migrator-reconstruction'],
+    sportCatalog: 'archives:SportCatalog_0804.swf',
     temp: {
       party: {
         partyName: 'Rockhopper & Yarr\'s Arr-ival Parr-ty',
@@ -908,6 +920,10 @@ export const UPDATES_2008: Update[] = [
     end: ['earthquake']
   },
   {
+    date: '2008-06-27',
+    sportCatalog: 'archives:SASJun2008.swf'
+  },
+  {
     date: '2008-07-04',
     clothingCatalog: 'archives:July08Style.swf'
   },
@@ -915,7 +931,10 @@ export const UPDATES_2008: Update[] = [
     date: '2008-07-11',
     stagePlay: {
       name: 'Squidzoid vs. Shadow Guy and Gamma Gal',
-      costumeTrunk: null,
+      costumeTrunk: {
+        newItems: [],
+        removedItems: []
+      },
       hide: true,
       script: [
         { note: "Squidzoid vs Shadow Guy & Gamma Gal" },
@@ -991,7 +1010,6 @@ export const UPDATES_2008: Update[] = [
       boiler: 'archives:RoomsBoiler-January2010.swf',
       attic: 'archives:RoomsAttic.swf',
       sport: 'archives:RoomsSport_2.swf',
-      lake: 'slegacy:media/play/v2/content/global/rooms/lake.swf',
       cavemine: 'slegacy:media/play/v2/content/global/rooms/cavemine.swf',
       dojo: 'recreation:dojo_cpip_start.swf',
       shiphold: 'slegacy:media/play/v2/content/global/rooms/shiphold.swf',
@@ -1009,19 +1027,34 @@ export const UPDATES_2008: Update[] = [
       dojowater: true,
     },
     fileChanges: {
+      'play/v2/load.swf': 'fix:load2008-08-15.swf',
+      'setup/en.txt': 'approximation:en.txt',
+      'setup/global.txt': 'approximation:global.txt',
+      'setup/system.txt': 'approximation:system.txt',
+      // TODO startscreen (almost definitely) wasn't used until Jan 2009
       'play/v2/client/startscreen.swf': 'recreation:startscreen/cpip.swf',
-      'play/v2/client/shell.swf': 'approximation:shell.swf',
-      'play/v2/client/engine.swf': 'unknown:engine_2009.swf',
-      'play/v2/client/interface.swf': 'recreation:interfaces/2008_july.swf',
-      'play/v2/client/login.swf': 'recreation:login_cpip.swf',
-      'play/v2/client/igloo.swf': 'recreation:client_igloo_cpip.swf',
+      'play/v2/shell/shell.swf': 'archives:ClientShell_January_2009.swf',
+      'play/v2/airtower/airtower.swf': 'recreation:airtower_cpip.swf',
+      'play/v2/gridview/gridview.swf': 'slegacy:media/play/v2/client/gridview.swf',
+      'play/v2/client/engine.swf': 'archives:ClientEngine2009-06-15.swf',
+      'play/v2/engine/engine.swf': 'recreation:engine_cpip.swf',
+      'play/v2/interface/interface.swf': 'recreation:interfaces/2008_july.swf',
+      'play/v2/client/login.swf': 'archives:ClientLoginJun2009.swf',
+      'play/v2/login/login.swf': 'archives:ClientLoginJun2009.swf',
+      'play/v2/mail/inbox/mail.swf': 'archives:ClientMail2009-06-15.swf',
+      'play/v2/mail/book/book.swf': 'slegacy:media/play/v2/client/book.swf',
+      'play/v2/music/music.swf': 'archives:PlayV2MusicMusic2009-04-02.swf',
+      'play/v2/client/igloo.swf': 'archives:ClientIgloo2009-04-02.swf',
+      'play/v2/igloo/igloo.swf': 'archives:ClientIgloo2009-04-02.swf',
       'play/v2/content/global/binoculars/empty.swf': 'slegacy:media/play/v2/content/global/binoculars/empty.swf',
-      'play/v2/content/global/telescope/empty.swf': 'slegacy:media/play/v2/content/global/telescope/empty.swf',
+      // TODO igloo background wasn't used until late 2009?
+      'play/v2/content/global/telescope/empty.swf': 'archives:TelescopeEmpty2010.swf',
       'play/v2/content/global/igloo/assets/igloo_background.swf': 'slegacy:media/play/v2/content/global/igloo/assets/igloo_background.swf',
       // this puffle roundup is a placeholder, TODO needs to be updated
       'play/v2/games/roundup/PuffleRoundup.swf': 'fix:PuffleRoundupWhitePuffle.swf'
     },
     startscreens: [ 'recreation:startscreen/cpip_logo.swf' ],
+    petFurniture: 'archives:May2008LoveYourPet.swf',
     localChanges: {
       'forms/moderator.swf': {
         'en': 'recreation:pre_epf_moderator_form.swf'
@@ -1039,7 +1072,7 @@ export const UPDATES_2008: Update[] = [
         'en': 'recreation:catalog/furniture_cpip.swf'
       },
       'catalogues/adopt.swf': {
-        'en': 'recreation:catalog/adopt_cpip.swf'
+        'en': 'archives:Adopt200711.swf'
       },
       'catalogues/costume.swf': {
         'en': 'recreation:catalog/costume_cpip.swf'
@@ -1055,15 +1088,18 @@ export const UPDATES_2008: Update[] = [
       },
       'catalogues/fish.swf': {
         'en': 'archives:TheFish2009.swf'
-      },
-      'catalogues/pets.swf': {
-        en: 'archives:May2008LoveYourPet.swf'
       }
     },
     map: 'unknown:cpip_map_no_dojoext.swf',
     iglooList: {
       file: 'recreation:igloo_music/cpip_start.swf',
       hidden: true
+    },
+    gameMusic: {
+      fish: 103,
+      cart: 105,
+      roundup: 102,
+      thinice: 111
     }
   },
   {
@@ -1993,7 +2029,8 @@ export const UPDATES_2008: Update[] = [
     miscComments: ['The start screen is updated with the introduction of Unlock Items Online'],
     fileChanges: {
       'play/v2/client/startscreen.swf': 'recreation:startscreen/unlock_items.swf',
-      'play/v2/client/login.swf': 'archives:ClientLogin2008.swf'
+      // TODO reimplement this recreation
+      // 'play/v2/client/login.swf': 'archives:ClientLogin2008.swf'
     },
     localChanges: {
       'forms/library.swf': {
@@ -2089,9 +2126,16 @@ export const UPDATES_2008: Update[] = [
           sport: 252,
           town: 251
         },
+        prices: {
+          9006: 0
+        },
         globalChanges: {
           'igloo/assets/igloo_background.swf': 'recreation:halloween_2008/igloo_background.swf',
-          'telescope/empty.swf': 'recreation:telescope/far_halloween.swf'
+          'telescope/empty.swf': 'recreation:telescope/far_halloween.swf',
+          'scavenger_hunt/hunt_ui.swf': ['recreation:halloween_2008/hunt_ui.swf', 'halloween_hunt']
+        },
+        scavengerHunt2010: {
+          iconFileId: 'recreation:halloween_2008/hunt_icon.swf'
         }
       }
     }
@@ -2158,18 +2202,27 @@ export const UPDATES_2008: Update[] = [
       dojo: 21,
       dojoext: 21
     },
-    map: 'archives:Map2008-2011Stadium.swf'
+    map: 'archives:Map2008-2011Stadium.swf',
+    miscComments: ['The settings menu is updated'],
+    globalChanges: {
+      'content/help.swf': 'slegacy:media/play/v2/content/global/content/help.swf',
+    }
   },
   {
     date: '2008-11-17',
     roomComment: 'The dojo now has the Card-Jitsu game',
     rooms: {
-      dojo: 'recreation:dojo_2008.swf',
+      dojo: 'recreation:dojo_november_2008.swf',
       dojohide: 'recreation:dojohide_2008.swf',
       dojoext: 'recreation:dojoext.swf'
     },
     music: {
       dojoext: 0
+    },
+    martialArtworks: {
+      announce: false,
+      newItems: [4034],
+      removedItems: []
     }
   },
   {
@@ -2555,12 +2608,13 @@ export const UPDATES_2008: Update[] = [
         }
       }
     },
-    roomComment: 'The Ice Rink returns',
+    roomComment: 'The Ice Rink returns, and the Dojo now has instructions',
     rooms: {
       town: 'archives:RoomsTown.swf',
       forts: 'archives:FortsWithIceRinkStadium.swf',
       rink: 'archives:RoomsRink.swf',
-      agent: 'archives:RoomsAgent.swf'
+      agent: 'archives:RoomsAgent.swf',
+      dojo: 'recreation:dojo_2008.swf'
     },
     map: 'archives:Map2008-2011Rink.swf'
   },

@@ -1,4 +1,4 @@
-import { iterateEntries } from "../../common/utils";
+import { iterateEntries } from "@common/utils";
 import { isGreaterOrEqual, isLower, Version } from "../routes/versions";
 import { DateReference } from "../updates";
 import { UPDATES } from "../updates/updates";
@@ -13,7 +13,15 @@ const dateRefRecord: Record<DateReference, Version | undefined> = {
   'stamps-release': undefined,
   'vanilla-engine': undefined,
   'placeholder-2016': undefined,
-  'vr-room': undefined
+  'vr-room': undefined,
+  'old-rink': undefined,
+  'string-verify': undefined,
+  'composite-paths': undefined,
+  'igloo-catalog-name': undefined,
+  'adopt-catalog-name': undefined,
+  'pet-furniture-rename1': undefined,
+  'pet-furniture-rename2': undefined,
+  'furniture-catalog-name': undefined
 };
 
 const dateRefMap = new Map<DateReference, Version>();

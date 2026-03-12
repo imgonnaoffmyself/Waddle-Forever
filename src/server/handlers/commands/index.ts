@@ -1,12 +1,12 @@
-import { BotGroup, Client } from "../../../server/client";
+import { BotGroup, Client } from "@server/client";
 import { getHandlerCallback, Handler } from "..";
 import { ITEMS } from "../../game-logic/items";
 import { Room } from "../../game-logic/rooms";
-import { CARDS } from "../../../server/game-logic/cards";
-import { RoomName, ROOMS } from "../../../server/game-data/rooms";
-import { randomInt, Vector } from "../../../common/utils";
+import { CARDS } from "@server/game-logic/cards";
+import { RoomName, ROOMS } from "@server/game-data/rooms";
+import { randomInt, Vector } from "@common/utils";
 import { ArgumentsIndicator, GetArgumentsType } from "../handles";
-import { logdebug } from "../../../server/logger";
+import { logdebug } from "@server/logger";
 
 const handler = new Handler();
 
@@ -177,6 +177,45 @@ commands.add('powercards', [], (client) => {
       client.penguin.addCard(row.id, 1);
     }
   });
+  client.update();
+});
+
+commands.add('nosave', [], (client) => {
+  client.penguin.disableSave();
+  client.update(true);
+});
+
+commands.add('enablesave', [], (client) => {
+  client.penguin.allowSave();
+  client.update();
+});
+
+commands.add('safechat', [], (client) => {
+  if (client.penguin.isSafeChat) {
+    client.penguin.disableSafeChat();
+  } else {
+    client.penguin.enableSafeChat();
+  }
+  client.update();
+});
+
+commands.add('amulet', ['string'], (client, element) => {
+  switch (element) {
+    case 'fire':
+      client.penguin.isFireNinja = !client.penguin.isFireNinja;
+      break;
+    case 'water':
+      client.penguin.isWaterNinja = !client.penguin.isWaterNinja;
+      break;
+    case 'snow':
+      client.penguin.isSnowNinja = !client.penguin.isSnowNinja;
+      break;
+  }
+  client.update();
+});
+
+commands.add('addcard', ['number', 'number'], (client, card, amount) => {
+  client.penguin.addCard(card, amount);
   client.update();
 });
 

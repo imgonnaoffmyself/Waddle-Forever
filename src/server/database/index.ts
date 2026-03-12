@@ -228,6 +228,12 @@ class JsonDatabase {
         return '1.4.1';
       case '1.4.1':
         return '1.4.2';
+      case '1.4.2':
+        return '1.4.3';
+      case '1.4.3':
+        return '1.4.4';
+      case '1.4.4':
+        return '1.4.5';
       default:
         throw new Error('Invalid database version: ' + version);
     }
@@ -301,6 +307,10 @@ class JsonDatabase {
     }
 
     return undefined;
+  }
+
+  penguinExists(name: string): boolean {
+    return this.get<PenguinData>(Databases.Penguins, 'name', name) !== undefined
   }
 
   add<T>(database: Databases, value: T): [T, number] {
@@ -477,6 +487,13 @@ export interface PenguinData {
   /** If completed battle of doom or not */
   battleOfDoom: boolean;
   medieval2012Message?: number;
+  noSave?: boolean;
+  safeChat?: boolean;
+
+  /** Temporary data for cheaters who want the amulet to be completed */
+  fireNinja?: boolean;
+  waterNinja?: boolean;
+  snowNinja?: boolean;
 }
 
 export default db;

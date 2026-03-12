@@ -39,7 +39,7 @@ export function getStampbook(version: Version): Stampbook {
     if (update.update.stampUpdates !== undefined) {
       update.update.stampUpdates.forEach(u => {
         if ('category' in u) {
-          newStampbook.push(u.category);
+          newStampbook.push(JSON.parse(JSON.stringify(u.category)));
         } else {
           for (let i = 0; i < newStampbook.length; i++) {
             if (newStampbook[i].group_id === u.categoryId) {
