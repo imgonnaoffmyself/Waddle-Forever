@@ -120,8 +120,8 @@ export class SettingsManager {
       no_rainbow_quest_wait: this.readBoolean(settingsJson, 'no_rainbow_quest_wait', false),
       no_create_via_login: this.readBoolean(settingsJson, 'no_create_via_login', false),
       answered_packages: this.readString(settingsJson, 'answered_packages'),
-      ignored_version: this.readString(settingsJson, 'ignored_version')
-      coin_multiplier: this.readNumber(settingsJson, 'coin_multiplier', 1)
+      ignored_version: this.readString(settingsJson, 'ignored_version'),
+      coin_multiplier: this.readNumber(settingsJson, 'coin_multiplier', 1),
       medieval_sound_fix: this.readBoolean(settingsJson, 'medieval_sound_fix', true),
       inventory_accuracy: this.readBoolean(settingsJson, 'inventory_accuracy', true)
     };
@@ -153,6 +153,15 @@ export class SettingsManager {
   readBoolean(object: any, property: string, default_value: boolean): boolean {
     const value = object[property];
     if (typeof value === 'boolean') {
+      return value;
+    } else {
+      return default_value;
+    }
+  }
+
+  readNumber(object: any, property: string, default_value: number): number {
+    const value = object[property];
+    if (typeof value === 'number') {
       return value;
     } else {
       return default_value;

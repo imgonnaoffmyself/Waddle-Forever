@@ -121,6 +121,7 @@ const allSettings: Setting[] = [
       update({ coin_multiplier: Number(target.value) });
 	}
   },
+  {
     key: 'no_create_via_login',
     elementId: 'createvialogin-input',
     onChange: ({ checked }) => {

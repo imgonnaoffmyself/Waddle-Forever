@@ -9,7 +9,6 @@ export const UPDATES_2005: Update[] = [
     chatVersion: 291,
     indexHtml: 'beta',
     websiteFolder: 'beta',
-    clothingCatalog: 'approximation:style_august_05.swf',
     furnitureCatalog: 'approximation:furniture_aug05.swf',
     fileChanges: {
       'chat291.swf': 'approximation:chat291_no_news.swf', // newspapers-less precpip client
@@ -31,7 +30,7 @@ export const UPDATES_2005: Update[] = [
       attic: 'archives:ArtworkRoomsAttic12.swf'
     },
     clothingCatalog: {
-      file: 'recreation:style_september_05.swf',
+      file: 'recreation:style_august_05.swf',
       newItems: [
         1,
         2,
