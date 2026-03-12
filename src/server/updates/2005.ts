@@ -30,7 +30,7 @@ export const UPDATES_2005: Update[] = [
       attic: 'archives:ArtworkRoomsAttic12.swf'
     },
     clothingCatalog: {
-      file: 'recreation:style_august_05.swf',
+      file: 'approximation:style_august_05.swf',
       newItems: [
         1,
         2,
@@ -216,7 +216,9 @@ export const UPDATES_2005: Update[] = [
   },
   {
     date: '2005-09-21',
+	clothingCatalog: 'recreation:style_september_05.swf',
     furnitureCatalog: 'recreation:furniture_sep05.swf',
+
     temp: {
       party: {
         partyName: 'Beta Test Party',
@@ -329,7 +331,8 @@ export const UPDATES_2005: Update[] = [
     roomComment: 'Penguins can now access the mountain at the ski area',
     rooms: {
       village: 'approximation:village_no_lodge.swf',
-      mtn: 'fix:Mtn1.swf'
+	  // changed to mtn10 as mtn1 has non functional sled racing
+      mtn: 'mammoth:artwork/rooms/mtn10.swf'
     }
   },
   {
