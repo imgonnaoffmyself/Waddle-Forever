@@ -239,9 +239,10 @@ export const UPDATES_2005: Update[] = [
   },
   {
     date: '2005-10-20',
-    roomComment: 'A banner is added to the Ski Village',
+    roomComment: 'Sled Racing has been added',
     rooms: {
-      village: 'approximation:village_release.swf'
+      village: 'approximation:village_release.swf',
+      mtn: 'mammoth:artwork/rooms/mtn10.swf'
     }
   },
   {
@@ -297,7 +298,7 @@ export const UPDATES_2005: Update[] = [
     roomComment: 'A new shop opens at the ski area',
     rooms: {
       sport: 'mammoth:artwork/rooms/sport11.swf',
-      village: 'approximation:village_sport.swf'
+      village: 'approximation:village_no_lodge.swf'
     }
   },
   {
@@ -325,15 +326,6 @@ export const UPDATES_2005: Update[] = [
   {
     date: '2005-11-16',
     newspaper: 'irregular'
-  },
-  {
-    date: '2005-11-18',
-    roomComment: 'Penguins can now access the mountain at the ski area',
-    rooms: {
-      village: 'approximation:village_no_lodge.swf',
-	  // changed to mtn10 as mtn1 has non functional sled racing
-      mtn: 'mammoth:artwork/rooms/mtn10.swf'
-    }
   },
   {
     date: '2005-11-21',
