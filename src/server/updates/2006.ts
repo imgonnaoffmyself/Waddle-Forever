@@ -709,7 +709,6 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-09-08',
-    iglooVersion: 40,
     iglooCatalog: 'archives:September2006Igloo.swf',
     postcardCatalog: 'archives:ArtworkCatalogueCards_0609.swf'
   },
@@ -734,6 +733,7 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-09-21',
+    iglooVersion: 40,
     chatVersion: 506,
     fileChanges: {
       'interface.swf': 'recreation:old_interface/old_toolbar.swf'
