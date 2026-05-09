@@ -255,8 +255,8 @@ would need to investigated`
   [APPROXIMATION]: [
     {
       file: 'style_august_05.swf',
-      comment: 'Placeholder for August 2005 clothing catalog, copied from September 2005',
-      base: 'recreation:style_september_05.swf'
+      comment: 'Placeholder for August 2005 clothing catalog, copied from September 2005 (NEEDS TO BE REDONE - real September 2005 catalog was found!)',
+      base: 'archives:Catalog1_06.swf' // actually recreation:style_september_05.swf -- changed just in case!
     },
     {
       file: 'furniture_aug05.swf',
