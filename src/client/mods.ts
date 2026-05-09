@@ -1,25 +1,21 @@
 import { BrowserWindow, ipcMain, shell } from "electron";
-import electronIsDev from "electron-is-dev";
 import path from "path";
 import fs from "fs";
-import { MODS_DIRECTORY } from "@common/paths";
+import { MODS_DIRECTORY, MOD_HACKS_FILE, MOD_ITEMS_FILE } from "@common/paths";
+import { getPopupCreator } from "./popups";
+import { SettingsManager } from "@server/settings";
+import { ModError } from "@server/mods";
+import { Server } from "@server/client";
 
-let modsWindow: BrowserWindow | null;
-
-export const createModsWindow = async (mainWindow: BrowserWindow) => {
-  if (modsWindow) {
-    modsWindow.focus();
-    return;
-  }
-  modsWindow = new BrowserWindow({
+export const createModsWindow = getPopupCreator('mods', ['update-mod', 'open-mods-folder', 'mod-from-path', 'get-mods'], (mainWindow: BrowserWindow, settings: SettingsManager, server: Server) => {
+  const modsWindow = new BrowserWindow({
     width: 500,
     height: 500,
     title: "Mods",
     webPreferences: {
       preload: path.join(__dirname, 'preload/mods-preload.js'),
     },
-    resizable: false,
-    parent: mainWindow
+    resizable: false
   });
 
   modsWindow.setMenu(null);
@@ -30,30 +26,62 @@ export const createModsWindow = async (mainWindow: BrowserWindow) => {
   })
 
   modsWindow.loadFile(path.join(__dirname, 'views/mods.html'));
-  modsWindow.webContents.on('did-finish-load', () => {
-    if (electronIsDev) {
-      modsWindow?.webContents.openDevTools();
-    }
-  });
 
-  modsWindow.on('closed', () => {
-    modsWindow = null;
-    for (const event of ['update-mod', 'open-mods-folder', 'mod-from-path']) {
-      ipcMain.removeAllListeners(event);
-    }
-  });
+  ipcMain.on('update-mod', (_, arg) => {
+    const { name, state } = arg;
 
-  ipcMain.on('update-mod', () => {
-    mainWindow.webContents.reloadIgnoringCache();
+    let worked = true;
+
+    if (state) {
+      try {
+        settings.mods.setModActive(name);
+      } catch (error) {
+        if (error instanceof ModError) {
+          worked = false;
+          modsWindow.webContents.send('mod-error', { message: error.message, name });
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      settings.mods.setModInactive(name);
+    }
+
+    if (worked) {
+      server.reset();
+      mainWindow.webContents.reloadIgnoringCache();
+    }
   })
 
   ipcMain.on('open-mods-folder', () => {
     shell.openPath(MODS_DIRECTORY);
   });
 
+  const sendMods = () => {
+    const mods = settings.mods.getMods();
+    const modsRelation: Record<string, boolean> = {};
+    for (const mod of mods) {
+      modsRelation[mod] = settings.mods.isModActive(mod);
+    }
+    modsWindow.webContents.send('get-mods', modsRelation);
+  };
+
+  ipcMain.on('get-mods', sendMods);
+
   ipcMain.on('mod-from-path', (event, modName: string, dir: string) => {
-    fs.mkdir(path.join(MODS_DIRECTORY, modName, dir), { recursive: true }, (err) => {
+    const modDir = path.join(MODS_DIRECTORY, modName);
+    const dirExisted = fs.existsSync(modDir);
+    fs.mkdir(path.join(modDir, dir), { recursive: true }, (err) => {
+      // add mod extensions if creating the directory
+      if (!dirExisted) {
+        fs.writeFileSync(path.join(modDir, MOD_ITEMS_FILE), JSON.stringify([]));
+        fs.writeFileSync(path.join(modDir, MOD_HACKS_FILE), JSON.stringify([]));
+      }
       event.reply('mod-created', err);
     })
   });
-};
+
+  modsWindow.webContents.on('did-finish-load', sendMods);
+
+  return modsWindow;
+});

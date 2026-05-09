@@ -4,7 +4,7 @@ import path from "path";
 import { IS_DEV } from "@common/constants";
 import { PACKAGE_INFO } from "./package-info";
 import { PackageName } from "./packages";
-import { DEFAULT_DIRECTORY, getFilesInDirectory, iterateEntries } from "@common/utils";
+import { DEFAULT_DIRECTORY, getFilesInDirectory, iterateEntries, MEDIA_DIRECTORY, readFile } from "@common/utils";
 
 /**
  * File reference is a term used in this code base to refer a string in the format
@@ -234,6 +234,22 @@ would need to investigated`
     {
       file: 'load2008-08-15.swf',
       comment: 'Found in various old trainers. Domain check has likely been removed. Further changes to fix paths, including in shell.'
+    },
+    {
+      file: 'ArtworkRoomsDock3_luau.swf',
+      comment: 'Chat 291 compatibility fixes'
+    },
+    {
+      file: 'ArtworkRoomsDance2_luau.swf',
+      comment: 'Chat 291 compatibility fixes'
+    },
+    {
+      file: 'ArtworkRoomsForts3_luau.swf',
+      comment: 'Chat 291 compatibility fixes'
+    },
+    {
+      file: 'ArtworkRoomsTown4_luau.swf',
+      comment: 'Chat 291 compatibility fixes'
     }
   ],
   [APPROXIMATION]: [
@@ -512,7 +528,7 @@ so that it works with newer clients (newer being around 2007)`,
     },
     {
       file: 'login_no_101_days_of_fun.swf',
-      comment: 'By Randomon, removed 101 days of fun on start screen. not accurate for all dates, needs more research'
+      comment: 'By Randomno, removed 101 days of fun on start screen. not accurate for all dates, needs more research'
     },
     {
       file: 'en.txt',
@@ -667,22 +683,6 @@ Unknown if its teleporting to village functions would be accurate`
       comment: 'Made by Blue Kirby, Water Hunt stage with Planet Y, including glitched T as seen from videos'
     },
     {
-      file: 'winter_luau/dance.swf',
-      comment: 'Winter Luau room recreation by Supermanover'
-    },
-    {
-      file: 'winter_luau/dock.swf',
-      comment: 'Winter Luau room recreation by Supermanover, with additional fixes from Randomno'
-    },
-    {
-      file: 'winter_luau/town.swf',
-      comment: 'Winter Luau room recreation by Supermanover'
-    },
-    {
-      file: 'winter_luau/forts.swf',
-      comment: 'Winter Luau room recreation by Supermanover'
-    },
-    {
       file: 'puffle_roundup_orange.swf',
       comment: 'Made by nhaar. Recreation of the Puffle Roundup post Orange puffle release, using the Brown puffle one and replacing Brown puffle with its respective Puffle as seen from the white puffle SWF'
     },
@@ -824,11 +824,11 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'summer_kickoff_2007/beach.swf',
-      comment: 'made by Cyan'
+      comment: 'made by Doubleuman'
     },
     {
       file: 'summer_kickoff_2007/beach_update.swf',
-      comment: 'made by Cyan (added Flower Headdress)'
+      comment: 'made by Doubleuman (added Flower Headdress)'
     },
     {
       file: 'summer_kickoff_2007/town.swf',
@@ -840,7 +840,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'summer_kickoff_2007/dojo.swf',
-      comment: 'made by Victando'
+      comment: 'made by Doubleuman'
     },
     {
       file: 'summer_kickoff_2007/beacon.swf',
@@ -1315,22 +1315,6 @@ Unknown if its teleporting to village functions would be accurate`
       comment: 'Made by Blue Kirby. Built on top of the modified lgeacy media interface, removing the owned igloos functionality'
     },
     {
-      file: 'startscreen/cpip.swf',
-      comment: 'Made by lifeofgames477, recreation of the original CPIP start screen'
-    },
-    {
-      file: 'startscreen/cpip_logo.swf',
-      comment: 'Made by lifeofgames477, this file is an extension of the CPIP startscreen recreation. The logo was placed in a separate SWF because the recreation was built on top of the startscreen that we had, though it is purely a functional dependency'
-    },
-    {
-      file: 'startscreen/unlock_items.swf',
-      comment: 'Made by Blue Kirby, built on top of lifeofgames\' recreation adding the unlock items functionality'
-    },
-    {
-      file: 'startscreen/unlock_items_logo.swf',
-      comment: 'Made by Blue Kirby, the logo was slightly altered, cf. lifeofgame\'s recreation for why this file exists'
-    },
-    {
       file: 'login_cpip.swf',
       comment: 'Made by Blue Kirby, server select screen without the unlock items button and with the proper save password warning'
     },
@@ -1799,10 +1783,6 @@ Unknown if its teleporting to village functions would be accurate`
       comment: 'Made by Doubleuman'
     },
     {
-      file: 'style_september_05.swf',
-      comment: 'Made by Doubleuman'
-    },
-    {
       file: 'mtn_lucky_coin_pin.swf',
       comment: 'Made by Blue Kirby'
     },
@@ -2028,11 +2008,31 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'engine_cpip.swf',
-      comment: 'Used the Jun 2009 engine as base. Made self-initialising. Changed .path to .file_path. Added showInterface call after roomInitiated. Changed myMediaPath assigning for game_mc'
+      comment: 'Used the Jun 2009 engine as base. Made self-initialising. Changed .path to .file_path. Added showInterface call after roomInitiated. Changed myMediaPath assigning for game_mc. Added to the addPlayer function code to add balloon to the balloons_mc interface (fixes the balloons not showing up). Added the removeBalloonByPlayerId function and updated the call to INTERFACE.removeBalloonByPlayerId to call that function instead.'
     },
     {
       file: 'telescope_holiday.swf',
       comment: 'Made by ItzAle, from the 2012 telescope as a base'
+    },
+    {
+      file: 'LoginJul2008.swf',
+      comment: 'Made by Randomno from the Jun 2009 login'
+    },
+    {
+      file: 'LoginOct2008.swf',
+      comment: 'Made by Randomno from the Jun 2009 login'
+    },
+    {
+      file: 'winter_fiesta_2007/beach.swf',
+      comment: 'Made by Cyan'
+    },
+    {
+      file: 'coffee_valentine.swf',
+      comment: 'Made by lifeofgames477, added the missing code to the file from the archives. From lifeofgames\' upload, further fixes were added for chat291 compatibility'
+    },
+    {
+      file: 'clothing_10_01.swf',
+      comment: 'Made by Randomno, the January 2010 penguin style but with the proper year label'
     }
   ],
   [MOD]: [
@@ -2230,7 +2230,8 @@ const SUBDIRECTORES = new Set([
   'slegacy',
   'svanilla',
   'mammoth',
-  'slippers07'
+  'slippers07',
+  'websites'
 ]);
 
 if (IS_DEV) {
@@ -2268,4 +2269,9 @@ export function getMediaFilePath(fileReference: string): string {
   }
 
   return path.join(pkgName, pkgPath);
+}
+
+
+export async function getMediaFile(fileReference: string): Promise<Buffer> {
+  return await readFile(path.join(MEDIA_DIRECTORY, getMediaFilePath(fileReference)));
 }

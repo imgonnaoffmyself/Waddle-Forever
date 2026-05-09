@@ -2,25 +2,15 @@ import path from 'path'
 
 import { BrowserWindow, ipcMain } from "electron";
 import { isEqual, isLower, isLowerOrEqual, processVersion, Version, addDays } from '../server/routes/versions';
-import { PIN_TIMELINE } from '../server/timelines/pins';
 import { UPDATES } from '../server/updates/updates';
-import { NEWSPAPER_TIMELINE } from '../server/timelines/newspapers';
 import { CatalogItems } from '../server/updates';
 import { getDate } from '@server/timelines/dates';
+import { getPopupCreator } from './popups';
+import { SettingsManager } from '@server/settings';
+import { Server } from '@server/client';
 
-let timelinePicker: BrowserWindow | null;
-
-export const createTimelinePicker = async (mainWindow: BrowserWindow) => {
-  if (timelinePicker) {
-    timelinePicker.focus();
-    return;
-  }
-
-  mainWindow.on('closed', () => {
-    timelinePicker?.close();
-  });
-
-  timelinePicker = new BrowserWindow({
+export const createTimelinePicker = getPopupCreator('timeline', ['update-version'], (mainWindow: BrowserWindow, settings: SettingsManager, server: Server) => {
+  const timelinePicker = new BrowserWindow({
     show: false,
     title: "Timeline",
     webPreferences: {
@@ -32,21 +22,23 @@ export const createTimelinePicker = async (mainWindow: BrowserWindow) => {
 
   timelinePicker.loadFile(path.join(__dirname, 'views/timeline.html'));
 
-  timelinePicker.on('closed', () => {
-    timelinePicker = null;
-    ipcMain.removeAllListeners('update-version');
-  });
-
-  ipcMain.on('update-version', () => {
+  ipcMain.on('update-version', (_, arg) => {
+    const { settings: s, reset } = arg;
+    settings.updateSettings(s);
+    if (reset === true) {
+      server.reset();
+    }
     mainWindow.webContents.reloadIgnoringCache();
   });
 
   timelinePicker.webContents.on('did-finish-load', () => {
     timelinePicker?.maximize();
     timelinePicker?.show();
-    timelinePicker?.webContents.send('get-timeline', getConsumedTimeline(getTimeline()));
+    timelinePicker?.webContents.send('get-timeline', { days: getConsumedTimeline(getTimeline()), settings: settings.settings  });
   });
-}
+
+  return timelinePicker;
+});
 
 
 // this type is duplicated in the timeline-static file, it should be the same type
@@ -230,15 +222,11 @@ function getTimeline(): Day[] {
         }
       }
     }
-  });
-
-  NEWSPAPER_TIMELINE.forEach((update, i) => {
-    addEvent(map, update.date, `Issue #${i + 1} of the newspaper releases`, 'news');
-  });
-
-  PIN_TIMELINE.forEach((pin) => {
-    if (!('hidden' in pin && pin.hidden === true)) {
-      addEvent(map, pin.date, `The ${pin.name} is now hidden in the island`, 'pin');
+    if (update.update.issue !== undefined) {
+      addEvent(map, update.date, `Issue #${update.update.issue.edition} of the newspaper releases`, 'news');
+    }
+    if (update.update.hiddenPin !== undefined) {
+      addEvent(map, update.date, `The ${update.update.hiddenPin} is now hidden in the island`, 'pin');
     }
   });
 

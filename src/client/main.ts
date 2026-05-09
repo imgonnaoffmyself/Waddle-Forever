@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import log from "electron-log";
 import { autoUpdater } from "electron-updater";
 import { startDiscordRPC } from "./discord";
@@ -16,6 +16,10 @@ import electronIsDev from "electron-is-dev";
 import { AdminError, downloadMediaFolder, startMedia } from "./media";
 import { GlobalSettings } from '@common/utils';
 import { VERSION } from '@common/version';
+import { Popups } from './popups';
+import { WEBSITE } from '@common/website';
+import { Server } from '@server/client';
+import { Handler } from '@server/handlers';
 
 log.initialize();
 
@@ -30,6 +34,9 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox');
 }
 
+let server: Server | null = null;
+let handler: Handler | null = null;
+
 
 loadFlashPlugin(app);
 
@@ -41,6 +48,8 @@ let mainWindow: BrowserWindow;
 let globalSettings : GlobalSettings = {
   multiplayer: { type: 'local' }
 };
+
+const popups: Popups = new Map<string, BrowserWindow>();
 
 app.on('ready', async () => {
   // setup window is necessary so that in case we need to
@@ -97,20 +106,41 @@ app.on('ready', async () => {
     }
     settingsManager.updateSettings({ answered_packages: VERSION });
   }
-  try {
-    await startServer(settingsManager);
 
-    // this message box is useless, but for some reason, it is the only way for auto reload to work
-    const start = await dialog.showMessageBox(mainWindow, {
-      buttons: ['Start'],
-      title: 'Ready',
-      message: `Waddle Forever is Ready!`,
-      defaultId: 0,
-      cancelId: 1
+  if (!settingsManager.settings.faq_warning) {
+    const result = await dialog.showMessageBox(mainWindow, {
+      buttons: ['Take me to the FAQ', 'Understood'],
+      title: 'Heads-Up!',
+      message: `Welcome to Waddle Forever! If you know nothing about this client, you might be confused about some things:
+- You don't need to create an account, just log in with any name or password
+- The game is entirely offline
+- You can choose the day in the timeline, use commands, and more through the menu
+
+These are the most important things, but there is a full list of questions in our FAQ. If you're ever lost, you can read it in our website.`,
+      cancelId: 2
     });
 
-    if (start.response === 1) {
-      app.quit();
+    if (result.response === 0 || result.response === 1) {
+      if (result.response === 0) {
+        shell.openExternal(`${WEBSITE}/faq`);
+      }
+      settingsManager.updateSettings({ faq_warning: true });
+    }
+  }
+
+  try {
+    const result = await startServer(settingsManager);
+    server = result.server;
+    handler = result.handler;
+    for (const err of result.errors) {
+      // warn user if there are any issues with their mods
+      if (err.type === 'mods') {
+        await dialog.showMessageBox(mainWindow, {
+          buttons: ['OK'],
+          title: 'Error with Mods',
+          message: err.message
+        });
+      }
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes('EADDRINUSE')) {
@@ -130,6 +160,10 @@ app.on('ready', async () => {
     }
   }
 
+  if (server === null || handler === null) {
+    throw new Error("Server or handler should have been initialized");
+  }
+
   mainWindow = await createWindow(store, globalSettings, settingsManager);
   // release window since the main window now serves as
   // the window that will remain open
@@ -138,11 +172,17 @@ app.on('ready', async () => {
   // Some users was reporting problems with cache.
   await mainWindow.webContents.session.clearHostResolverCache();
 
-  startMenu(store, mainWindow, globalSettings, settingsManager);
+  startMenu(store, mainWindow, globalSettings, settingsManager, popups, server, handler);
 
   if (!electronIsDev) {
     startDiscordRPC(store, mainWindow);
   }
+
+  mainWindow.on('closed', () => {
+    popups.forEach(win => {
+      win.close();
+    });
+  });
 });
 
 
@@ -173,6 +213,9 @@ app.on('activate', async () => {
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     mainWindow = await createWindow(store, globalSettings, settingsManager);
-    startMenu(store, mainWindow, globalSettings, settingsManager);
+    if (server === null || handler === null) {
+      throw new Error("Server or handler must be non null");
+    }
+    startMenu(store, mainWindow, globalSettings, settingsManager, popups, server, handler);
   }
 });

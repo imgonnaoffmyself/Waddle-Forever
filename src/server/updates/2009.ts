@@ -102,7 +102,8 @@ export const UPDATES_2009: Update[] = [
     date: '2009-01-19',
     miscComments: ['Members can now see a special badge on their own player card'],
     fileChanges: {
-      'play/v2/interface/interface.swf': 'recreation:interfaces/membership_badge.swf'
+      'play/v2/interface/interface.swf': 'recreation:interfaces/membership_badge.swf',
+      'play/v2/login/login.swf': 'approximation:login_no_101_days_of_fun.swf'
     }
   },
   {
@@ -706,7 +707,7 @@ export const UPDATES_2009: Update[] = [
     date: '2009-03-24',
     miscComments: ['The membership badge now features levels'],
     fileChanges: {
-      'play/v2/interface/interface.swf': 'archives:ClientInterface-June2009.swf'
+      'play/v2/interface/interface.swf': 'archives:ClientInterface-April2009.swf'
     }
   },
   {

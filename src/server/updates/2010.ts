@@ -22,6 +22,15 @@ export const UPDATES_2010: Update[] = [
     end: ['party']
   },
   {
+    date: '2010-01-05',
+    miscComments: ['The Penguin Style year label is fixed'],
+    localChanges: {
+      'catalogues/clothing.swf': {
+        en: 'recreation:clothing_10_01.swf'
+      }
+    }
+  },
+  {
     date: '2010-01-08',
     miscComments: ['A rockslide appears in the Mine'],
     stagePlay: {
@@ -798,7 +807,8 @@ export const UPDATES_2010: Update[] = [
   },
   {
     date: '2010-05-14',
-    furnitureCatalog: 'archives:May10Furniture.swf'
+    furnitureCatalog: 'archives:May10Furniture.swf',
+    iglooCatalog: 'archives:May2010Igloo.swf'
   },
   {
     date: '2010-05-16',
@@ -842,6 +852,7 @@ export const UPDATES_2010: Update[] = [
   {
     date: '2010-05-27',
     end: ['party'],
+    indexHtml: 'classic-cpip-boots',
     fileChanges: {
       // engine that has EPF and stuff
       'play/v2/client/engine.swf': 'approximation:engine.swf',
