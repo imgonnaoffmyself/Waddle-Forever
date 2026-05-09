@@ -37,7 +37,7 @@ function patchFrame(rooms: OldRoom[], frames: Map<RoomName, number>) {
 }
 
 export function getSetupXml(d: GameData, s: SettingsManager) {
-  const news = d.getIssue();
+  const news = d.getIssue() ?? '';
   // const news = findInVersion(version, newspaperTimeline);
 
   const rooms: OldRoom[] = Object.entries(ROOMS).filter((pair) => {

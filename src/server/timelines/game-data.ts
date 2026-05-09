@@ -863,6 +863,9 @@ export class GameData {
   }
 
   public getIssue() {
+    if (this.state.issues.length === 0) {
+      return null;
+    }
     return this.state.issues[0].edition;
   }
 
