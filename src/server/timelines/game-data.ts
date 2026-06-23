@@ -9,17 +9,17 @@ import { FileRef, getMediaFilePath } from "@server/game-data/files";
 import { FURNITURE_ICONS, FURNITURE_SPRITES } from "@server/game-data/furniture";
 import { GameName } from "@server/game-data/games";
 import { MUSIC_IDS } from "@server/game-data/music";
-import { POSTCARD_IDS } from "@server/game-data/postcard";
 import { PRE_CPIP_STATIC_FILES } from "@server/game-data/precpip-static";
 import { RoomName } from "@server/game-data/rooms";
 import { getStagePlayMusic, StageScript } from "@server/game-data/stage-plays";
 import { ORIGINAL_STAMPBOOK, Stampbook, StampCategory, StampRoom, STAMP_ROOMS } from "@server/game-data/stamps";
 import { FURNITURE } from "@server/game-logic/furniture";
-import { ItemTable } from "@server/game-logic/items";
+import { ITEMS, ItemTable } from "@server/game-logic/items";
 import { WaddleRoomInfo } from "@server/game-logic/waddles";
 import { isGreater, Version } from "@server/routes/versions";
 import { SettingsManager } from "@server/settings";
 import { CatalogItems, CPUpdateE, CrumbIndicator, GameUpdate, HuntCrumbs, IglooList, ListSongPatch, PartyOp, WorldStamp } from "@server/updates";
+import { getUpdates } from "@server/updates/updates";
 import path from "path";
 
 const SCAVENGER_ICON_PATH = 'scavenger_hunt/scavenger_hunt_icon.swf';
@@ -102,6 +102,8 @@ type GameState = {
   gameStamps: Map<StampRoom, Set<number>>;
   releasedStamps: Set<number>;
   extraWaddleRooms: WaddleRoomInfo[];
+  iglooMusicReleased: boolean;
+  ownedIgloos: boolean;
 }
 
 function getFreshState(): GameState {
@@ -123,7 +125,7 @@ function getFreshState(): GameState {
     stamps: false,
     stageScript: [],
     localPaths: new Map<string, string>(),
-    compositePaths: false,
+    compositePaths: true,
     newShell2009: false,
     roomMusic: new Map<RoomName, number>(),
     roomMember: new Map<RoomName, boolean>(),
@@ -153,7 +155,9 @@ function getFreshState(): GameState {
     freeBrownPuffle: false,
     gameStamps: new Map<StampRoom, Set<number>>(),
     releasedStamps: new Set<number>(),
-    extraWaddleRooms: []
+    extraWaddleRooms: [],
+    iglooMusicReleased: false,
+    ownedIgloos: false
   };
 }
 
@@ -165,7 +169,14 @@ export class GameData {
 
   private date: string;
 
-  constructor(private updates: GameUpdate[], private items: ItemTable, settings: SettingsManager) {
+  private updates: GameUpdate[]
+
+  private items: ItemTable;
+
+  constructor(settings: SettingsManager) {
+    this.updates = getUpdates();
+    // todo: remove global state
+    this.items = ITEMS;
     this.date = settings.settings.version;
     this.update(settings.settings.version);
     settings.addListener(() => {
@@ -210,8 +221,6 @@ export class GameData {
   private addDefaultInfo() {
     ['play/v2/content/global', ''].forEach((parentDir) => this.addIdMap(parentDir, 'music', MUSIC_IDS));
 
-    this.addIdMap('play/v2/content/local/en', 'postcards', POSTCARD_IDS);
-  
     const clothingDir = 'play/v2/content/global/clothing';
     const preCpipClothingDir = 'artwork';
 
@@ -311,6 +320,12 @@ export class GameData {
             break;
           case 'as3-startscreen':
             this.state.as3Startscreen = true;
+            break;
+          case 'igloo-music':
+            this.state.iglooMusicReleased = true;
+            break;
+          case 'owned-igloos':
+            this.state.ownedIgloos = true;
             break;
           default:
             break;
@@ -947,5 +962,17 @@ export class GameData {
 
   public getExtraWaddleRooms() {
     return this.state.extraWaddleRooms;
+  }
+
+  public getItem(id: number) {
+    return this.items.getStrict(id);
+  }
+
+  public hasIglooMusicReleased() {
+    return this.state.iglooMusicReleased;
+  }
+
+  public isAfterOwnedIgloos() {
+    return this.state.ownedIgloos;
   }
 }
