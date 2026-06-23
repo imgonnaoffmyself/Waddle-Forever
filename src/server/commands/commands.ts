@@ -60,7 +60,7 @@ const handleJoinRoomName: CommandHandler<[string]> = (ctx, name) => {
 
 const handleAddCoins: CommandHandler<[number]> = ({ msg, penguin, prst, data }, coins) => {
   console.log(typeof coins, 'eis os coins');
-  const total = penguin.currency.add(coins);
+  const total = penguin.currency.add(coins, false);
 
   if (data.isPreCpip()) {
     msg.send(penguin, 'ac', total);

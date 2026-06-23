@@ -1,7 +1,7 @@
 import { getDefaultIgloo, Igloo, Mail, PenguinJson, PlayerPuffle, RainbowPuffleStage, StampbookCover } from "@server/database/database";
 import { CardJitsuFireProgress, CardJitsuProgress } from "@server/game-logic/ninja-progress";
 import { processVersion } from "@server/routes/versions";
-import { SettingsManager } from "@server/settings";
+import settingsManager, { SettingsManager } from "@server/settings";
 
 export type PenguinEquipped = {
   color: number
@@ -182,8 +182,9 @@ class Currency {
     return this._coins;
   }
 
-  public add(coins: number) {
-    this._coins += coins;
+  public add(coins: number, applyMultiplier: boolean = true) {
+    const multiplier = applyMultiplier ? settingsManager.settings.coin_multiplier : 1;
+    this._coins += Math.floor(coins * multiplier);
     return this._coins;
   }
 }
