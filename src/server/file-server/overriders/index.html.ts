@@ -8,12 +8,12 @@ function injectRuffleIntoHtml(html: string, ip: string, loginPort: number, world
       {
         host: ip,
         port: loginPort,
-        proxyUrl: `ws://${ip}:${loginPort}`,
+        proxyUrl: `ws://125.168.206.149:${loginPort}`,
       },
       {
         host: ip,
         port: worldPort,
-        proxyUrl: `ws://${ip}:${worldPort}`,
+        proxyUrl: `ws://125.168.206.149:${worldPort}`,
       },
     ]
   });
