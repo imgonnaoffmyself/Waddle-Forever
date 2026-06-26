@@ -73,6 +73,17 @@ export const handleSendJoke: RoomHandler<[string]> = ({ room, msg, penguin }, jo
 }
 
 export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, npc }, _penguinIdParam, message) => {
+  if (message.toLowerCase() === "dead internet theory") {
+    if (!penguin.deadInternet) {
+      penguin.deadInternet = true;
+      // Remove all NPCs for this player
+      const npcs = room.playerStates.filter(([occ]) => !(occ instanceof WorldPenguin));
+      npcs.forEach(([npcOcc]) => {
+        msg.send(penguin, 'rp', npcOcc.id);
+      });
+    }
+  }
+
   msg.send(room.players, 'sm', _penguinIdParam, message);
   // Let NPCs react to the player's chat
   npc?.onPlayerChat(room, penguin, message);

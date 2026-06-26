@@ -259,7 +259,7 @@ export class NpcManager {
     // Remove all NPCs from their rooms — broadcast rp to real players
     for (const [npc, room] of this.npcRooms) {
       room.removeOccupant(npc);
-      this.msg.send(room.realPlayers, 'rp', npc.id);
+      this.msg.send(this.getActivePlayers(room), 'rp', npc.id);
     }
 
     this.npcRooms.clear();
@@ -280,7 +280,7 @@ export class NpcManager {
     this.npcRooms.set(npc, room);
 
     // Broadcast new NPC to real players already in the room
-    this.msg.send(room.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.msg.send(this.getActivePlayers(room), 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
 
     this.scheduleDwell(npc);
     this.scheduleIdle(npc);
@@ -302,7 +302,7 @@ export class NpcManager {
 
     // Remove from current room
     currentRoom.removeOccupant(npc);
-    this.msg.send(currentRoom.realPlayers, 'rp', npc.id);
+    this.msg.send(this.getActivePlayers(currentRoom), 'rp', npc.id);
 
     // Pick a new room (avoid same room if possible)
     const eligible = ROOM_POOL.filter(id => id !== currentRoom.id);
@@ -314,7 +314,7 @@ export class NpcManager {
     this.npcRooms.set(npc, newRoom);
 
     // Broadcast arrival to players in new room
-    this.msg.send(newRoom.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.msg.send(this.getActivePlayers(newRoom), 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
 
     this.scheduleDwell(npc);
   }
@@ -333,7 +333,7 @@ export class NpcManager {
     if (this.npcMancalaTables.has(npc)) { this.scheduleAmbient(npc); return; }
 
     const room = this.npcRooms.get(npc);
-    if (room !== undefined && room.realPlayers.length > 0) {
+    if (room !== undefined && this.getActivePlayers(room).length > 0) {
       // 70% chance to waddle to a new spot, 30% chance to do a random frame (wave, sit, dance)
       if (Math.random() < 0.7) {
         const [x, y] = spawnPosForRoom(room.id);
@@ -360,7 +360,7 @@ export class NpcManager {
     if (!this.active) return;
 
     const room = this.npcRooms.get(npc);
-    if (room === undefined || room.realPlayers.length === 0) {
+    if (room === undefined || this.getActivePlayers(room).length === 0) {
       // Nobody in room — still reschedule, just skip dialogue
       this.scheduleIdle(npc);
       return;
@@ -699,7 +699,7 @@ export class NpcManager {
   }
 
   private dispatchAction(npc: NpcPenguin, room: WorldRoom, action: NpcAction): void {
-    const targets = room.realPlayers;
+    const targets = this.getActivePlayers(room);
     if (targets.length === 0) return;
 
     switch (action.type) {
@@ -730,7 +730,7 @@ export class NpcManager {
         let targetY = action.y ?? 0;
 
         if (action.target === 'random-player') {
-          const players = room.realPlayers;
+          const players = this.getActivePlayers(room);
           if (players.length > 0) {
             const player = randFrom(players);
             const state = room.getState(player);
@@ -771,7 +771,7 @@ export class NpcManager {
         if (seatId !== 99) {
           const count = table.getCount();
           if (count !== before) {
-            this.msg.send(room.realPlayers, 'ut', table.getId(), table.getCount());
+            this.msg.send(this.getActivePlayers(room), 'ut', table.getId(), table.getCount());
           }
           
           // The table is now joined by the NPC.
@@ -1054,9 +1054,9 @@ export class NpcManager {
           intermediate: ["good game!", "nice match!", "gg"],
           expert:       ["gg", "good game", "as expected ;)"],
         };
-        this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(winLines[npc.mancalaSkill]));
+        this.msg.send(this.getActivePlayers(room), 'sm', String(npc.id), randFrom(winLines[npc.mancalaSkill]));
         // emote: happy = 1
-        setTimeout(() => this.msg.send(room.realPlayers, 'se', npc.id, 1), 800);
+        setTimeout(() => this.msg.send(this.getActivePlayers(room), 'se', npc.id, 1), 800);
       } else {
         const loseLines: Record<MancalaSkill, string[]> = {
           clueless:     ["oh well lol", "i never know what im doing anyway", "good job!!"],
@@ -1064,7 +1064,7 @@ export class NpcManager {
           intermediate: ["good game, well played", "gg", "nicely done"],
           expert:       ["impressive", "gg, i underestimated you", "well played"],
         };
-        this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(loseLines[npc.mancalaSkill]));
+        this.msg.send(this.getActivePlayers(room), 'sm', String(npc.id), randFrom(loseLines[npc.mancalaSkill]));
 
         // Grumpy/excitable NPCs may throw a snowball at the winner on loss
         const throwsSnowball =
@@ -1077,7 +1077,7 @@ export class NpcManager {
             const target = randFrom(players);
             const state = room.playerStates.find(([occ]) => occ === target);
             if (state) {
-              this.msg.send(room.realPlayers, 'sb', npc.id, state[1].x, state[1].y);
+              this.msg.send(this.getActivePlayers(room), 'sb', npc.id, state[1].x, state[1].y);
             }
           }, randInt(1200, 2500));
         }
@@ -1099,7 +1099,7 @@ export class NpcManager {
     // Slight delay so the player leaving animation happens first
     setTimeout(() => {
       if (this.npcRooms.get(npc) !== room) return;
-      this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(abortLines[npc.mancalaSkill]));
+      this.msg.send(this.getActivePlayers(room), 'sm', String(npc.id), randFrom(abortLines[npc.mancalaSkill]));
     }, 1000);
   }
 
@@ -1107,6 +1107,10 @@ export class NpcManager {
     return [...this.npcRooms.entries()]
       .filter(([, r]) => r === room)
       .map(([npc]) => npc);
+  }
+
+  private getActivePlayers(room: WorldRoom): WorldPenguin[] {
+    return room.realPlayers.filter(p => !p.deadInternet);
   }
 
   /** Whether this module should be active for the given date string */
