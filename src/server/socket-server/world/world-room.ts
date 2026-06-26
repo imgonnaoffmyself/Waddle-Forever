@@ -4,8 +4,31 @@ import { WaddleRoom } from "./waddle-room";
 import { RoomState, WorldPenguin } from "./world-penguin";
 import { WorldTable } from "./world-table";
 
+/**
+ * Minimal interface satisfied by both WorldPenguin and NpcPenguin.
+ * Used everywhere a room needs to store or display an occupant.
+ */
+export interface RoomOccupant {
+  id: number;
+  name: string;
+  inventory: {
+    color: number;
+    head: number;
+    face: number;
+    neck: number;
+    body: number;
+    hand: number;
+    feet: number;
+    pin: number;
+    background: number;
+  };
+  membership: { isMember: boolean };
+  time: { age: number };
+  avatar: { id: number };
+}
+
 export class WorldRoom {
-  private penguins = new Map<WorldPenguin, RoomState>();
+  private penguins = new Map<RoomOccupant, RoomState>();
   private waddles = new Map<number, WaddleRoom>();
   private tables = new Map<number, WorldTable>();
 
@@ -22,16 +45,53 @@ export class WorldRoom {
     return this.penguins.entries();
   }
 
-  public get players() {
+  /** All occupants in this room (real players + NPCs). Used for join-string building. */
+  public get occupants(): RoomOccupant[] {
     return [...this.penguins.keys()];
   }
 
-  public get playerStates() {
+  /** Only real WorldPenguin players (excludes NPCs). Used as msg.send() targets. */
+  public get realPlayers(): WorldPenguin[] {
+    return [...this.penguins.keys()].filter((o): o is WorldPenguin => o instanceof WorldPenguin);
+  }
+
+  /** Alias for realPlayers — kept for backward compatibility with existing call sites. */
+  public get players(): WorldPenguin[] {
+    return this.realPlayers;
+  }
+
+  public get playerStates(): [RoomOccupant, RoomState][] {
     return [...this.penguins.entries()];
   }
 
   public addPenguin(penguin: WorldPenguin, x: number, y: number): void {
-    this.penguins.set(penguin, { x, y, frame : 1});
+    this.penguins.set(penguin, { x, y, frame: 1 });
+  }
+
+  /** Add any RoomOccupant (real player or NPC) to this room. */
+  public addOccupant(occupant: RoomOccupant, x: number, y: number): void {
+    this.penguins.set(occupant, { x, y, frame: 1 });
+  }
+
+  /** Remove any RoomOccupant from this room. */
+  public removeOccupant(occupant: RoomOccupant): void {
+    this.penguins.delete(occupant);
+  }
+
+  /** Update an occupant's position (used by NPC movement actions). */
+  public updateOccupantPosition(occupant: RoomOccupant, x: number, y: number): void {
+    const state = this.penguins.get(occupant);
+    if (state !== undefined) {
+      this.penguins.set(occupant, { x, y, frame: state.frame });
+    }
+  }
+
+  /** Update an occupant's frame (used by NPC frame actions). */
+  public updateOccupantFrame(occupant: RoomOccupant, frame: number): void {
+    const state = this.penguins.get(occupant);
+    if (state !== undefined) {
+      this.penguins.set(occupant, { ...state, frame });
+    }
   }
 
   public getState(penguin: WorldPenguin) {

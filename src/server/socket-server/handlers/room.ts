@@ -9,20 +9,54 @@ export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room
   msg.send(room.players, 'sp', penguin.id, x, y);
 }
 
+function hasSpecialDanceCombination(penguin: WorldPenguin): boolean {
+  const equipped = [
+    penguin.inventory.head,
+    penguin.inventory.face,
+    penguin.inventory.neck,
+    penguin.inventory.body,
+    penguin.inventory.hand,
+    penguin.inventory.feet,
+  ].filter(id => id > 0);
+
+  equipped.sort((a, b) => a - b);
+  const equippedStr = equipped.join(',');
+
+  const validCombos = [
+    '212',
+    '171',
+    '193',
+    '3185',
+    '3247',
+    '171,212',
+    '193,212',
+    '212,3247'
+  ];
+
+  return validCombos.includes(equippedStr);
+}
+
 export const handleSetFrame: RoomHandler<[number]> = ({ penguin, room, msg }, frame) => {
-  room.updateFrame(penguin, frame);
-  msg.send(room.players, 'sf', penguin.id, frame);
+  let finalFrame = frame;
+  // If attempting to dance, check if they have the special dance clothing combo
+  if (finalFrame === 26 && hasSpecialDanceCombination(penguin)) {
+    finalFrame = 32;
+  }
+  
+  room.updateFrame(penguin, finalFrame);
+  msg.send(room.players, 'sf', penguin.id, finalFrame);
 }
 
 export const handleSetAction: RoomHandler<[string]> = ({ room, msg, penguin }, action) => {
   msg.send(room.players, 'sa', penguin.id, action);
 }
 
-export const handleSetSnowball: RoomHandler<[string, string]> = ({ room, msg, penguin }, x, y) => {
+export const handleSetSnowball: RoomHandler<[string, string]> = ({ room, msg, penguin, npc }, x, y) => {
   msg.send(room.players, 'sb', penguin.id, x, y);
+  npc?.onPlayerSnowball(room, penguin, Number(x), Number(y));
 }
 
-export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, data, world }, emote) => {
+export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, data, world, npc }, emote) => {
   if (data.hasBakery() && room === world.bakery.room) {
     if (Number(emote) === world.bakery.emote) {
       world.bakery.incrementCheer();
@@ -30,14 +64,18 @@ export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, dat
   }
   
   msg.send(room.players, 'se', penguin.id, emote);
+  // Let NPCs react to the emote
+  npc?.onPlayerEmote(room, penguin, Number(emote));
 }
 
 export const handleSendJoke: RoomHandler<[string]> = ({ room, msg, penguin }, joke) => {
   msg.send(room.players, 'sj', penguin.id, joke);
 }
 
-export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg }, penguin, message) => {
-  msg.send(room.players, 'sm', penguin, message);
+export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, npc }, _penguinIdParam, message) => {
+  msg.send(room.players, 'sm', _penguinIdParam, message);
+  // Let NPCs react to the player's chat
+  npc?.onPlayerChat(room, penguin, message);
 }
 
 export const handleSafeMessage: RoomHandler<[string]> = ({ room, msg, penguin }, message) => {
@@ -120,7 +158,7 @@ export const handleGetTables: RoomHandler<number[]> = ({ msg, penguin, room }, .
   }));
 }
 
-export const handleJoinTable: RoomHandler<[number]> =({ msg, penguin, room }, tableId) => {
+export const handleJoinTable: RoomHandler<[number]> =({ msg, penguin, room, npc }, tableId) => {
   const table = room.getTable(tableId);
 
   const before = table.getCount();
@@ -135,17 +173,44 @@ export const handleJoinTable: RoomHandler<[number]> =({ msg, penguin, room }, ta
     if (count !== before) {
       msg.send(room.players, 'ut', table.getId(), table.getCount())
     }
+
+    // If this is the only player at a Mancala table, invite an NPC after a short delay
+    if (before === 0 && WorldTable.MANCALA_TABLE_IDS.has(tableId) && npc) {
+      const delay = Math.floor(Math.random() * 4000) + 2000; // 2-6 seconds
+      console.log(`[jt] Player "${penguin.name}" sat at mancala table ${tableId}. NPC will be invited in ${delay}ms.`);
+      setTimeout(() => {
+        // Only proceed if the player is still alone (no one else joined in the meantime)
+        const curCount = table.getCount();
+        const curStarted = table.hasStarted();
+        console.log(`[jt-timer] Mancala table ${tableId}: count=${curCount}, started=${curStarted} — will invite NPC? ${curCount === 1 && !curStarted}`);
+        if (curCount === 1 && !curStarted) {
+          npc.onPlayerJoinedMancala(room, table);
+        }
+      }, delay);
+    }
   }
   // the index here is 1 based
   const tableSeatId = seatId === WorldTable.TABLE_SPECTATOR_SEAT ? seatId : seatId + 1;
   msg.send(penguin, 'jt', tableId, tableSeatId);
 }
 
-export const handleLeaveTable: RoomHandler<[]> = ({ msg, room, penguin }) => {
+export const handleLeaveTable: RoomHandler<[]> = ({ msg, room, penguin, npc }) => {
   // old leave flow: free seat, broadcast count, and reset if empty
   const table = room.getPenguinTable(penguin);
   if (table !== null) {
     table.removePlayer(penguin);
+
+    // If only an NPC is left, kick them too
+    if (npc && WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+      const seats = table.getSeats();
+      const npcOpp = seats.find(s => s !== null && !(s instanceof WorldPenguin));
+      if (npcOpp) {
+        npc.fireMancalaAbortedReaction(npcOpp as any, room);
+        npc.releaseMancalaNpc(npcOpp as any);
+        table.removePlayer(npcOpp as any);
+      }
+    }
+
     const count = table.getCount();
     msg.send(room.players, 'ut', table.getId(), table.getCount());
     if (count === 0) {
@@ -169,15 +234,19 @@ export const handleGetTableGame: RoomHandler<[string]> = ({ msg, room, penguin }
   }
 
   const table = room.getTable(resolvedTableId);
-
   const boardState = table.serializeBoard();
+
+  if (WorldTable.MANCALA_TABLE_IDS.has(resolvedTableId)) {
+    console.log(`[gz] Player "${penguin.name}" requested table ${resolvedTableId}. names=${JSON.stringify(table.getNames())}, board="${boardState}", seats=${JSON.stringify(table.getSeats().map(s => s?.name ?? null))}, joined=${JSON.stringify((table as any).joined)}, started=${table.hasStarted()}`);
+  }
 
   msg.send(penguin, 'gz', ...table.getNames(), boardState);
 }
 
-export const handleJoinTableGame: RoomHandler<[]> = ({ msg, room, penguin }) => {
+export const handleJoinTableGame: RoomHandler<[]> = ({ msg, room, penguin, npc }) => {
   // join the game instance after table seat selection
   const table = room.getPenguinTable(penguin);
+  console.log(`[jz] Player "${penguin.name}" sent jz. table=${table?.getId() ?? 'null'}, isMancala=${table ? WorldTable.MANCALA_TABLE_IDS.has(table.getId()) : false}`);
   if (table !== null) {
     const currentSeat = table.getSeatIndex(penguin);
     let seatId;
@@ -188,26 +257,39 @@ export const handleJoinTableGame: RoomHandler<[]> = ({ msg, room, penguin }) => 
     }
 
     table.setJoined(seatId);
+    console.log(`[jz] table=${table.getId()}, seatId=${seatId}, joined=${JSON.stringify((table as any).joined)}, everyoneJoined=${table.hasEveryoneJoined()}, started=${table.hasStarted()}, seats=${JSON.stringify(table.getSeats().map(s => s?.name ?? null))}`);
 
     msg.send(penguin, 'jz', seatId);
     table.getSeats().forEach((seat, index) => {
       msg.send(penguin, 'uz', index, seat?.name ?? '');
     });
 
-    msg.send(table.penguins, 'uz', seatId, penguin.name);
+    msg.send(table.realPlayers, 'uz', seatId, penguin.name);
 
     // start the match when both players have joined
     if (!table.hasStarted()) {
       if (table.hasEveryoneJoined()) {
+        console.log(`[jz] Both joined — starting game on table ${table.getId()}, turn=${table.getTurn()}`);
         table.setStarted();
-        msg.send(table.penguins, 'sz', table.getTurn())
+        msg.send(table.realPlayers, 'sz', table.getTurn());
+
+        // If the first turn belongs to an NPC, trigger their move loop
+        const firstTurnSeatId = table.getTurn();
+        const firstTurnPlayer = table.getSeats()[firstTurnSeatId];
+        if (firstTurnPlayer && !(firstTurnPlayer instanceof WorldPenguin)) {
+          console.log(`[jz] First turn is NPC "${firstTurnPlayer.name}" at seat ${firstTurnSeatId} — firing NPC turn`);
+          npc?.handleMancalaTurn(firstTurnPlayer as any, room, table.getId());
+        }
+      } else {
+        console.log(`[jz] Not everyone joined yet on table ${table.getId()}, waiting...`);
       }
       return;
     }
+    console.log(`[jz] Table ${table.getId()} already started — ignoring`);
   }
 }
 
-export const handleLeaveTableGame: RoomHandler<[]> = ({ msg, room, penguin }) => {
+export const handleLeaveTableGame: RoomHandler<[]> = ({ msg, room, penguin, npc }) => {
   // leave the active game: spectators just close, players clear seats/reset
   const table = room.getPenguinTable(penguin);
 
@@ -221,8 +303,20 @@ export const handleLeaveTableGame: RoomHandler<[]> = ({ msg, room, penguin }) =>
     if (!table.hasStarted()) {
       if (seat !== undefined) {
         table.removePlayer(penguin);
-        msg.send(table.penguins, 'uz', seat, '');
+        msg.send(table.realPlayers, 'uz', seat, '');
       }
+
+      // If only an NPC is left, kick them too
+      if (npc && WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+        const seats = table.getSeats();
+        const npcOpp = seats.find(s => s !== null && !(s instanceof WorldPenguin));
+        if (npcOpp) {
+          npc.fireMancalaAbortedReaction(npcOpp as any, room);
+          npc.releaseMancalaNpc(npcOpp as any);
+          table.removePlayer(npcOpp as any);
+        }
+      }
+
       const count = table.getCount();
       msg.send(room.players, 'ut', table.getId(), table.getCount());
       if (count === 0) {
@@ -230,13 +324,24 @@ export const handleLeaveTableGame: RoomHandler<[]> = ({ msg, room, penguin }) =>
       }
       return;
     }
-    msg.send(table.penguins, 'cz', penguin.name);
+    msg.send(table.realPlayers, 'cz', penguin.name);
+    
+    // Release NPC if one was at the table
+    if (npc && WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+      const seats = table.getSeats();
+      const npcOpp = seats.find(s => s !== null && !(s instanceof WorldPenguin));
+      if (npcOpp) {
+        npc.fireMancalaAbortedReaction(npcOpp as any, room);
+        npc.releaseMancalaNpc(npcOpp as any);
+      }
+    }
+
     table.resetRound();
     msg.send(room.players, 'ut', table.getId(), table.getCount());
   }
 }
 
-export const handleSendTableMove: RoomHandler<number[]> = ({ msg, room, penguin, data }, ...moves) => {
+export const handleSendTableMove: RoomHandler<number[]> = ({ msg, room, penguin, data, npc }, ...moves) => {
   // dispatch board moves for find four or mancala
   const table = room.getPenguinTable(penguin);
   if (table !== null) {
@@ -257,7 +362,9 @@ export const handleSendTableMove: RoomHandler<number[]> = ({ msg, room, penguin,
 
     // table game specific logic
     if (moves.length === table.getMoveLength()) {
-      // TODO
+      if (WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+        console.log(`[zm] Player "${penguin.name}" move: table=${table.getId()}, seat=${seat}, moves=${JSON.stringify(moves)}, board="${table.serializeBoard()}"`);
+      }
       const [endArgs, args] = table.sendMove(moves);
       
       // Ignore non-table zm packets (e.g. sled racing uses 4 args).
@@ -265,19 +372,52 @@ export const handleSendTableMove: RoomHandler<number[]> = ({ msg, room, penguin,
         table.changeTurn();
       }
       if (args !== null) {
-        msg.send(table.penguins, 'zm', ...args);
+        if (WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+          console.log(`[zm] Sending zm to players: args=${JSON.stringify(args)}, nextTurn=${table.getTurn()}`);
+        }
+        msg.send(table.realPlayers, 'zm', ...args);
       }
       if (endArgs !== null) {
+        if (WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+          console.log(`[zo] Game over on table ${table.getId()}: endArgs=${JSON.stringify(endArgs)}`);
+        }
         // end args is pre-cpip thing
         // post-cpip: regular player coins
         if (data.isPreCpip()) {
           table.blockSpectators();
-          msg.send(table.penguins, 'zo', ...endArgs);
+          msg.send(table.realPlayers, 'zo', ...endArgs);
         } else {
-          table.penguins.forEach(p => msg.send(p, 'zo', p.currency.coins));
+          table.realPlayers.forEach(p => msg.send(p, 'zo', p.currency.coins));
+        }
+        // Fire NPC reaction if one of the seats was an NPC
+        if (npc && WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+          const seats = table.getSeats();
+          const npcOpp = seats.find(s => s !== null && !(s instanceof WorldPenguin));
+          if (npcOpp) {
+            const finalBoard = table.serializeBoard().split(',').map(Number);
+            const npcSeatId = table.getSeatIndex(npcOpp)!;
+            const npcScore = npcSeatId === 0 ? finalBoard[6] : finalBoard[13];
+            const playerScore = npcSeatId === 0 ? finalBoard[13] : finalBoard[6];
+            npc.fireMancalaEndReaction(npcOpp as any, room, npcScore > playerScore, table.realPlayers);
+          }
         }
         msg.send(room.players, 'ut', table.getId(), table.getCount());
         table.resetRound();
+      }
+
+      // If it's now an NPC's turn, notify the NpcManager
+      if (!table.hasEnded() && npc) {
+        const currentTurnSeatId = table.getTurn();
+        const seats = table.getSeats();
+        const currentTurnPlayer = seats[currentTurnSeatId];
+        
+        // Identify NPC occupants: they are NOT instances of WorldPenguin
+        if (currentTurnPlayer && !(currentTurnPlayer instanceof WorldPenguin)) {
+          if (WorldTable.MANCALA_TABLE_IDS.has(table.getId())) {
+            console.log(`[zm] Now NPC "${currentTurnPlayer.name}"'s turn at seat ${currentTurnSeatId} — firing handleMancalaTurn`);
+          }
+          npc.handleMancalaTurn(currentTurnPlayer as any, room, table.getId());
+        }
       }
     }
   }  

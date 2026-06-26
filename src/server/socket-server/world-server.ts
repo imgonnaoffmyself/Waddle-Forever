@@ -23,6 +23,7 @@ import { createLoginXmlHandler } from "./login-handlers";
 import { PenguinPersister, WorldContext } from "@server/socket-server/handlers/handlers";
 import { CommandsHandler, getCommandsHandler } from "@server/commands/commands";
 import { OfflineWorld } from "./offline-world";
+import { NpcManager } from "@server/npc";
 
 export class WorldServer implements MessageHandler {
   private _world: World;
@@ -32,10 +33,12 @@ export class WorldServer implements MessageHandler {
   private _xtHandler: XtHandler;
   private _xmlHandler: XmlHandler;
   private _persister: PenguinPersister;
+  private _npc: NpcManager;
   
   constructor(private _settings: SettingsManager, private _gameData: GameData, private _db: PenguinRepository) {
     this._off = new OfflineWorld(_db);
     this._world = new World(_gameData);
+    this._npc = new NpcManager(this._world, this._msg, this._gameData);
 
     this._commandsHandler = getCommandsHandler();
 
@@ -49,6 +52,11 @@ export class WorldServer implements MessageHandler {
     this._xmlHandler = createLoginXmlHandler();
 
     this.init();
+
+    // Re-evaluate NPC activation whenever the timeline date changes
+    this._gameData.addListener(() => {
+      this.syncNpcState();
+    });
   }
 
   public runCommand(penguinId: number, name: string, args: string[]) {
@@ -80,13 +88,25 @@ export class WorldServer implements MessageHandler {
   private init() {
     addBakeryListener(this._world, this._msg);
     addMatchmakerListeners(this._world, this._msg);
+    this.syncNpcState();
+  }
+
+  /** Activate or deactivate NPCs depending on the current timeline date */
+  private syncNpcState(): void {
+    if (NpcManager.isActiveDate(this._gameData.getDate())) {
+      this._npc.activate();
+    } else {
+      this._npc.deactivate();
+    }
   }
 
   public async reset() {
     await Promise.all(this._msg.getClients().map(client => this.disconnect(client)));
+    this._npc.deactivate();
     this._msg.close();
     this._msg = new PenguinMessenger();
     this._world = new World(this._gameData);
+    this._npc = new NpcManager(this._world, this._msg, this._gameData);
     this.init();
   }
 
@@ -100,6 +120,7 @@ export class WorldServer implements MessageHandler {
       db: this._db,
       prst: this._persister,
       off: this._off,
+      npc: NpcManager.isActiveDate(this._gameData.getDate()) ? this._npc : undefined,
 
       client,
 

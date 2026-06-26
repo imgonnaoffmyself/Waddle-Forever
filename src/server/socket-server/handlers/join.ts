@@ -2,7 +2,7 @@ import { PenguinRepository } from '@server/database/database';
 import { isGameRoom, Room } from '@server/game-logic/rooms';
 import { World } from '@server/socket-server/world/world';
 import { WorldPenguin } from '@server/socket-server/world/world-penguin';
-import { WorldRoom } from '@server/socket-server/world/world-room';
+import { RoomOccupant, WorldRoom } from '@server/socket-server/world/world-room';
 import { GameData } from '@server/timelines/game-data';
 import { PenguinMessenger } from '../../socket-server/messenger';
 import { getClientPuffleIds } from './puffle';
@@ -62,7 +62,7 @@ const handleSendBuddyOnline: PenguinHandler<[]> = ({ world, msg, penguin }) => {
   msg.send(getOnlineBuddies(world, penguin), 'bon', penguin.id);
 }
 
-export function getPenguinString(data: GameData, p: WorldPenguin, state: { x: number; y: number; frame: number; }): string {
+export function getPenguinString(data: GameData, p: RoomOccupant, state: { x: number; y: number; frame: number; }): string {
   const approvedFlag = data.isNewShell2009() ? [1] : [];
 
   return [
@@ -99,8 +99,12 @@ const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) =>
   const { penguin, msg, data, world } = ctx;
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });
+  // Send jr to the joining player — includes ALL occupants (real + NPCs)
   msg.send(penguin, 'jr', r.id, ...r.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
+  // Broadcast new player arrival to real players already in the room (not NPCs)
   msg.send(r.players, 'ap', getPenguinString(data, penguin, { x, y, frame: 1 }));
+  // Let NPCs react to the new player
+  ctx.npc?.onPlayerJoin(r, penguin);
 }
 
 export function filterItems(data: GameData, items: number[]): number[] {
@@ -487,6 +491,9 @@ export const handleDisconnect = async (ctx: WorldContext) => {
     if ('room' in ctx) {
       const table = ctx.room.getPenguinTable(penguin);
 
+      // Let NPCs react before the player is removed
+      ctx.npc?.onPlayerLeave(ctx.room, penguin);
+
       await leaveRoom(ctx);
 
       if (table !== null) {
@@ -494,7 +501,7 @@ export const handleDisconnect = async (ctx: WorldContext) => {
         if (index !== undefined && index !== WorldTable.TABLE_SPECTATOR_SEAT) {
           table.removePlayer(penguin);
           if (table.hasStarted()) {
-            await msg.send(table.penguins, 'cz', penguin.name);
+            await msg.send(table.realPlayers, 'cz', penguin.name);
             table.resetRound();
           } else {
             if (table.getCount() === 0) {
