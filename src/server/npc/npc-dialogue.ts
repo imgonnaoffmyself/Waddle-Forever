@@ -125,7 +125,7 @@ const FRIENDLY: PersonalityDialogue = {
       {
         gate: { before: '2005-09-21' },
         steps: [
-          { delayMs: 0,    action: { type: 'chat', message: 'i heard the club penguin team is gonna be here on wednesday' } },
+          { delayMs: 0,    action: { type: 'chat', message: 'the cp team is gonna be here wednesday!!' } },
           { delayMs: 3000, action: { type: 'chat', message: 'so cool!!' } },
         ],
       },
@@ -214,7 +214,7 @@ const FRIENDLY: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-09-21' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'omg yes!! the club penguin party on sept 21!! i want a party hat!!' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'omg YES!! the sept 21 party!! i want a hat!!' } }],
         },
         {
           steps: [{ delayMs: 800, action: { type: 'chat', message: 'yeah!! :D' } }],
@@ -231,7 +231,7 @@ const FRIENDLY: PersonalityDialogue = {
         },
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'haha yeah the newspaper is just filled with lorem ipsum rn' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'haha yeah the newspaper is all lorem ipsum rn' } }],
         },
       ],
     },
@@ -314,7 +314,7 @@ const FRIENDLY: PersonalityDialogue = {
       keywords: ['friend', 'buddy', 'add me'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wish i could add friends but my list is broken :(' } }] },
+        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i\'d add you but my friend list is broken :(' } }] },
         { steps: [{ delayMs: 1200, action: { type: 'chat', message: 'sorry i cant add anyone right now!!' } }] },
       ],
     },
@@ -337,7 +337,7 @@ const FRIENDLY: PersonalityDialogue = {
       keywords: ['mancala', 'play'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i dont know how to play mancala yet but i wanna learn' } }] },
+        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wanna learn mancala but idk how yet' } }] },
       ],
     },
     {
@@ -345,7 +345,7 @@ const FRIENDLY: PersonalityDialogue = {
       cooldownMs: 45_000,
       responses: [
         { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wish i had membership so i could buy clothes!!' } }] },
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'i have so many coins but im not a member so i cant buy anything lol' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'so many coins but cant buy anything lol' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i love buying new clothes from the catalog!!' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1200, action: { type: 'chat', message: 'im saving up for a cool hat' } }] },
       ],
@@ -357,7 +357,7 @@ const FRIENDLY: PersonalityDialogue = {
         { steps: [{ delayMs: 800, action: { type: 'chat', message: 'i have so many coins from bean counters!!' } }] },
         { steps: [{ delayMs: 900, action: { type: 'chat', message: 'coins are so easy to get if you play games all day' } }] },
         { steps: [{ delayMs: 700, action: { type: 'chat', message: 'im trying to save up but i keep spending lol' } }] },
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 800, action: { type: 'chat', message: 'i have a ton of coins but nothing to spend them on :(' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 800, action: { type: 'chat', message: 'tons of coins but nothing to spend them on :(' } }] },
       ],
     },
     {
@@ -470,7 +470,7 @@ const FRIENDLY: PersonalityDialogue = {
       steps: [
         { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'the newspaper is literally just lorem ipsum' } } },
         { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah they didnt even finish it' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'what does "CLUB PENGUIN OPENS" even mean if its in beta' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: '"CLUB PENGUIN OPENS" but its in beta lol' } } },
       ],
     },
     {
@@ -645,7 +645,7 @@ const SHY: PersonalityDialogue = {
       keywords: ['ballistic', 'biscuit', 'hydro', 'score'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i tried ballistic biscuit but i fell off immediately..' } }] },
+        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i tried ballistic biscuit and fell off right away..' } }] },
       ],
     },
     {
@@ -763,7 +763,7 @@ const SHY: PersonalityDialogue = {
       steps: [
         { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'the newspaper is literally just lorem ipsum' } } },
         { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah they didnt even finish it' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'what does "CLUB PENGUIN OPENS" even mean if its in beta' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: '"CLUB PENGUIN OPENS" but its in beta lol' } } },
       ],
     },
   ],
@@ -808,7 +808,7 @@ const GRUMPY: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'yeah yeah theres a party coming. wake me up when its here' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'yeah yeah a party. wake me up when it\'s here' } }],
       },
     ],
     100: [
@@ -821,7 +821,7 @@ const GRUMPY: PersonalityDialogue = {
     ],
     111: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'at least it\'s quiet up here.' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'mancala tables are useless if nobody knows the rules.' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'mancala is useless if nobody knows the rules.' } }] },
     ],
     800: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep falling off the biscuit. every time.' } }] },
@@ -892,7 +892,7 @@ const GRUMPY: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: "newspaper? you mean the lorem ipsum thing? yeah. great journalism." } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: "the newspaper? its just lorem ipsum lol" } }],
         },
       ],
     },
@@ -970,7 +970,7 @@ const GRUMPY: PersonalityDialogue = {
       cooldownMs: 45_000,
       responses: [
         { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i cant even buy clothes. great game.' } }] },
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1800, action: { type: 'chat', message: 'literally rich but not a member so it doesnt matter.' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1800, action: { type: 'chat', message: 'rich but not a member so it doesnt matter.' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1500, action: { type: 'chat', message: 'the clothes here are too expensive' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1800, action: { type: 'chat', message: 'i waste all my coins on shirts' } }] },
       ],
@@ -1307,8 +1307,8 @@ const EXCITABLE: PersonalityDialogue = {
       keywords: ['clothes', 'shirt', 'hat', 'buy', 'shop', 'member'],
       cooldownMs: 30_000,
       responses: [
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 500, action: { type: 'chat', message: 'I WANT TO BUY EVERYTHING IN THE SHOP BUT I NEED MEMBERSHIP' } }] },
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 600, action: { type: 'chat', message: 'I HAVE SO MANY COINS FROM MINIGAMES BUT NOTHING TO SPEND IT ON YET' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 500, action: { type: 'chat', message: 'I WANT EVERYTHING IN THE SHOP BUT NO MEMBERSHIP' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 600, action: { type: 'chat', message: 'SO MANY COINS FROM MINIGAMES BUT NOTHING TO BUY' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 500, action: { type: 'chat', message: 'I BOUGHT SO MANY CLOTHES TODAY' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 600, action: { type: 'chat', message: 'I LOVE BEING A MEMBER' } }] },
       ],
@@ -1460,7 +1460,7 @@ const CURIOUS: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'are we the first penguins here?' } }] },
       {
         gate: { before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the club penguin team will actually talk to us at the party?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the cp team will talk to us at the party?' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -1483,10 +1483,10 @@ const CURIOUS: PersonalityDialogue = {
     ],
     802: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long has that puck been stuck up there?' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder if they will add a real hockey game here one day' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder if they\'ll ever add real hockey here' } }] },
     ],
     200: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i heard they might add something in the ski village eventually' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i heard they might add stuff to ski village' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think we will be able to ski?' } }] },
     ],
     100: [
@@ -1570,7 +1570,7 @@ const CURIOUS: PersonalityDialogue = {
       responses: [
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what is the dojo? is it really just an empty room?' } }] },
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'i heard there\'s a hidden room somewhere on the map' } }] },
-        { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'well.. i found the dojo. it is indeed just a big empty room' } }] },
+        { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'well.. found the dojo. just a big empty room.' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i wonder why the dojo is just completely empty?' } }] },
       ],
     },
@@ -1578,21 +1578,21 @@ const CURIOUS: PersonalityDialogue = {
       keywords: ['friend', 'buddy', 'add me'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i tried to add friends but my list doesnt work yet!' } }] },
+        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i tried adding friends but my list doesnt work!' } }] },
       ],
     },
     {
       keywords: ['ballistic', 'biscuit', 'hydro', 'score'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'how high of a score can you get on ballistic biscuit?' } }] },
+        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'whats the highest score on ballistic biscuit?' } }] },
       ],
     },
     {
       keywords: ['bean', 'counter', 'bags', 'coffee'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'how many bags of coffee beans have you caught so far?' } }] },
+        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'how many coffee bags have you caught so far?' } }] },
       ],
     },
     {
@@ -1606,7 +1606,7 @@ const CURIOUS: PersonalityDialogue = {
       keywords: ['item', 'catalog', 'catalogue', 'clothes', 'wear', 'shirt', 'hat', 'buy', 'shop', 'member'],
       cooldownMs: 30_000,
       responses: [
-        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'do you think non members will ever get to buy clothes?' } }] },
+        { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'will non-members ever get to buy clothes?' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 900,  action: { type: 'chat', message: 'i wonder when they add new items' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1200, action: { type: 'chat', message: 'how many items are there in the catalog right now?' } }] },
       ],
