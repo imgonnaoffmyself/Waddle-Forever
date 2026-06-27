@@ -1008,11 +1008,13 @@ export class NpcManager {
     const chosenCup = this.pickMancalaMove(npc.mancalaSkill, board, seatId, validMoves, mancalaTable);
 
     // Skill-based think time
+	// Higher skill thinks longer
+	// 6000 is the minimum to avoid turns overlapping with each other
     const thinkTime: Record<MancalaSkill, [number, number]> = {
-      clueless:     [3000, 7000],
-      novice:       [2000, 5000],
-      intermediate: [1500, 4000],
-      expert:       [800, 2500],
+      clueless:     [6000, 7000],
+      novice:       [6000, 8000],
+      intermediate: [6000, 10000],
+      expert:       [6000, 12500],
     };
     const [minT, maxT] = thinkTime[npc.mancalaSkill];
 
