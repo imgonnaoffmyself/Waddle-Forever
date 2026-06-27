@@ -972,8 +972,6 @@ export class WorldPenguin implements UserPenguin {
   private _medieval2012: Medieval2012Status;
   private _preference: UserPreference;
   private _avatar = new Avatar();
-  
-  public deadInternet: boolean = false;
 
   constructor(
     id: number,

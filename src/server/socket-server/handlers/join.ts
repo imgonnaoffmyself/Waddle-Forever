@@ -99,11 +99,8 @@ const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) =>
   const { penguin, msg, data, world } = ctx;
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });
-  // Send jr to the joining player - includes ALL occupants (real + NPCs)
-  const occupants = penguin.deadInternet 
-    ? r.playerStates.filter(([p]) => p instanceof WorldPenguin)
-    : r.playerStates;
-  msg.send(penguin, 'jr', r.id, ...occupants.map(([p, s]) => getPenguinString(data, p, s)));
+  // Send jr to the joining player — includes ALL occupants (real + NPCs)
+  msg.send(penguin, 'jr', r.id, ...r.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
   // Broadcast new player arrival to real players already in the room (not NPCs)
   msg.send(r.players, 'ap', getPenguinString(data, penguin, { x, y, frame: 1 }));
   // Let NPCs react to the new player
