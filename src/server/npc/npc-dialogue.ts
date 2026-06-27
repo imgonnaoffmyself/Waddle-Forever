@@ -6,11 +6,12 @@
 // Within each trait, dialogue is further keyed by room ID or 'any'.
 //
 // Timeline gates:
+//   after: '2005-09-12'   — Snow Forts open, beta continues, party feels closer
 //   before: '2005-09-21'  — upcoming Club Penguin Party hype
 //   before: '2005-10-24'  — ongoing beta complaints, empty newspaper
 //   (No gate)             — always available on 2005-08-22
 //
-// Room IDs (2005-08-22 accessible rooms):
+// Room IDs (2005-08-22 / 2005-09-12 accessible rooms):
 //   100  Town
 //   110  Coffee Shop
 //   111  Book Room
@@ -19,6 +20,7 @@
 //   130  Gift Shop
 //   200  Ski Village
 //   800  Dock
+//   801  Snow Forts       (opens on 2005-09-12)
 //   802  Ice Rink
 //   320  Dojo
 //   221  Lodge Attic  (attic is in the 2005-08-22 data)
@@ -170,6 +172,20 @@ const FRIENDLY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'anyone good at ballistic biscuit??' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i love it out here by the water' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the boat looks cool' } }] },
+    ],
+    801: [ // Snow Forts
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the snow forts are so cool!! they just opened!!' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'this is the best room for snowball fights already' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is getting close!! maybe they decorate the forts too' } }],
+      },
     ],
     802: [ // Ice Rink
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck is stuck again lol' } }] },
@@ -444,6 +460,26 @@ const FRIENDLY: PersonalityDialogue = {
   ],
 
   onPlayerSnowball: [
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.9,
+      steps: [
+        { delayMs: 500, action: { type: 'chat', message: 'snow forts battle!!' } },
+        { delayMs: 1000, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1800, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.8,
+      steps: [
+        { delayMs: 600, action: { type: 'emote', emoteId: 7 } },
+        { delayMs: 1200, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 2200, action: { type: 'chat', message: 'red fort vs blue fort!!' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'haha good shot!' } }, { delayMs: 1000, action: { type: 'snowball', target: 'origin' } }] },
     { chance: 0.5, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'hey!!' } }, { delayMs: 1000, action: { type: 'snowball', target: 'origin' } }] },
     { chance: 0.4, steps: [{ delayMs: 1500, action: { type: 'emote', emoteId: 2 } }, { delayMs: 1000, action: { type: 'snowball', target: 'origin' } }] },
@@ -576,6 +612,20 @@ const SHY: PersonalityDialogue = {
     ],
     800: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the water looks cold..' } }] },
+    ],
+    801: [
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the snow forts are busy already..' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i liked it more when town and the rink were separate..' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is getting close.. which means more people..' } }],
+      },
     ],
     200: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'not much going on here yet..' } }] },
@@ -781,6 +831,25 @@ const SHY: PersonalityDialogue = {
   ],
 
   onPlayerSnowball: [
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.8,
+      steps: [
+        { delayMs: 700, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1500, action: { type: 'chat', message: 'i knew someone would start that..' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.7,
+      steps: [
+        { delayMs: 800, action: { type: 'emote', emoteId: 2 } },
+        { delayMs: 1400, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 2200, action: { type: 'chat', message: 'please dont make me defend the fort..' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 1000, action: { type: 'emote', emoteId: 8 } }, { delayMs: 2000, action: { type: 'chat', message: 'why did you do that..' } }] },
     { chance: 0.5, steps: [{ delayMs: 800, action: { type: 'chat', message: 'ah!!' } }, { delayMs: 500, action: { type: 'frame', frame: 24 } }, { delayMs: 3000, action: { type: 'frame', frame: 1 } }] }, // hide
     { chance: 0.4, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'please stop..' } }] },
@@ -879,6 +948,20 @@ const GRUMPY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep falling off the biscuit. every time.' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'my high score is pathetic' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the dock smells like fish.' } }] },
+    ],
+    801: [
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'new room. same snow. wow.' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the snow forts turned the walk to the rink into a war zone.' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is in nine days and everyone is already unbearable.' } }],
+      },
     ],
     802: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'puck is still stuck. nobody fixed it.' } }] },
@@ -1107,6 +1190,27 @@ const GRUMPY: PersonalityDialogue = {
   ],
 
   onPlayerSnowball: [
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.9,
+      steps: [
+        { delayMs: 400, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 900, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1500, action: { type: 'snowball', target: 'random-player' } },
+        { delayMs: 2100, action: { type: 'chat', message: 'you picked the wrong fort.' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.8,
+      steps: [
+        { delayMs: 500, action: { type: 'chat', message: 'this is literally what the forts are for.' } },
+        { delayMs: 1100, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1900, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 1000, action: { type: 'emote', emoteId: 12 } }, { delayMs: 1500, action: { type: 'chat', message: 'stop throwing snowballs at me.' } }] }, // angry
     { chance: 0.5, steps: [{ delayMs: 800, action: { type: 'chat', message: 'im reporting you.' } }] },
     { chance: 0.4, steps: [{ delayMs: 500, action: { type: 'snowball', target: 'origin' } }, { delayMs: 1000, action: { type: 'snowball', target: 'origin' } }, { delayMs: 1500, action: { type: 'chat', message: 'how do you like it.' } }] },
@@ -1245,6 +1349,20 @@ const EXCITABLE: PersonalityDialogue = {
     800: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'BALLISTIC BISCUIT IS SO HARD BUT SO FUN' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'I WANNA GO SWIMMING!!' } }] },
+    ],
+    801: [
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'SNOW FORTS!!! BEST ROOM EVER!!!' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'TOWN TO RINK TO FORTS TO RINK TO TOWN AHHH!!!' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'ONLY NINE DAYS UNTIL THE PARTY LETS GOOOO' } }],
+      },
     ],
     802: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'THEY NEED TO FIX THE PUCK I WANT TO PLAY HOCKEY' } }] },
@@ -1468,6 +1586,28 @@ const EXCITABLE: PersonalityDialogue = {
   ],
 
   onPlayerSnowball: [
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.95,
+      steps: [
+        { delayMs: 300, action: { type: 'chat', message: 'FORT FIGHT!!!' } },
+        { delayMs: 500, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 900, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1400, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.85,
+      steps: [
+        { delayMs: 400, action: { type: 'emote', emoteId: 9 } },
+        { delayMs: 700, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1100, action: { type: 'snowball', target: 'random-player' } },
+        { delayMs: 1800, action: { type: 'chat', message: 'DEFEND THE FORT!!!' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 500, action: { type: 'chat', message: 'SNOWBALL FIGHT!!!' } }, { delayMs: 500, action: { type: 'snowball', target: 'origin' } }, { delayMs: 1000, action: { type: 'snowball', target: 'origin' } }] },
     { chance: 0.5, steps: [{ delayMs: 800, action: { type: 'snowball', target: 'origin' } }, { delayMs: 1000, action: { type: 'chat', message: 'TAKE THAT!!!' } }] },
     { chance: 0.4, steps: [{ delayMs: 1000, action: { type: 'emote', emoteId: 1 } }, { delayMs: 500, action: { type: 'snowball', target: 'random-player' } }] },
@@ -1605,6 +1745,20 @@ const CURIOUS: PersonalityDialogue = {
     ],
     800: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how deep do you think the water is?' } }] },
+    ],
+    801: [
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'why did they put the snow forts exactly here?' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the snow forts changed how everyone walks around the island?' } }],
+      },
+      {
+        gate: { after: '2005-09-12', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'if the party is close do you think the forts get decorations too?' } }],
+      },
     ],
     221: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder what this attic was used for' } }] },
@@ -1772,6 +1926,26 @@ const CURIOUS: PersonalityDialogue = {
   ],
 
   onPlayerSnowball: [
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.85,
+      steps: [
+        { delayMs: 600, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1200, action: { type: 'snowball', target: 'random-npc' } },
+        { delayMs: 2000, action: { type: 'chat', message: 'interesting. the forts really do make this room chaotic.' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.75,
+      steps: [
+        { delayMs: 700, action: { type: 'chat', message: 'i wonder if the walls help aim' } },
+        { delayMs: 1300, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 2100, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'how did you make that?' } }] },
     { chance: 0.5, steps: [{ delayMs: 1500, action: { type: 'snowball', target: 'origin' } }, { delayMs: 1500, action: { type: 'chat', message: 'fascinating physics' } }] },
     { chance: 0.4, steps: [{ delayMs: 1000, action: { type: 'emote', emoteId: 8 } }, { delayMs: 2000, action: { type: 'chat', message: 'why did you throw that at me?' } }] },

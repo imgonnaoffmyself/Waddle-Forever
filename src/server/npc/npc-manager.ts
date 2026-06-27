@@ -36,14 +36,16 @@ import {
 /** Number of NPC penguins spawned when the module activates */
 const NPC_COUNT = 100;
 
-/** The date string this module is active for */
-const ACTIVE_DATE = '2005-08-22';
+/** Exact timeline snapshots that enable the NPC module */
+const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12']);
+
+const SNOW_FORTS_ROOM_ID = 801;
 
 /** 
  * All room IDs that existed and were accessible on 2005-08-22.
  * Town (100) is duplicated to double its spawn weight.
  */
-const ROOM_POOL: number[] = [
+const BASE_ROOM_POOL: number[] = [
   100, // Town
   100, // Town (double weight)
   110, // Coffee Shop
@@ -56,6 +58,12 @@ const ROOM_POOL: number[] = [
   802, // Ice Rink
   320, // Dojo
   221, // Lodge Attic
+];
+
+const SEPTEMBER_ROOM_POOL: number[] = [
+  ...BASE_ROOM_POOL,
+  SNOW_FORTS_ROOM_ID,
+  SNOW_FORTS_ROOM_ID, // New room hotspot once it opens
 ];
 
 /**
@@ -72,6 +80,7 @@ const SPAWN_ZONES: Record<number, [number, number, number, number]> = {
   130: [180, 300, 550, 460], // Gift Shop
   200: [150, 320, 650, 480], // Ski Village
   800: [250, 350, 700, 480], // Dock
+  801: [160, 260, 730, 470], // Snow Forts
   802: [150, 200, 750, 480], // Ice Rink
   320: [200, 250, 600, 480], // Dojo
   221: [150, 200, 500, 380], // Lodge Attic
@@ -127,6 +136,14 @@ function spawnPosForRoom(roomId: number): [number, number] {
   const zone = SPAWN_ZONES[roomId] ?? [300, 350, 600, 480];
   const [xMin, yMin, xMax, yMax] = zone;
   return [randInt(xMin, xMax), randInt(yMin, yMax)];
+}
+
+function getRoomPool(currentDate: string): number[] {
+  if (currentDate === '2005-09-12') {
+    return SEPTEMBER_ROOM_POOL;
+  }
+
+  return BASE_ROOM_POOL;
 }
 
 /** Check whether the current timeline date passes a TimelineGate */
@@ -228,6 +245,7 @@ export class NpcManager {
 
     NpcPenguin.resetIdCounter();
     const currentDate = this.data.getDate();
+    const roomPool = getRoomPool(currentDate);
     const betaHasAllAccess = isLower(currentDate, '2005-10-24');
 
     // Sample names without replacement
@@ -242,7 +260,7 @@ export class NpcManager {
       const npc = new NpcPenguin(name, trait, isMember);
       this.npcs.push(npc);
 
-      const roomId = randFrom(ROOM_POOL);
+      const roomId = randFrom(roomPool);
       this.spawnNpc(npc, roomId);
     }
   }
@@ -308,8 +326,9 @@ export class NpcManager {
     this.msg.send(this.getActivePlayers(currentRoom), 'rp', npc.id);
 
     // Pick a new room (avoid same room if possible)
-    const eligible = ROOM_POOL.filter(id => id !== currentRoom.id);
-    const newRoomId = eligible.length > 0 ? randFrom(eligible) : randFrom(ROOM_POOL);
+    const roomPool = getRoomPool(this.data.getDate());
+    const eligible = roomPool.filter(id => id !== currentRoom.id);
+    const newRoomId = eligible.length > 0 ? randFrom(eligible) : randFrom(roomPool);
     const newRoom = this.world.getRoom(newRoomId);
     const [x, y] = spawnPosForRoom(newRoomId);
 
@@ -336,9 +355,26 @@ export class NpcManager {
     if (this.npcMancalaTables.has(npc)) { this.scheduleAmbient(npc); return; }
 
     const room = this.npcRooms.get(npc);
+    const currentDate = this.data.getDate();
     if (room !== undefined && this.getActivePlayers(room).length > 0) {
-      // 70% chance to waddle to a new spot, 30% chance to do a random frame (wave, sit, dance)
-      if (Math.random() < 0.7) {
+      if (room.id === SNOW_FORTS_ROOM_ID && currentDate === '2005-09-12') {
+        const roll = Math.random();
+        const hasOtherNpcs = this.getNpcsInRoom(room).some(other => other !== npc);
+
+        // The freshly opened Snow Forts are a high-energy snowball hotspot.
+        if (roll < 0.45) {
+          const target = hasOtherNpcs && Math.random() < 0.35 ? 'random-npc' : 'random-player';
+          this.dispatchAction(npc, room, { type: 'snowball', target });
+        } else if (roll < 0.8) {
+          const [x, y] = spawnPosForRoom(room.id);
+          this.dispatchAction(npc, room, { type: 'move', x, y });
+        } else {
+          const frames = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 1];
+          const frame = randFrom(frames);
+          this.dispatchAction(npc, room, { type: 'frame', frame });
+        }
+      } else if (Math.random() < 0.7) {
+        // 70% chance to waddle to a new spot, 30% chance to do a random frame (wave, sit, dance)
         const [x, y] = spawnPosForRoom(room.id);
         this.dispatchAction(npc, room, { type: 'move', x, y });
       } else {
@@ -630,12 +666,13 @@ export class NpcManager {
     if (!this.active) return;
     const currentDate = this.data.getDate();
     const now = Date.now();
+    const isSeptemberSnowForts = room.id === SNOW_FORTS_ROOM_ID && currentDate === '2005-09-12';
 
     let respondents = 0;
     const shuffledNpcs = shuffle(this.getNpcsInRoom(room));
 
     for (const npc of shuffledNpcs) {
-      if (respondents >= 2) break;
+      if (respondents >= (isSeptemberSnowForts ? 3 : 2)) break;
       const state = room.playerStates.find(([occ]) => occ === npc);
       if (!state) continue;
 
@@ -647,13 +684,15 @@ export class NpcManager {
       const dy = targetY - npcY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      // Hit radius of 80 units
-      if (distance > 80) continue;
+      // Snow Forts encourage broader splashy snowball fights.
+      const hitRadius = isSeptemberSnowForts ? 110 : 80;
+      if (distance > hitRadius) continue;
 
       // Ensure NPC has a cooldown on getting hit to prevent spam
       const cooldownKey = `${npc.id}:snowball_hit`;
       const lastHit = this.chatCooldowns.get(cooldownKey) ?? 0;
-      if (now - lastHit < 10_000) continue; // 10 second cooldown per NPC
+      const snowballCooldownMs = isSeptemberSnowForts ? 7_000 : 10_000;
+      if (now - lastHit < snowballCooldownMs) continue;
 
       const dialogue = PERSONALITY_DIALOGUE[npc.personalityTrait];
       const entry = pickFromPool(dialogue.onPlayerSnowball, currentDate, npc, room);
@@ -1118,6 +1157,6 @@ export class NpcManager {
 
   /** Whether this module should be active for the given date string */
   public static isActiveDate(date: string): boolean {
-    return date === ACTIVE_DATE;
+    return ACTIVE_DATES.has(date);
   }
 }

@@ -35,7 +35,7 @@ type GlobalContext = {
   db: PenguinRepository;
   prst: PenguinPersister;
   off: OfflineWorld;
-  /** Present only when the NPC module is active (timeline = 2005-08-22) */
+  /** Present only when the NPC module is active for a supported timeline snapshot */
   npc?: NpcManager;
 }
 
