@@ -349,6 +349,28 @@ const FRIENDLY: PersonalityDialogue = {
       ],
     },
     {
+      keywords: ['snow forts', 'snow fort', 'forts'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'snow forts?? what are those??' } }],
+        },
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'wait there are snow forts now?? where??' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 900, action: { type: 'chat', message: 'oh the snow forts!! best place for snowball fights :)' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 1100, action: { type: 'chat', message: 'yeah!! they opened by the rink and theyre super fun' } }],
+        },
+      ],
+    },
+    {
       keywords: ['friend', 'buddy', 'add me'],
       cooldownMs: 45_000,
       responses: [
@@ -739,6 +761,28 @@ const SHY: PersonalityDialogue = {
       ],
     },
     {
+      keywords: ['snow forts', 'snow fort', 'forts'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 2200, action: { type: 'chat', message: 'snow forts..? i dont think ive heard of those..' } }],
+        },
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 2500, action: { type: 'chat', message: 'what are the snow forts? another hidden room?' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 2200, action: { type: 'chat', message: 'oh.. the snow forts are kind of scary when everyone starts throwing snowballs' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'i know the snow forts.. theyre by the rink right?' } }],
+        },
+      ],
+    },
+    {
       keywords: ['friend', 'buddy', 'add me'],
       cooldownMs: 45_000,
       responses: [
@@ -1111,6 +1155,28 @@ const GRUMPY: PersonalityDialogue = {
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'dojo is literally just an empty room right now' } }] },
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah it\'s a secret room. not that impressive.' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'we\'re in the dojo. it\'s empty. impressive.' } }] },
+      ],
+    },
+    {
+      keywords: ['snow forts', 'snow fort', 'forts'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'snow forts? no idea what youre talking about.' } }],
+        },
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1400, action: { type: 'chat', message: 'what snow forts. did they build them in your imagination?' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah i know the snow forts. too many snowballs.' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'they exist. theyre loud. thats all i need to know.' } }],
+        },
       ],
     },
     {
@@ -1512,6 +1578,28 @@ const EXCITABLE: PersonalityDialogue = {
       ],
     },
     {
+      keywords: ['snow forts', 'snow fort', 'forts'],
+      cooldownMs: 30_000,
+      responses: [
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 400, action: { type: 'chat', message: 'SNOW FORTS??? WHAT IS THAT??' } }],
+        },
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 500, action: { type: 'chat', message: 'WAIT WHAT I HAVENT SEEN SNOW FORTS ANYWHERE!!!' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'THE SNOW FORTS ARE AMAZING!!! ITS LIKE A HUGE SNOWBALL BATTLE ZONE!!!' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES!!! THE SNOW FORTS BY THE RINK!!! I LOVE IT THERE!!!' } }],
+        },
+      ],
+    },
+    {
       keywords: ['friend', 'buddy', 'add me'],
       cooldownMs: 30_000,
       responses: [
@@ -1863,6 +1951,28 @@ const CURIOUS: PersonalityDialogue = {
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'i heard there\'s a hidden room somewhere on the map' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'well.. found the dojo. just a big empty room.' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i wonder why the dojo is just completely empty?' } }] },
+      ],
+    },
+    {
+      keywords: ['snow forts', 'snow fort', 'forts'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'snow forts? hmm.. i havent seen those on the island yet' } }],
+        },
+        {
+          gate: { before: '2005-09-12' },
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what are the snow forts supposed to be? a new room?' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'oh the snow forts! they changed that whole area near the rink' } }],
+        },
+        {
+          gate: { after: '2005-09-12' },
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i think the snow forts made the island feel a lot more active' } }],
+        },
       ],
     },
     {
