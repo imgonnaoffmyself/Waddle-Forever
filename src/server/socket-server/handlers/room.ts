@@ -3,6 +3,7 @@ import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import { WorldTable } from "@server/socket-server/world/world-table";
 import { ROOMS } from "@server/game-data/rooms";
 import { RoomGuard, RoomHandler } from "./handlers";
+import { isLower } from "@server/routes/versions";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg }, x, y) => {
   room.updatePosition(penguin, x, y);
@@ -486,9 +487,14 @@ export const handleUpdateBackground: RoomHandler<[number]> = ({ room, msg, pengu
   msg.send(room.players, 'upp', penguin.id, id);
 }
 
-export const handleGetHockeyGame: RoomHandler<[]> = ({ world, room, penguin, msg }) => {
+export const handleGetHockeyGame: RoomHandler<[]> = ({ world, room, penguin, msg, data }) => {
   const pos = world.getPuck(room);
   if (pos !== null) {
+    if (room.id === 802 && data.isPreCpip() && isLower(data.getDate(), '2006-08-11')) {
+      msg.send(penguin, 'gz', ...pos);
+      return;
+    }
+
     msg.send(penguin, 'gz', ...pos, ...world.teamScores);
   }
 }

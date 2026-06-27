@@ -15,6 +15,8 @@ import { MatchMaker } from "./matchmaker";
 import { FireGame } from "./fire";
 import { MATCHMAKERS } from "@server/game-data/games";
 
+export const RINK_PUCK_START: [number, number] = [390, 170];
+
 export class World {
   private penguins = new Map<number, WorldPenguin>();
   private states = new Map<WorldPenguin, PenguinEnvironment>
@@ -25,7 +27,7 @@ export class World {
   private _bakery: Bakery;
   
   // create class responsible for the puck
-  private _puckPosition = new Vector(0, 0);
+  private _puckPosition = new Vector(...RINK_PUCK_START);
   private _puckPositionParty = new Vector(0, 0);
   private _teamsScore: [number, number] = [0, 0];
 
