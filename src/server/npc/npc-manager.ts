@@ -227,6 +227,8 @@ export class NpcManager {
     this.active = true;
 
     NpcPenguin.resetIdCounter();
+    const currentDate = this.data.getDate();
+    const betaHasAllAccess = isLower(currentDate, '2005-10-24');
 
     // Sample names without replacement
     const namePool = [...NPC_NAME_POOL];
@@ -236,7 +238,8 @@ export class NpcManager {
       const nameIdx = randInt(0, namePool.length - 1);
       const name = namePool.splice(nameIdx, 1)[0];
       const trait = randFrom(traits);
-      const npc = new NpcPenguin(name, trait);
+      const isMember = betaHasAllAccess || Math.random() < 0.7;
+      const npc = new NpcPenguin(name, trait, isMember);
       this.npcs.push(npc);
 
       const roomId = randFrom(ROOM_POOL);

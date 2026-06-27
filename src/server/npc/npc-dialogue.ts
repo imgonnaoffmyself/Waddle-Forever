@@ -110,6 +110,14 @@ const FRIENDLY: PersonalityDialogue = {
         gate: { before: '2005-10-24' },
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'still finding bugs lol but its still fun' } }],
       },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i used to play penguin chat 3 so i had to sign up for the big update' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'club penguin is such a cute name for the big update' } }],
+      },
     ],
     100: [ // Town
       {
@@ -245,6 +253,20 @@ const FRIENDLY: PersonalityDialogue = {
             { delayMs: 800,  action: { type: 'chat', message: 'yeah still in beta lol' } },
             { delayMs: 3500, action: { type: 'chat', message: 'found any bugs??' } },
           ],
+        },
+      ],
+    },
+    {
+      keywords: ['club penguin', 'big update', 'penguin chat', 'pc3'],
+      cooldownMs: 60_000,
+      responses: [
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 800, action: { type: 'chat', message: 'i came over from penguin chat 3 to try the big update :)' } }],
+        },
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'some people still call club penguin the big update lol' } }],
         },
       ],
     },
@@ -519,6 +541,14 @@ const SHY: PersonalityDialogue = {
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'the newspaper is literally in latin..' } }],
       },
       {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i only joined because i used to play penguin chat 3..' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'everyone still calling club penguin the big update is kinda confusing..' } }],
+      },
+      {
         gate: { before: '2005-09-21' },
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'a club penguin party.. sounds crowded..' } }],
       },
@@ -615,6 +645,20 @@ const SHY: PersonalityDialogue = {
         {
           gate: { before: '2005-10-24' },
           steps: [{ delayMs: 2000, action: { type: 'chat', message: 'yeah.. still beta. found a few things' } }],
+        },
+      ],
+    },
+    {
+      keywords: ['club penguin', 'big update', 'penguin chat', 'pc3'],
+      cooldownMs: 60_000,
+      responses: [
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'i knew about it from penguin chat 3.. before they called it club penguin' } }],
+        },
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 2200, action: { type: 'chat', message: 'the big update was a less scary name somehow..' } }],
         },
       ],
     },
@@ -761,9 +805,9 @@ const SHY: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.1,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'the newspaper is literally just lorem ipsum' } } },
-        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah they didnt even finish it' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: '"CLUB PENGUIN OPENS" but its in beta lol' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'penguin chat 3 players really did all sign up for the big update huh' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah.. and now its called club penguin' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'i still forget the new name sometimes..' } } },
       ],
     },
   ],
@@ -801,6 +845,14 @@ const GRUMPY: PersonalityDialogue = {
       {
         gate: { before: '2005-10-24' },
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long is this beta gonna last' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'penguin chat 3 was simpler. this big update better be worth it.' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'club penguin is a better name than "the big update" i guess.' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -883,6 +935,20 @@ const GRUMPY: PersonalityDialogue = {
             { delayMs: 800,  action: { type: 'chat', message: 'yeah. lots of bugs. its a mess.' } },
             { delayMs: 3500, action: { type: 'emote', emoteId: 4 } },
           ],
+        },
+      ],
+    },
+    {
+      keywords: ['club penguin', 'big update', 'penguin chat', 'pc3'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i came from penguin chat 3. thats the only reason im here.' } }],
+        },
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'the big update finally got a real name. good.' } }],
         },
       ],
     },
@@ -1149,6 +1215,14 @@ const EXCITABLE: PersonalityDialogue = {
           { delayMs: 0, action: { type: 'chat', message: 'BETA TEST IS SO FUN even with the bugs lol' } },
         ],
       },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'I PLAYED PENGUIN CHAT 3 AND NOW WE GET THE BIG UPDATE!!!' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'CLUB PENGUIN IS THE BEST NAME EVER FOR THE BIG UPDATE!!!' } }],
+      },
     ],
     120: [
       {
@@ -1246,6 +1320,20 @@ const EXCITABLE: PersonalityDialogue = {
       responses: [
         { steps: [{ delayMs: 300, action: { type: 'chat', message: 'IKRR!!' } }] },
         { steps: [{ delayMs: 400, action: { type: 'emote', emoteId: 10 } }] }, // thumbs up
+      ],
+    },
+    {
+      keywords: ['club penguin', 'big update', 'penguin chat', 'pc3'],
+      cooldownMs: 30_000,
+      responses: [
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES!! I SIGNED UP BECAUSE OF PENGUIN CHAT 3!!!' } }],
+        },
+        {
+          gate: { before: '2005-10-24' },
+          steps: [{ delayMs: 400, action: { type: 'chat', message: 'THE BIG UPDATE BECOMING CLUB PENGUIN IS SO COOL!!!' } }],
+        },
       ],
     },
     {
@@ -1458,6 +1546,14 @@ const CURIOUS: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how many coins do you think exist on the island?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what happens if you stay on the island all night?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'are we the first penguins here?' } }] },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think all the beta testers came from penguin chat 3?' } }],
+      },
+      {
+        gate: { before: '2005-10-24' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'when did everyone stop calling club penguin the big update?' } }],
+      },
       {
         gate: { before: '2005-09-21' },
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the cp team will talk to us at the party?' } }],
@@ -1726,9 +1822,9 @@ const CURIOUS: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.1,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'why is the newspaper still empty?' } } },
-        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'maybe they haven\'t written anything yet lol' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'that\'s kinda funny if true' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'were all the beta testers from penguin chat 3?' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'i think so. thats how i heard about the big update' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'club penguin is definitely easier to say though' } } },
       ],
     },
   ],

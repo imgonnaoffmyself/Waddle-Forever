@@ -41,14 +41,12 @@ export class NpcPenguin {
   /** Track recently chosen dialogue sequences to prevent repeating entire topics */
   recentTopics: any[] = [];
 
-  constructor(name: string, trait: PersonalityTrait) {
+  constructor(name: string, trait: PersonalityTrait, isMember: boolean) {
     this.id = npcIdCounter--;
     this.name = name;
     this.personalityTrait = trait;
     this.mancalaSkill = sampleMancalaSkill();
 
-    // 70% chance to be a member
-    const isMember = Math.random() < 0.7;
     this.membership = { isMember };
 
     const outfit = sampleClothing(isMember);
