@@ -473,6 +473,16 @@ const FRIENDLY: PersonalityDialogue = {
     {
       gate: { after: '2005-09-12', before: '2005-09-21' },
       condition: (_npc, room) => room && room.id === 801,
+      chance: 0.85,
+      steps: [
+        { delayMs: 400, action: { type: 'chat', message: 'hold the fort!!' } },
+        { delayMs: 900, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1500, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
       chance: 0.8,
       steps: [
         { delayMs: 600, action: { type: 'emote', emoteId: 7 } },
@@ -850,6 +860,16 @@ const SHY: PersonalityDialogue = {
         { delayMs: 2200, action: { type: 'chat', message: 'please dont make me defend the fort..' } },
       ],
     },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.7,
+      steps: [
+        { delayMs: 700, action: { type: 'chat', message: 'ok fine. im defending this side.' } },
+        { delayMs: 1400, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 2200, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
     { chance: 0.6, steps: [{ delayMs: 1000, action: { type: 'emote', emoteId: 8 } }, { delayMs: 2000, action: { type: 'chat', message: 'why did you do that..' } }] },
     { chance: 0.5, steps: [{ delayMs: 800, action: { type: 'chat', message: 'ah!!' } }, { delayMs: 500, action: { type: 'frame', frame: 24 } }, { delayMs: 3000, action: { type: 'frame', frame: 1 } }] }, // hide
     { chance: 0.4, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'please stop..' } }] },
@@ -1199,6 +1219,16 @@ const GRUMPY: PersonalityDialogue = {
         { delayMs: 900, action: { type: 'snowball', target: 'origin' } },
         { delayMs: 1500, action: { type: 'snowball', target: 'random-player' } },
         { delayMs: 2100, action: { type: 'chat', message: 'you picked the wrong fort.' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.85,
+      steps: [
+        { delayMs: 400, action: { type: 'chat', message: 'back off my wall.' } },
+        { delayMs: 900, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1500, action: { type: 'snowball', target: 'origin' } },
       ],
     },
     {
@@ -1600,6 +1630,17 @@ const EXCITABLE: PersonalityDialogue = {
     {
       gate: { after: '2005-09-12', before: '2005-09-21' },
       condition: (_npc, room) => room && room.id === 801,
+      chance: 0.9,
+      steps: [
+        { delayMs: 300, action: { type: 'chat', message: 'NO MERCY FOR THE OTHER FORT!!!' } },
+        { delayMs: 700, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1100, action: { type: 'snowball', target: 'random-player' } },
+        { delayMs: 1600, action: { type: 'snowball', target: 'random-player' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
       chance: 0.85,
       steps: [
         { delayMs: 400, action: { type: 'emote', emoteId: 9 } },
@@ -1934,6 +1975,16 @@ const CURIOUS: PersonalityDialogue = {
         { delayMs: 600, action: { type: 'snowball', target: 'origin' } },
         { delayMs: 1200, action: { type: 'snowball', target: 'random-npc' } },
         { delayMs: 2000, action: { type: 'chat', message: 'interesting. the forts really do make this room chaotic.' } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-12', before: '2005-09-21' },
+      condition: (_npc, room) => room && room.id === 801,
+      chance: 0.8,
+      steps: [
+        { delayMs: 500, action: { type: 'chat', message: 'counterattack from the wall.' } },
+        { delayMs: 1100, action: { type: 'snowball', target: 'origin' } },
+        { delayMs: 1700, action: { type: 'snowball', target: 'random-player' } },
       ],
     },
     {

@@ -40,6 +40,9 @@ const NPC_COUNT = 100;
 const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12']);
 
 const SNOW_FORTS_ROOM_ID = 801;
+const NIGHT_CLUB_ROOM_ID = 120;
+const DANCE_FRAME = 26;
+const NIGHT_CLUB_POST_MOVE_DANCE_DELAY_MS = 2_500;
 
 /** 
  * All room IDs that existed and were accessible on 2005-08-22.
@@ -302,6 +305,7 @@ export class NpcManager {
 
     // Broadcast new NPC to real players already in the room
     this.msg.send(room.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.scheduleNightClubDance(npc, room);
 
     this.scheduleDwell(npc);
     this.scheduleIdle(npc);
@@ -337,6 +341,7 @@ export class NpcManager {
 
     // Broadcast arrival to players in new room
     this.msg.send(newRoom.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.scheduleNightClubDance(npc, newRoom);
 
     this.scheduleDwell(npc);
   }
@@ -362,16 +367,23 @@ export class NpcManager {
         const hasOtherNpcs = this.getNpcsInRoom(room).some(other => other !== npc);
 
         // The freshly opened Snow Forts are a high-energy snowball hotspot.
-        if (roll < 0.45) {
+        if (roll < 0.65) {
           const target = hasOtherNpcs && Math.random() < 0.35 ? 'random-npc' : 'random-player';
           this.dispatchAction(npc, room, { type: 'snowball', target });
-        } else if (roll < 0.8) {
+        } else if (roll < 0.9) {
           const [x, y] = spawnPosForRoom(room.id);
           this.dispatchAction(npc, room, { type: 'move', x, y });
         } else {
           const frames = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 1];
           const frame = randFrom(frames);
           this.dispatchAction(npc, room, { type: 'frame', frame });
+        }
+      } else if (room.id === NIGHT_CLUB_ROOM_ID) {
+        if (Math.random() < 0.7) {
+          const [x, y] = spawnPosForRoom(room.id);
+          this.dispatchAction(npc, room, { type: 'move', x, y });
+        } else {
+          this.dispatchAction(npc, room, { type: 'frame', frame: DANCE_FRAME });
         }
       } else if (Math.random() < 0.7) {
         // 70% chance to waddle to a new spot, 30% chance to do a random frame (wave, sit, dance)
@@ -385,6 +397,18 @@ export class NpcManager {
     }
 
     this.scheduleAmbient(npc);
+  }
+
+  private scheduleNightClubDance(npc: NpcPenguin, room: WorldRoom, delayMs = 0): void {
+    if (room.id !== NIGHT_CLUB_ROOM_ID) return;
+
+    setTimeout(() => {
+      if (!this.active) return;
+      if (this.npcRooms.get(npc) !== room) return;
+      if (this.npcMancalaTables.has(npc)) return;
+
+      this.dispatchAction(npc, room, { type: 'frame', frame: DANCE_FRAME });
+    }, delayMs);
   }
 
   // ── Idle Dialogue ──────────────────────────────────────────
@@ -672,7 +696,7 @@ export class NpcManager {
     const shuffledNpcs = shuffle(this.getNpcsInRoom(room));
 
     for (const npc of shuffledNpcs) {
-      if (respondents >= (isSeptemberSnowForts ? 3 : 2)) break;
+      if (respondents >= (isSeptemberSnowForts ? 4 : 2)) break;
       const state = room.playerStates.find(([occ]) => occ === npc);
       if (!state) continue;
 
@@ -691,7 +715,7 @@ export class NpcManager {
       // Ensure NPC has a cooldown on getting hit to prevent spam
       const cooldownKey = `${npc.id}:snowball_hit`;
       const lastHit = this.chatCooldowns.get(cooldownKey) ?? 0;
-      const snowballCooldownMs = isSeptemberSnowForts ? 7_000 : 10_000;
+      const snowballCooldownMs = isSeptemberSnowForts ? 5_000 : 10_000;
       if (now - lastHit < snowballCooldownMs) continue;
 
       const dialogue = PERSONALITY_DIALOGUE[npc.personalityTrait];
@@ -742,10 +766,10 @@ export class NpcManager {
 
   private dispatchAction(npc: NpcPenguin, room: WorldRoom, action: NpcAction): void {
     const targets = room.realPlayers;
-    if (targets.length === 0) return;
 
     switch (action.type) {
       case 'chat':
+        if (targets.length === 0) return;
         this.msg.send(targets, 'sm', String(npc.id), action.message);
         npc.recentMessages.push(action.message);
         if (npc.recentMessages.length > 10) {
@@ -756,18 +780,30 @@ export class NpcManager {
         this.onNpcChat(room, npc, action.message);
         break;
       case 'emote':
+        if (targets.length === 0) return;
         this.msg.send(targets, 'se', npc.id, action.emoteId);
         break;
       case 'move': {
-        this.msg.send(targets, 'sp', npc.id, action.x, action.y);
+        if (targets.length > 0) {
+          this.msg.send(targets, 'sp', npc.id, action.x, action.y);
+        }
         room.updateOccupantPosition(npc, action.x, action.y);
+        this.scheduleNightClubDance(npc, room, NIGHT_CLUB_POST_MOVE_DANCE_DELAY_MS);
         break;
       }
-      case 'frame':
-        this.msg.send(targets, 'sf', npc.id, action.frame);
-        room.updateOccupantFrame(npc, action.frame);
+      case 'frame': {
+        const frame = room.id === NIGHT_CLUB_ROOM_ID && action.frame === 1
+          ? DANCE_FRAME
+          : action.frame;
+
+        if (targets.length > 0) {
+          this.msg.send(targets, 'sf', npc.id, frame);
+        }
+        room.updateOccupantFrame(npc, frame);
         break;
+      }
       case 'snowball': {
+        if (targets.length === 0) return;
         let targetX = action.x ?? 0;
         let targetY = action.y ?? 0;
 
@@ -798,6 +834,7 @@ export class NpcManager {
         break;
       }
       case 'join_table': {
+        if (targets.length === 0) return;
         const table = room.getTable(action.tableId);
         
         const before = table.getCount();
