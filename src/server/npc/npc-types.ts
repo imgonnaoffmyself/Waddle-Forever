@@ -17,6 +17,7 @@ export type NpcAction =
   | { type: 'move';  x: number; y: number }
   | { type: 'frame'; frame: number }  // e.g. wave=25, sit=13, dance=26
   | { type: 'snowball'; target?: 'random-player' | 'random-npc' | 'origin'; x?: number; y?: number }
+  | { type: 'hockey_puck'; x: number; y: number; speedX?: number; speedY?: number }
   | { type: 'join_table'; tableId: number };
 
 /** One timed step in a response sequence */

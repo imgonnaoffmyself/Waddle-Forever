@@ -13,7 +13,7 @@
 import { isGreaterOrEqual, isLower } from '@server/routes/versions';
 import { GameData } from '@server/timelines/game-data';
 import { PenguinMessenger } from '@server/socket-server/messenger';
-import { World } from '@server/socket-server/world/world';
+import { RINK_PUCK_START, World } from '@server/socket-server/world/world';
 import { WorldRoom } from '@server/socket-server/world/world-room';
 import { WorldPenguin } from '@server/socket-server/world/world-penguin';
 import { WorldTable } from '@server/socket-server/world/world-table';
@@ -40,9 +40,13 @@ const NPC_COUNT = 100;
 const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12']);
 
 const SNOW_FORTS_ROOM_ID = 801;
+const ICE_RINK_ROOM_ID = 802;
 const NIGHT_CLUB_ROOM_ID = 120;
 const DANCE_FRAME = 26;
 const NIGHT_CLUB_POST_MOVE_DANCE_DELAY_MS = 2_500;
+const OLD_RINK_PUCK_CHANGE_DATE = '2006-04-01';
+const RINK_SCOREBOARD_DATE = '2006-08-11';
+const RINK_PUCK_TOUCH_RADIUS = 55;
 
 /** 
  * All room IDs that existed and were accessible on 2005-08-22.
@@ -139,6 +143,29 @@ function spawnPosForRoom(roomId: number): [number, number] {
   const zone = SPAWN_ZONES[roomId] ?? [300, 350, 600, 480];
   const [xMin, yMin, xMax, yMax] = zone;
   return [randInt(xMin, xMax), randInt(yMin, yMax)];
+}
+
+function randomRinkPuckTarget(): [number, number] {
+  return [randInt(220, 620), randInt(150, 390)];
+}
+
+function hockeyPuckTarget(currentDate: string): [number, number] {
+  if (isLower(currentDate, OLD_RINK_PUCK_CHANGE_DATE)) {
+    return randomRinkPuckTarget();
+  }
+
+  const shootsRight = Math.random() < 0.5;
+  return [
+    shootsRight ? randInt(655, 735) : randInt(145, 225),
+    randInt(205, 335)
+  ];
+}
+
+function pointNearPuck(puck: [number, number]): [number, number] {
+  return [
+    puck[0] + randInt(-RINK_PUCK_TOUCH_RADIUS, RINK_PUCK_TOUCH_RADIUS),
+    puck[1] + randInt(-RINK_PUCK_TOUCH_RADIUS, RINK_PUCK_TOUCH_RADIUS)
+  ];
 }
 
 function getRoomPool(currentDate: string): number[] {
@@ -384,6 +411,46 @@ export class NpcManager {
           this.dispatchAction(npc, room, { type: 'move', x, y });
         } else {
           this.dispatchAction(npc, room, { type: 'frame', frame: DANCE_FRAME });
+        }
+	  } else if (room.id === ICE_RINK_ROOM_ID) {
+        const roll = Math.random();
+        const puck = this.world.getPuck(room) ?? RINK_PUCK_START;
+
+        if (roll < 0.45) {
+          const [x, y] = pointNearPuck(puck);
+          this.dispatchAction(npc, room, { type: 'move', x, y });
+
+          setTimeout(() => {
+            if (!this.active || this.npcRooms.get(npc) !== room) return;
+
+            // Verify the asshole actually walked to the puck before hitting it
+            const currentNPCState = room.playerStates.find(([occ]) => occ === npc);
+            if (!currentNPCState) return;
+
+            const npcX = currentNPCState[1].x;
+            const npcY = currentNPCState[1].y;
+            const dx = npcX - puck[0];
+            const dy = npcY - puck[1];
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Give it a small buffer above the touch radius to account for processing/network ticks
+            if (distance > RINK_PUCK_TOUCH_RADIUS + 15) return;
+
+            const [targetX, targetY] = hockeyPuckTarget(currentDate);
+            this.dispatchAction(npc, room, {
+              type: 'hockey_puck',
+              x: targetX,
+              y: targetY,
+              speedX: targetX - puck[0],
+              speedY: targetY - puck[1]
+            });
+          }, randInt(1200, 2200)); // Slightly increased minimum delay to allow for the waddle time
+        } else if (roll < 0.75) {
+          const [x, y] = spawnPosForRoom(room.id);
+          this.dispatchAction(npc, room, { type: 'move', x, y });
+        } else {
+          const frame = randFrom([17, 18, 19, 20, 21, 22, 23, 24, 25, 1]);
+          this.dispatchAction(npc, room, { type: 'frame', frame });
         }
       } else if (Math.random() < 0.7) {
         // 70% chance to waddle to a new spot, 30% chance to do a random frame (wave, sit, dance)
@@ -831,6 +898,17 @@ export class NpcManager {
         }
 
         this.msg.send(targets, 'sb', npc.id, targetX, targetY);
+        break;
+      }
+      case 'hockey_puck': {
+        if (targets.length === 0) return;
+        if (!this.world.updatePuck(action.x, action.y, room)) return;
+
+        if (room.id === ICE_RINK_ROOM_ID && this.data.isPreCpip() && isLower(this.data.getDate(), RINK_SCOREBOARD_DATE)) {
+          this.msg.send(targets, 'zm', action.x, action.y);
+        } else {
+          this.msg.send(targets, 'zm', npc.id, action.x, action.y, action.speedX ?? 0, action.speedY ?? 0);
+        }
         break;
       }
       case 'join_table': {

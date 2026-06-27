@@ -188,9 +188,9 @@ const FRIENDLY: PersonalityDialogue = {
       },
     ],
     802: [ // Ice Rink
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck is stuck again lol' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck goes wherever it wants lol' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep slipping on the ice!!' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'wish we could actually play hockey here' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'im pretending this is a serious hockey game' } }] },
     ],
     200: [ // Ski Village
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'not much to do here yet but still cool' } }] },
@@ -664,7 +664,7 @@ const SHY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'kinda empty out here..' } }] },
     ],
     802: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck is stuck..' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck has a mind of its own..' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'slippery out here..' } }] },
     ],
     320: [
@@ -1028,8 +1028,8 @@ const GRUMPY: PersonalityDialogue = {
       },
     ],
     802: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'puck is still stuck. nobody fixed it.' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what even is the point of an ice rink with no puck' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck just did a weird little jump' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what even is the point of an ice rink if nobody chases the puck' } }] },
     ],
     200: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'literally nothing to do here' } }] },
@@ -1123,7 +1123,7 @@ const GRUMPY: PersonalityDialogue = {
       keywords: ['puck', 'rink', 'hockey'],
       cooldownMs: 30_000,
       responses: [
-        { steps: [{ delayMs: 800, action: { type: 'chat', message: 'puck is stuck. has been since day 1. nobody cares.' } }] },
+        { steps: [{ delayMs: 800, action: { type: 'chat', message: 'the puck is real. the hockey is mostly imagination.' } }] },
       ],
     },
     {
@@ -1346,9 +1346,9 @@ const GRUMPY: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.1,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'that puck has been stuck since day 1' } } },
-        { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'maybe they will fix it eventually' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'sure. eventually.' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'that puck is impossible to aim' } } },
+        { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'just pretend that was a pass' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'best hockey game on the island' } } },
       ],
     },
   ],
@@ -1461,7 +1461,7 @@ const EXCITABLE: PersonalityDialogue = {
       },
     ],
     802: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'THEY NEED TO FIX THE PUCK I WANT TO PLAY HOCKEY' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'I AM PLAYING HOCKEY VERY SERIOUSLY AND BADLY' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'SLIDING ON THE ICE IS SO FUN WEEEE' } }] },
     ],
     110: [
@@ -1847,8 +1847,8 @@ const CURIOUS: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder why the dojo is completely empty' } }] },
     ],
     802: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long has that puck been stuck up there?' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder if they\'ll ever add real hockey here' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'why does the puck move like that?' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder if there is a way to aim it' } }] },
     ],
     200: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i heard they might add stuff to ski village' } }] },
@@ -2137,9 +2137,9 @@ const CURIOUS: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.1,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'do you think they will ever fix the puck?' } } },
-        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'eventually probably' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'i just want to play hockey properly' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'do you think the puck listens to us?' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'no, and that is why it is winning' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'then i am larping as the referee' } } },
       ],
     },
     {
