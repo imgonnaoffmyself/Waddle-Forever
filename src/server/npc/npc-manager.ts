@@ -59,63 +59,42 @@ const OLD_RINK_PUCK_CHANGE_DATE = '2006-04-01';
 const RINK_SCOREBOARD_DATE = '2006-08-11';
 const RINK_PUCK_TOUCH_RADIUS = 55;
 
-/** 
- * All room IDs that existed and were accessible on 2005-08-22.
- * Some roons are duplicated as they would be more popular!
- */
-const BASE_ROOM_POOL: number[] = [
-  100, // Town
-  100, // Town
-  100, // Town
-  100, // Town (4x weight, most popular room)
-  110, // Coffee Shop
-  110, // Coffee Shop
-  110, // Coffee Shop (3x weight, hotspot by nature)
-  111, // Book Room
-  111, // Book Room (2x weight, mancala activity)
-  120, // Dance Club
-  120, // Dance Club
-  120, // Dance Club (3x weight, hotspot by nature)
-  121, // Dance Lounge (1x weight, nothing to do here yet)
-  130, // Gift Shop
-  130, // Gift Shop
-  130, // Gift Shop (3x weight, hotspot by nature)
-  200, // Ski Village (1x weight, nothing to do here yet)
-  800, // Dock
-  800, // Dock (2x weight, biscuit activity)
-  802, // Ice Rink
-  802, // Ice Rink (2x weight, hockey activity)
-  320, // Dojo (1x weight, secret room)
-];
-
-const SEPTEMBER_12_ROOM_POOL: number[] = [
-  ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID, // Snow Forts
-  SNOW_FORTS_ROOM_ID, // Snow Forts
-  SNOW_FORTS_ROOM_ID, // Snow Forts (3x weight, fight activity + new location hotspot)
-];
+type WeightedRoomEntry = {
+  roomId: number;
+  weight: number;
+  gate?: TimelineGate;
+};
 
 /**
- * 2005-09-13: Astro Barrier launches in the Dance Lounge (121).
- * The lounge gets triple-weighted — it was previously a dead room,
- * now it's an actual destination. Snow Forts still double-weighted.
+ * Room weighting is defined as one timeline-aware list instead of separate
+ * per-date pools. Entries stack, so later timeline entries can add weight to
+ * an existing room without redefining the whole pool.
  */
-const SEPTEMBER_13_ROOM_POOL: number[] = [
-  ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID, // Snow Forts
-  SNOW_FORTS_ROOM_ID, // Snow Forts (2x weight, fight activity)
-  121, // Dance Lounge
-  121, // Dance Lounge (1x -> 3x weight, astro-barrier activity + new location hotspot)
-];
+const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
+  { roomId: 100, weight: 4 }, // Town
+  { roomId: 110, weight: 3 }, // Coffee Shop
+  { roomId: 111, weight: 2 }, // Book Room
+  { roomId: 120, weight: 3 }, // Dance Club
+  { roomId: 121, weight: 1 }, // Dance Lounge
+  { roomId: 130, weight: 3 }, // Gift Shop
+  { roomId: 200, weight: 1 }, // Ski Village
+  { roomId: 800, weight: 2 }, // Dock
+  { roomId: 802, weight: 2 }, // Ice Rink
+  { roomId: 320, weight: 1 }, // Dojo
 
-const SEPTEMBER_21_ROOM_POOL: number[] = [
-  ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID, // Snow Forts
-  SNOW_FORTS_ROOM_ID, // Snow Forts (2x weight, fight activity)
-  121, // Dance Lounge (1x -> 2x weight, astro-barrier activity)
-  100, // Town (4x -> 5x weight, beta party hotspot)
-  130, // Gift Shop (3x -> 4x weight, beta party hotspot)
-  120, // Dance Club (3x -> 4x weight, beta party hotspot)
+  // 2005-09-12: Snow Forts opens as a new hotspot.
+  { roomId: SNOW_FORTS_ROOM_ID, weight: 3, gate: { after: '2005-09-12' } },
+
+  // 2005-09-13: Astro Barrier makes the Dance Lounge an actual destination,
+  // while Snow Forts cool off slightly from launch-day intensity.
+  { roomId: SNOW_FORTS_ROOM_ID, weight: -1, gate: { after: '2005-09-13' } },
+  { roomId: 121, weight: 2, gate: { after: '2005-09-13' } },
+
+  // 2005-09-21: Beta Test Party concentrates more traffic in the social hubs.
+  { roomId: 121, weight: -1, gate: { after: BETA_TEST_PARTY_DATE } },
+  { roomId: 100, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
+  { roomId: 130, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
+  { roomId: 120, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
 ];
 
 /**
@@ -214,19 +193,21 @@ function pointNearPuck(puck: [number, number]): [number, number] {
 }
 
 function getRoomPool(currentDate: string): number[] {
-  if (currentDate === BETA_TEST_PARTY_DATE) {
-    return SEPTEMBER_21_ROOM_POOL;
+  const roomWeights = new Map<number, number>();
+
+  for (const entry of ROOM_POOL_ENTRIES) {
+    if (!gatePass(entry.gate, currentDate)) continue;
+    roomWeights.set(entry.roomId, (roomWeights.get(entry.roomId) ?? 0) + entry.weight);
   }
 
-  if (currentDate === '2005-09-13') {
-    return SEPTEMBER_13_ROOM_POOL;
+  const pool: number[] = [];
+  for (const [roomId, weight] of roomWeights) {
+    for (let i = 0; i < weight; i++) {
+      pool.push(roomId);
+    }
   }
 
-  if (currentDate === '2005-09-12') {
-    return SEPTEMBER_12_ROOM_POOL;
-  }
-
-  return BASE_ROOM_POOL;
+  return pool;
 }
 
 function getNpcCount(currentDate: string): number {
