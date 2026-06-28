@@ -37,7 +37,7 @@ import {
 const NPC_COUNT = 100;
 
 /** Exact timeline snapshots that enable the NPC module */
-const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12']);
+const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13']);
 
 const SNOW_FORTS_ROOM_ID = 801;
 const ICE_RINK_ROOM_ID = 802;
@@ -67,10 +67,23 @@ const BASE_ROOM_POOL: number[] = [
   221, // Lodge Attic
 ];
 
-const SEPTEMBER_ROOM_POOL: number[] = [
+const SEPTEMBER_12_ROOM_POOL: number[] = [
   ...BASE_ROOM_POOL,
   SNOW_FORTS_ROOM_ID,
   SNOW_FORTS_ROOM_ID, // New room hotspot once it opens
+];
+
+/**
+ * 2005-09-13: Astro Barrier launches in the Dance Lounge (121).
+ * The lounge gets triple-weighted — it was previously a dead room,
+ * now it's an actual destination. Snow Forts still double-weighted.
+ */
+const SEPTEMBER_13_ROOM_POOL: number[] = [
+  ...BASE_ROOM_POOL,
+  SNOW_FORTS_ROOM_ID,
+  SNOW_FORTS_ROOM_ID,
+  121, // Dance Lounge — Astro Barrier is here now
+  121, // extra weight, new minigame hotspot
 ];
 
 /**
@@ -169,8 +182,12 @@ function pointNearPuck(puck: [number, number]): [number, number] {
 }
 
 function getRoomPool(currentDate: string): number[] {
+  if (currentDate === '2005-09-13') {
+    return SEPTEMBER_13_ROOM_POOL;
+  }
+
   if (currentDate === '2005-09-12') {
-    return SEPTEMBER_ROOM_POOL;
+    return SEPTEMBER_12_ROOM_POOL;
   }
 
   return BASE_ROOM_POOL;

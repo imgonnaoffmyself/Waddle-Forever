@@ -7,6 +7,7 @@
 //
 // Timeline gates:
 //   after: '2005-09-12'   — Snow Forts open, beta continues, party feels closer
+//   after: '2005-09-13'   — Astro Barrier launches in Dance Lounge (121); party is 8 days out
 //   before: '2005-09-21'  — upcoming Club Penguin Party hype
 //   before: '2005-10-24'  — ongoing beta complaints, empty newspaper
 //   (No gate)             — always available on 2005-08-22
@@ -109,6 +110,14 @@ const FRIENDLY: PersonalityDialogue = {
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'great. a party on wednesday. going to be so laggy.' } }],
       },
       {
+        gate: { after: '2005-09-13', before: '2005-09-21' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'new game AND a party this week. they really went for it' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'have you tried astro barrier? its upstairs in the dance club' } }],
+      },
+      {
         gate: { before: '2005-10-24' },
         steps: [{ delayMs: 0, action: { type: 'chat', message: 'still finding bugs lol but its still fun' } }],
       },
@@ -161,6 +170,21 @@ const FRIENDLY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'why are there just couches here lol' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'nice and chill up here' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'kinda quiet compared to downstairs' } }] },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is so fun!! i keep coming back up here' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [
+          { delayMs: 0,    action: { type: 'chat',  message: 'have you tried astro barrier yet??' } },
+          { delayMs: 3000, action: { type: 'chat',  message: 'its upstairs in the dance club!!' } },
+        ],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i cant believe they added a new game!! astro barrier is amazing!!' } }],
+      },
     ],
     130: [ // Gift Shop
       { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 0, action: { type: 'chat', message: 'just got something from the catalogue :)' } }] },
@@ -637,6 +661,14 @@ const SHY: PersonalityDialogue = {
     121: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'just sitting here..' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the lounge is nice..' } }] },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep playing astro barrier alone up here..' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is less stressful when no one is watching..' } }],
+      },
     ],
     130: [
       { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 0, action: { type: 'chat', message: 'just browsing..' } }] },
@@ -836,6 +868,24 @@ const SHY: PersonalityDialogue = {
         { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'games are fun.. when i can find them' } }] },
         { steps: [{ delayMs: 1800, action: { type: 'chat', message: 'i like bean counters its calm..' } }] },
         { steps: [{ delayMs: 1200, action: { type: 'chat', message: 'ballistic biscuit is kinda scary..' } }] },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'astro barrier is.. actually kind of fun? when nobody is around..' } }],
+        },
+      ],
+    },
+    {
+      keywords: ['astro', 'astro barrier', 'barrier'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1800, action: { type: 'chat', message: 'oh.. yeah astro barrier.. i tried it when nobody was looking' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'its upstairs in the club.. not many people know about it yet i think..' } }],
+        },
       ],
     },
     {
@@ -1038,6 +1088,14 @@ const GRUMPY: PersonalityDialogue = {
     121: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'just a bunch of couches. amazing.' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'upstairs. nothing here either.' } }] },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier. so now theres a crowd up here too.' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the new game is fine i guess. the music loop is annoying.' } }],
+      },
     ],
     130: [
       { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 0, action: { type: 'chat', message: 'not enough items in the catalog' } }] },
@@ -1131,6 +1189,24 @@ const GRUMPY: PersonalityDialogue = {
       cooldownMs: 30_000,
       responses: [
         { steps: [{ delayMs: 800, action: { type: 'chat', message: 'i have a terrible score. dont ask.' } }] },
+      ],
+    },
+    {
+      keywords: ['astro', 'astro barrier', 'barrier'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah i tried it. the music loop alone made me leave.' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'new game. upstairs in the club. not that exciting.' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'its fine. crowded the lounge though.' } }],
+        },
       ],
     },
     {
@@ -1351,6 +1427,17 @@ const GRUMPY: PersonalityDialogue = {
         { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'best hockey game on the island' } } },
       ],
     },
+    {
+      gate: { after: '2005-09-13', before: '2005-09-21' },
+      cooldownMs: 180_000,
+      chance: 0.1,
+      steps: [
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'did you try astro barrier' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah. the music never stops.' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'great. another reason to hate the club.' } } },
+        { who: 'a', step: { delayMs: 1500, action: { type: 'emote', emoteId: 4  } } },
+      ],
+    },
   ],
 };
 
@@ -1410,6 +1497,18 @@ const EXCITABLE: PersonalityDialogue = {
         ],
       },
       {
+        gate: { after: '2005-09-13', before: '2005-09-21' },
+        steps: [
+          { delayMs: 0,    action: { type: 'chat',  message: 'ASTRO BARRIER AND A PARTY IN EIGHT DAYS!!! THIS WEEK IS INSANE!!!' } },
+          { delayMs: 2500, action: { type: 'frame', frame: 26 } },
+          { delayMs: 5500, action: { type: 'frame', frame: 1  } },
+        ],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'ASTRO BARRIER IS THE BEST THING THEY HAVE EVER ADDED' } }],
+      },
+      {
         gate: { before: '2005-10-24' },
         steps: [
           { delayMs: 0, action: { type: 'chat', message: 'BETA TEST IS SO FUN even with the bugs lol' } },
@@ -1436,6 +1535,22 @@ const EXCITABLE: PersonalityDialogue = {
     ],
     121: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'WHY ARE WE SITTING UP HERE!! LETS GO DANCE!!' } }] },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [
+          { delayMs: 0,    action: { type: 'chat',  message: 'ASTRO BARRIER IS IN HERE NOW OMGG' } },
+          { delayMs: 2000, action: { type: 'frame', frame: 26 } },
+          { delayMs: 5000, action: { type: 'frame', frame: 1  } },
+        ],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'HAVE YOU PLAYED ASTRO BARRIER YET??? ITS SO HARD BUT AMAZING' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'NEW GAME AND PARTY IN EIGHT DAYS I LITERALLY CANNOT CONTAIN MYSELF' } }],
+      },
     ],
     130: [
       { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 0, action: { type: 'chat', message: 'I WANT EVERYTHING IN THE CATALOG' } }] },
@@ -1655,6 +1770,32 @@ const EXCITABLE: PersonalityDialogue = {
         { steps: [{ delayMs: 400, action: { type: 'chat', message: 'BEAN COUNTERS RIGHT NOW LETS GO' } }] },
         { steps: [{ delayMs: 300, action: { type: 'chat', message: 'IM SO GOOD AT BALLISTIC BISCUIT' } }] },
         { steps: [{ delayMs: 400, action: { type: 'chat', message: 'THE GAMES ON THIS ISLAND ARE AMAZING' } }] },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'ASTRO BARRIER JUST LAUNCHED IN THE DANCE LOUNGE GO PLAY IT NOW!!!' } }],
+        },
+      ],
+    },
+    {
+      keywords: ['astro', 'astro barrier', 'barrier'],
+      cooldownMs: 30_000,
+      responses: [
+        {
+          gate: { after: '2005-09-13' },
+          steps: [
+            { delayMs: 300,  action: { type: 'chat',  message: 'YES!!! ASTRO BARRIER!!! ITS SO GOOD!!!' } },
+            { delayMs: 1500, action: { type: 'frame', frame: 26 } },
+            { delayMs: 4500, action: { type: 'frame', frame: 1  } },
+          ],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 400, action: { type: 'chat', message: 'I PLAYED ASTRO BARRIER FOR LIKE AN HOUR STRAIGHT' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO THE DANCE LOUNGE ITS IN THERE UPSTAIRS!!! SO FUN!!!' } }],
+        },
       ],
     },
     {
@@ -1783,6 +1924,18 @@ const EXCITABLE: PersonalityDialogue = {
         { who: 'a', step: { delayMs: 1500, action: { type: 'chat', message: 'BEST GAME EVER' } } },
       ],
     },
+    {
+      gate: { after: '2005-09-13', before: '2005-09-21' },
+      cooldownMs: 150_000,
+      chance: 0.12,
+      steps: [
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat',  message: 'ASTRO BARRIER AND THE PARTY IN ONE WEEK AHHHH' } } },
+        { who: 'b', step: { delayMs: 2000, action: { type: 'chat',  message: 'I KNOW RIGHT this week is actually insane' } } },
+        { who: 'a', step: { delayMs: 1500, action: { type: 'chat',  message: 'I CANT STOP PLAYING ASTRO BARRIER' } } },
+        { who: 'a', step: { delayMs: 1000, action: { type: 'frame', frame: 26 } } },
+        { who: 'a', step: { delayMs: 4000, action: { type: 'frame', frame: 1  } } },
+      ],
+    },
   ],
 };
 
@@ -1870,7 +2023,25 @@ const CURIOUS: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder where the music is coming from' } }] },
     ],
     121: [
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what is the point of the lounge if there are no games?' } }] },
+      {
+        gate: { before: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'what is the point of the lounge if there are no games?' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long do you think astro barrier has been here? did they just add it?' } }],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [
+          { delayMs: 0,    action: { type: 'chat', message: 'i wonder what level you can actually get to in astro barrier' } },
+          { delayMs: 3000, action: { type: 'emote', emoteId: 8 } },
+        ],
+      },
+      {
+        gate: { after: '2005-09-13' },
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how did they get astro barrier into the dance lounge? it just appeared' } }],
+      },
     ],
     800: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how deep do you think the water is?' } }] },
@@ -2028,6 +2199,35 @@ const CURIOUS: PersonalityDialogue = {
         { steps: [{ delayMs: 900,  action: { type: 'chat', message: 'do you think they\'ll add more games?' } }] },
         { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wonder how ballistic biscuit was invented' } }] },
         { steps: [{ delayMs: 900,  action: { type: 'chat', message: 'what\'s your high score on bean counters?' } }] },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 900, action: { type: 'chat', message: 'have you tried astro barrier yet? it just appeared in the dance lounge' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wonder how many levels astro barrier actually has' } }],
+        },
+      ],
+    },
+    {
+      keywords: ['astro', 'astro barrier', 'barrier'],
+      cooldownMs: 45_000,
+      responses: [
+        {
+          gate: { after: '2005-09-13' },
+          steps: [
+            { delayMs: 900,  action: { type: 'chat', message: 'oh yeah astro barrier just appeared in the dance lounge' } },
+            { delayMs: 3000, action: { type: 'chat', message: 'i wonder when they actually finished making it' } },
+          ],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 800, action: { type: 'chat', message: 'i wonder if astro barrier has a secret ending' } }],
+        },
+        {
+          gate: { after: '2005-09-13' },
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'how are the graphics in astro barrier even done?' } }],
+        },
       ],
     },
     {
@@ -2160,6 +2360,17 @@ const CURIOUS: PersonalityDialogue = {
         { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'were all the beta testers from penguin chat 3?' } } },
         { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'i think so. thats how i heard about the big update' } } },
         { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'club penguin is definitely easier to say though' } } },
+      ],
+    },
+    {
+      gate: { after: '2005-09-13', before: '2005-09-21' },
+      cooldownMs: 180_000,
+      chance: 0.12,
+      steps: [
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'did you see that astro barrier just appeared in the dance lounge?' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah! i tried it. it just starts and keeps going' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'i wonder if anyone actually knows how many levels there are' } } },
+        { who: 'a', step: { delayMs: 1500, action: { type: 'emote', emoteId: 8 } } },
       ],
     },
   ],
