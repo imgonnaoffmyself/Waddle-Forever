@@ -112,7 +112,7 @@ const SEPTEMBER_21_ROOM_POOL: number[] = [
   ...BASE_ROOM_POOL,
   SNOW_FORTS_ROOM_ID, // Snow Forts
   SNOW_FORTS_ROOM_ID, // Snow Forts (2x weight, fight activity)
-  121, // Dance Lounge (2x weight, astro-barrier activity)
+  121, // Dance Lounge (1x -> 2x weight, astro-barrier activity)
   100, // Town (4x -> 5x weight, beta party hotspot)
   130, // Gift Shop (3x -> 4x weight, beta party hotspot)
   120, // Dance Club (3x -> 4x weight, beta party hotspot)
