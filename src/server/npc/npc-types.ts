@@ -99,6 +99,7 @@ export type PersonalityDialogue = {
 
 /** Weighted item for clothing slot sampling */
 export type WeightedClothingItem = {
+  gate?: TimelineGate;
   id: number;
   /** Higher = more likely. In-catalogue: 10, off-sale: 2, secret: 1 */
   weight: number;

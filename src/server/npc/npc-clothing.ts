@@ -21,17 +21,22 @@
 //   e.g. items like 104, 106–110, 171–177, 181, 216, 222, 233–240, 244, 252, 261–263,
 //        301, 351–352, 363, 366, 402, 406–407, 410, 412–414, 417–425, 453, 456, 484, 500–524, 550–551
 
-import { ClothingSlot, WeightedClothingItem } from './npc-types';
+import { ClothingSlot, TimelineGate, WeightedClothingItem } from './npc-types';
 
 export type ClothingOutfit = Record<ClothingSlot, number>;
 type SampleClothingOptions = {
   currentDate?: string;
   forcePartyHat?: boolean;
 };
+type TimelineGatedValue<T> = {
+  gate?: TimelineGate;
+  value: T;
+};
 
 export const BETA_TEST_PARTY_DATE = '2005-09-21';
 export const PARTY_HAT_ITEM_ID = 413;
 const PARTY_HAT_CHANCE = 0.9;
+const DEFAULT_DATE = '2005-08-22';
 
 /**
  * Weighted clothing pools per slot for the 2005-08-22 timeline.
@@ -75,23 +80,45 @@ export const CLOTHING_POOLS: Record<ClothingSlot, WeightedClothingItem[]> = {
 };
 
 /** Color IDs available in 2005-08-22 (items 1–12 are all the penguin colors) */
-// TODO: Need a way to timeline gate colors!!!
-export const COLOR_POOL: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+export const COLOR_POOL: TimelineGatedValue<number>[] = [
+  { value: 1 },
+  { value: 2 },
+  { value: 3 },
+  { value: 4 },
+  { value: 5 },
+  { value: 6 },
+  { value: 7 },
+  { value: 8 },
+  { value: 9 },
+  { value: 10 },
+  { value: 11 },
+  { value: 12 },
+];
 
 /**
  * Set of item IDs that are considered "rare" at this date:
  * present in the game client but not available in the current catalogue.
  * When a player wears one of these, NPCs may comment on it.
  * NOTE: Party hat will have its own unique behaviour.
- * TODO: Need a way to timeline gate rare items!!!
  */
-export const RARE_ITEM_IDS = new Set<number>([
-  452, 10452, // Viking Helmet (secret item)
-]);
+export const RARE_ITEM_IDS: TimelineGatedValue<number>[] = [
+  { value: 452 }, { value: 10452 }, // Viking Helmet (secret item)
+];
+
+function gatePass(gate: TimelineGate | undefined, currentDate: string): boolean {
+  if (gate === undefined) return true;
+  if (gate.before !== undefined && !(currentDate < gate.before)) return false;
+  if (gate.after !== undefined && !(currentDate >= gate.after)) return false;
+  return true;
+}
+
+function filterGated<T extends { gate?: TimelineGate }>(items: T[], currentDate: string): T[] {
+  return items.filter(item => gatePass(item.gate, currentDate));
+}
 
 /** Returns true if the item ID is considered rare / off-sale at 2005-08-22 */
-export function isRareItem(id: number): boolean {
-  return RARE_ITEM_IDS.has(id);
+export function isRareItem(id: number, currentDate = DEFAULT_DATE): boolean {
+  return filterGated(RARE_ITEM_IDS, currentDate).some(item => item.value === id);
 }
 
 /** Sample one item from a weighted pool using weighted random selection */
@@ -108,14 +135,17 @@ function sampleWeighted(pool: WeightedClothingItem[]): number {
 }
 
 /** Sample a random color from the color pool */
-export function sampleColor(): number {
-  return COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)];
+export function sampleColor(currentDate = DEFAULT_DATE): number {
+  const eligible = filterGated(COLOR_POOL, currentDate);
+  const colorPool = eligible.length > 0 ? eligible : COLOR_POOL;
+  return colorPool[Math.floor(Math.random() * colorPool.length)].value;
 }
 
 /** Resolve a full random outfit by sampling each clothing slot's weighted pool */
 export function sampleClothing(isMember: boolean, options: SampleClothingOptions = {}): ClothingOutfit {
   const slots: ClothingSlot[] = ['head', 'face', 'neck', 'body', 'hand', 'feet', 'pin', 'background'];
   const result = {} as ClothingOutfit;
+  const currentDate = options.currentDate ?? DEFAULT_DATE;
   
   if (!isMember) {
     for (const slot of slots) {
@@ -125,10 +155,12 @@ export function sampleClothing(isMember: boolean, options: SampleClothingOptions
   }
 
   for (const slot of slots) {
-    result[slot] = sampleWeighted(CLOTHING_POOLS[slot]);
+    const eligible = filterGated(CLOTHING_POOLS[slot], currentDate);
+    const pool = eligible.length > 0 ? eligible : CLOTHING_POOLS[slot];
+    result[slot] = sampleWeighted(pool);
   }
 
-  if (options.currentDate === BETA_TEST_PARTY_DATE && (options.forcePartyHat || Math.random() < PARTY_HAT_CHANCE)) {
+  if (currentDate === BETA_TEST_PARTY_DATE && (options.forcePartyHat || Math.random() < PARTY_HAT_CHANCE)) {
     result.head = PARTY_HAT_ITEM_ID;
   }
 

@@ -691,7 +691,7 @@ export class NpcManager {
       inventory.pin, inventory.background,
     ].filter(id => id > 0);
 
-    const hasRareItem = wornIds.some(id => isRareItem(id));
+    const hasRareItem = wornIds.some(id => isRareItem(id, currentDate));
 
     let respondents = 0;
     const shuffledNpcs = shuffle(npcsInRoom);

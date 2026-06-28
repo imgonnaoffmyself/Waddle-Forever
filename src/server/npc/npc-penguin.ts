@@ -62,7 +62,7 @@ export class NpcPenguin {
       forcePartyHat: options.forcePartyHat,
     });
     this.inventory = {
-      color:      sampleColor(),
+      color:      sampleColor(options.currentDate),
       head:       outfit.head,
       face:       outfit.face,
       neck:       outfit.neck,
