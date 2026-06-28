@@ -24,6 +24,14 @@
 import { ClothingSlot, WeightedClothingItem } from './npc-types';
 
 export type ClothingOutfit = Record<ClothingSlot, number>;
+type SampleClothingOptions = {
+  currentDate?: string;
+  forcePartyHat?: boolean;
+};
+
+export const BETA_TEST_PARTY_DATE = '2005-09-21';
+export const PARTY_HAT_ITEM_ID = 413;
+const PARTY_HAT_CHANCE = 0.9;
 
 /**
  * Weighted clothing pools per slot for the 2005-08-22 timeline.
@@ -114,7 +122,7 @@ export function sampleColor(): number {
 }
 
 /** Resolve a full random outfit by sampling each clothing slot's weighted pool */
-export function sampleClothing(isMember: boolean): ClothingOutfit {
+export function sampleClothing(isMember: boolean, options: SampleClothingOptions = {}): ClothingOutfit {
   const slots: ClothingSlot[] = ['head', 'face', 'neck', 'body', 'hand', 'feet', 'pin', 'background'];
   const result = {} as ClothingOutfit;
   
@@ -128,5 +136,10 @@ export function sampleClothing(isMember: boolean): ClothingOutfit {
   for (const slot of slots) {
     result[slot] = sampleWeighted(CLOTHING_POOLS[slot]);
   }
+
+  if (options.currentDate === BETA_TEST_PARTY_DATE && (options.forcePartyHat || Math.random() < PARTY_HAT_CHANCE)) {
+    result.head = PARTY_HAT_ITEM_ID;
+  }
+
   return result;
 }

@@ -2376,6 +2376,123 @@ const CURIOUS: PersonalityDialogue = {
   ],
 };
 
+const BETA_TEST_PARTY_GATE = { after: '2005-09-21', before: '2005-09-22' } as const;
+
+FRIENDLY.onIdle.any?.push(
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta test party day!! there are penguins everywhere :)' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone has a party hat on and it looks so cute' } }] },
+);
+FRIENDLY.onPlayerChat.unshift({
+  keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
+  cooldownMs: 20_000,
+  responses: [
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'walk to one of the hat boxes in town!! they have the party hats :)' } }] },
+  ],
+});
+FRIENDLY.npcExchanges.push({
+  gate: BETA_TEST_PARTY_GATE,
+  cooldownMs: 180_000,
+  chance: 0.16,
+  condition: (_npc, other) => other.isDev,
+  steps: [
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'wait are you one of the penguins making the game?' } } },
+    { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'yeah! we are still building it, thanks for testing with us' } } },
+    { who: 'a', step: { delayMs: 2500, action: { type: 'chat', message: 'that is so cool. thanks for letting us be here :)' } } },
+  ],
+});
+
+SHY.onIdle.any?.push(
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'there are so many penguins here today..' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i got my party hat from the town box.. i think there are a few of them' } }] },
+);
+SHY.onPlayerChat.unshift({
+  keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
+  cooldownMs: 20_000,
+  responses: [
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'um.. try walking to one of the hat boxes in town' } }] },
+  ],
+});
+SHY.npcExchanges.push({
+  gate: BETA_TEST_PARTY_GATE,
+  cooldownMs: 180_000,
+  chance: 0.14,
+  condition: (_npc, other) => other.isDev,
+  steps: [
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'um.. are you really from the team?' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'yeah, still fixing bugs and adding things while beta is live' } } },
+    { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'oh.. okay. thanks for making it' } } },
+  ],
+});
+
+GRUMPY.onIdle.any?.push(
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'whole island is packed. just what i needed.' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'everybody has the same party hat on. very original.' } }] },
+);
+GRUMPY.onPlayerChat.unshift({
+  keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
+  cooldownMs: 20_000,
+  responses: [
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town. one of the hat boxes. hard to miss.' } }] },
+  ],
+});
+GRUMPY.npcExchanges.push({
+  gate: BETA_TEST_PARTY_GATE,
+  cooldownMs: 180_000,
+  chance: 0.15,
+  condition: (_npc, other) => other.isDev,
+  steps: [
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'so when are you fixing the bugs and finishing the newspaper' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'hopefully soon. beta is exactly when we catch stuff like that' } } },
+    { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'good. because the lorem ipsum is getting old.' } } },
+  ],
+});
+
+EXCITABLE.onIdle.any?.push(
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE BETA TEST PARTY IS LIVE!!! LOOK AT ALL THESE PENGUINS!!!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'EVERYONE HAS PARTY HATS AHHHH THIS IS SO COOL' } }] },
+);
+EXCITABLE.onPlayerChat.unshift({
+  keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
+  cooldownMs: 20_000,
+  responses: [
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO TOWN!! THE HAT BOXES HAVE THE PARTY HATS!!!' } }] },
+  ],
+});
+EXCITABLE.npcExchanges.push({
+  gate: BETA_TEST_PARTY_GATE,
+  cooldownMs: 150_000,
+  chance: 0.18,
+  condition: (_npc, other) => other.isDev,
+  steps: [
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'WAIT ARE YOU REALLY ONE OF THE DEVS?!' } } },
+    { who: 'b', step: { delayMs: 1800, action: { type: 'chat', message: 'yeah!! thanks for showing up to the beta test party' } } },
+    { who: 'a', step: { delayMs: 2200, action: { type: 'chat', message: 'THIS GAME RULES PLEASE KEEP MAKING MORE STUFF!!!' } } },
+  ],
+});
+
+CURIOUS.onIdle.any?.push(
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder how they got this many penguins online at once' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'do the hat boxes in town refill themselves somehow?' } }] },
+);
+CURIOUS.onPlayerChat.unshift({
+  keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
+  cooldownMs: 20_000,
+  responses: [
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'pretty sure you just walk to one of the hat boxes in town and pick one up' } }] },
+  ],
+});
+CURIOUS.npcExchanges.push({
+  gate: BETA_TEST_PARTY_GATE,
+  cooldownMs: 180_000,
+  chance: 0.16,
+  condition: (_npc, other) => other.isDev,
+  steps: [
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'how do you even build a whole island like this?' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'one room and one bug fix at a time, mostly' } } },
+    { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'huh. i have about fifty more questions' } } },
+  ],
+});
+
 // ─────────────────────────────────────────────────────────────
 // Export
 // ─────────────────────────────────────────────────────────────

@@ -34,10 +34,21 @@ import {
 // ─── Configuration ───────────────────────────────────────────
 
 /** Number of NPC penguins spawned when the module activates */
-const NPC_COUNT = 100;
+const BASE_NPC_COUNT = 100;
+const BETA_TEST_PARTY_DATE = '2005-09-21';
+const BETA_TEST_PARTY_NPC_MULTIPLIER = 3;
+const BETA_TEST_PARTY_NPC_COUNT = BASE_NPC_COUNT * BETA_TEST_PARTY_NPC_MULTIPLIER;
+const DEV_NPC_NAMES = ['Rsnail', 'Billybob', 'Gizmo', 'Screenhog'] as const;
+const DEV_NPC_NAME_SET = new Set<string>(DEV_NPC_NAMES);
+const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> = {
+  Rsnail: 'friendly',
+  Billybob: 'curious',
+  Gizmo: 'shy',
+  Screenhog: 'grumpy',
+};
 
 /** Exact timeline snapshots that enable the NPC module */
-const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13']);
+const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE]);
 
 const SNOW_FORTS_ROOM_ID = 801;
 const ICE_RINK_ROOM_ID = 802;
@@ -84,6 +95,15 @@ const SEPTEMBER_13_ROOM_POOL: number[] = [
   SNOW_FORTS_ROOM_ID,
   121, // Dance Lounge — Astro Barrier is here now
   121, // extra weight, new minigame hotspot
+];
+
+const SEPTEMBER_21_ROOM_POOL: number[] = [
+  ...SEPTEMBER_13_ROOM_POOL,
+  100,
+  100,
+  100,
+  130,
+  120,
 ];
 
 /**
@@ -182,6 +202,10 @@ function pointNearPuck(puck: [number, number]): [number, number] {
 }
 
 function getRoomPool(currentDate: string): number[] {
+  if (currentDate === BETA_TEST_PARTY_DATE) {
+    return SEPTEMBER_21_ROOM_POOL;
+  }
+
   if (currentDate === '2005-09-13') {
     return SEPTEMBER_13_ROOM_POOL;
   }
@@ -191,6 +215,32 @@ function getRoomPool(currentDate: string): number[] {
   }
 
   return BASE_ROOM_POOL;
+}
+
+function getNpcCount(currentDate: string): number {
+  return currentDate === BETA_TEST_PARTY_DATE
+    ? BETA_TEST_PARTY_NPC_COUNT
+    : BASE_NPC_COUNT;
+}
+
+function buildUniqueNamePool(count: number): string[] {
+  const names: string[] = [];
+  let cycle = 0;
+
+  while (names.length < count) {
+    const batch = shuffle(NPC_NAME_POOL);
+    for (const baseName of batch) {
+      const candidate = cycle === 0 ? baseName : `${baseName}${cycle + 1}`;
+      if (DEV_NPC_NAME_SET.has(candidate)) continue;
+      names.push(candidate);
+      if (names.length === count) {
+        break;
+      }
+    }
+    cycle++;
+  }
+
+  return names;
 }
 
 /** Check whether the current timeline date passes a TimelineGate */
@@ -292,23 +342,39 @@ export class NpcManager {
 
     NpcPenguin.resetIdCounter();
     const currentDate = this.data.getDate();
+    const npcCount = getNpcCount(currentDate);
     const roomPool = getRoomPool(currentDate);
     const betaHasAllAccess = isLower(currentDate, '2005-10-24');
+    const hasBetaTestParty = currentDate === BETA_TEST_PARTY_DATE;
 
     // Sample names without replacement
-    const namePool = [...NPC_NAME_POOL];
     const traits: PersonalityTrait[] = ['friendly', 'shy', 'grumpy', 'excitable', 'curious'];
+    const genericNpcCount = hasBetaTestParty ? npcCount - DEV_NPC_NAMES.length : npcCount;
+    const namePool = buildUniqueNamePool(genericNpcCount);
 
-    for (let i = 0; i < NPC_COUNT; i++) {
+    for (let i = 0; i < genericNpcCount; i++) {
       const nameIdx = randInt(0, namePool.length - 1);
       const name = namePool.splice(nameIdx, 1)[0];
       const trait = randFrom(traits);
       const isMember = betaHasAllAccess || Math.random() < 0.7;
-      const npc = new NpcPenguin(name, trait, isMember);
+      const npc = new NpcPenguin(name, trait, isMember, { currentDate });
       this.npcs.push(npc);
 
       const roomId = randFrom(roomPool);
       this.spawnNpc(npc, roomId);
+    }
+
+    if (hasBetaTestParty) {
+      for (const name of DEV_NPC_NAMES) {
+        const npc = new NpcPenguin(name, DEV_NPC_TRAITS[name], true, {
+          currentDate,
+          isDev: true,
+        });
+        this.npcs.push(npc);
+
+        const roomId = randFrom(roomPool);
+        this.spawnNpc(npc, roomId);
+      }
     }
   }
 
@@ -574,7 +640,12 @@ export class NpcManager {
 
       if (Math.random() >= exchange.chance) continue;
 
-      const npcB = randFrom(otherNpcs);
+      const eligibleOthers = exchange.condition
+        ? otherNpcs.filter(other => exchange.condition?.(npc, other, room))
+        : otherNpcs;
+      if (eligibleOthers.length === 0) continue;
+
+      const npcB = randFrom(eligibleOthers);
       this.exchangeCooldowns.set(cooldownKey, now);
 
       // Accumulate timing so B always speaks AFTER A finishes

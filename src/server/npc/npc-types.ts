@@ -78,6 +78,7 @@ export type NpcExchange = {
   gate?: TimelineGate;
   cooldownMs: number;
   chance: number;
+  condition?: (npcA: NpcPenguin, npcB: NpcPenguin, room: any) => boolean;
   steps: Array<{ who: 'a' | 'b'; step: DialogueStep }>;
 };
 

@@ -23,11 +23,18 @@ function sampleMancalaSkill(): MancalaSkill {
 /** Counter for assigning unique negative IDs to each NPC */
 let npcIdCounter = -1;
 
+type NpcCreationOptions = {
+  currentDate?: string;
+  forcePartyHat?: boolean;
+  isDev?: boolean;
+};
+
 export class NpcPenguin {
   readonly id: number;
   readonly name: string;
   readonly personalityTrait: PersonalityTrait;
   readonly mancalaSkill: MancalaSkill;
+  readonly isDev: boolean;
 
   // RoomOccupant-compatible fields
   readonly inventory: ClothingOutfit & { color: number };
@@ -41,15 +48,19 @@ export class NpcPenguin {
   /** Track recently chosen dialogue sequences to prevent repeating entire topics */
   recentTopics: any[] = [];
 
-  constructor(name: string, trait: PersonalityTrait, isMember: boolean) {
+  constructor(name: string, trait: PersonalityTrait, isMember: boolean, options: NpcCreationOptions = {}) {
     this.id = npcIdCounter--;
     this.name = name;
     this.personalityTrait = trait;
     this.mancalaSkill = sampleMancalaSkill();
+    this.isDev = options.isDev ?? false;
 
     this.membership = { isMember };
 
-    const outfit = sampleClothing(isMember);
+    const outfit = sampleClothing(isMember, {
+      currentDate: options.currentDate,
+      forcePartyHat: options.forcePartyHat,
+    });
     this.inventory = {
       color:      sampleColor(),
       head:       outfit.head,
