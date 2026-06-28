@@ -61,27 +61,38 @@ const RINK_PUCK_TOUCH_RADIUS = 55;
 
 /** 
  * All room IDs that existed and were accessible on 2005-08-22.
- * Town (100) is duplicated to double its spawn weight.
+ * Some roons are duplicated as they would be more popular!
  */
 const BASE_ROOM_POOL: number[] = [
   100, // Town
-  100, // Town (double weight)
+  100, // Town
+  100, // Town
+  100, // Town (4x weight, most popular room)
   110, // Coffee Shop
+  110, // Coffee Shop
+  110, // Coffee Shop (3x weight, hotspot by nature)
   111, // Book Room
+  111, // Book Room (2x weight, mancala activity)
   120, // Dance Club
-  121, // Dance Lounge
+  120, // Dance Club
+  120, // Dance Club (3x weight, hotspot by nature)
+  121, // Dance Lounge (1x weight, nothing to do here yet)
   130, // Gift Shop
-  200, // Ski Village
+  130, // Gift Shop
+  130, // Gift Shop (3x weight, hotspot by nature)
+  200, // Ski Village (1x weight, nothing to do here yet)
   800, // Dock
+  800, // Dock (2x weight, biscuit activity)
   802, // Ice Rink
-  320, // Dojo
-  221, // Lodge Attic
+  802, // Ice Rink (2x weight, hockey activity)
+  320, // Dojo (1x weight, secret room)
 ];
 
 const SEPTEMBER_12_ROOM_POOL: number[] = [
   ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID,
-  SNOW_FORTS_ROOM_ID, // New room hotspot once it opens
+  SNOW_FORTS_ROOM_ID, // Snow Forts
+  SNOW_FORTS_ROOM_ID, // Snow Forts
+  SNOW_FORTS_ROOM_ID, // Snow Forts (3x weight, fight activity + new location hotspot)
 ];
 
 /**
@@ -91,21 +102,20 @@ const SEPTEMBER_12_ROOM_POOL: number[] = [
  */
 const SEPTEMBER_13_ROOM_POOL: number[] = [
   ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID,
-  SNOW_FORTS_ROOM_ID,
-  121, // Dance Lounge — Astro Barrier is here now
-  121, // extra weight, new minigame hotspot
+  SNOW_FORTS_ROOM_ID, // Snow Forts
+  SNOW_FORTS_ROOM_ID, // Snow Forts (2x weight, fight activity)
+  121, // Dance Lounge
+  121, // Dance Lounge (1x -> 3x weight, astro-barrier activity + new location hotspot)
 ];
 
 const SEPTEMBER_21_ROOM_POOL: number[] = [
   ...BASE_ROOM_POOL,
-  SNOW_FORTS_ROOM_ID,
-  121, // Dance Lounge — Astro Barrier is here now
-  100,
-  100,
-  100,
-  130,
-  120,
+  SNOW_FORTS_ROOM_ID, // Snow Forts
+  SNOW_FORTS_ROOM_ID, // Snow Forts (2x weight, fight activity)
+  121, // Dance Lounge (2x weight, astro-barrier activity)
+  100, // Town (4x -> 5x weight, beta party hotspot)
+  130, // Gift Shop (3x -> 4x weight, beta party hotspot)
+  120, // Dance Club (3x -> 4x weight, beta party hotspot)
 ];
 
 /**
