@@ -34,8 +34,12 @@ type TimelineGatedValue<T> = {
 };
 
 export const BETA_TEST_PARTY_DATE = '2005-09-21';
+export const POST_BETA_TEST_PARTY_DATE = '2005-09-22';
 export const PARTY_HAT_ITEM_ID = 413;
-const PARTY_HAT_CHANCE = 0.9;
+const PARTY_HAT_CHANCE_BY_DATE: Record<string, number> = {
+  [BETA_TEST_PARTY_DATE]: 0.9,
+  [POST_BETA_TEST_PARTY_DATE]: 0.5,
+};
 const DEFAULT_DATE = '2005-08-22';
 
 /**
@@ -160,7 +164,8 @@ export function sampleClothing(isMember: boolean, options: SampleClothingOptions
     result[slot] = sampleWeighted(pool);
   }
 
-  if (currentDate === BETA_TEST_PARTY_DATE && (options.forcePartyHat || Math.random() < PARTY_HAT_CHANCE)) {
+  const partyHatChance = PARTY_HAT_CHANCE_BY_DATE[currentDate];
+  if (partyHatChance !== undefined && (options.forcePartyHat || Math.random() < partyHatChance)) {
     result.head = PARTY_HAT_ITEM_ID;
   }
 

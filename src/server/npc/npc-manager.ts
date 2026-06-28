@@ -36,6 +36,8 @@ import {
 /** Number of NPC penguins spawned when the module activates */
 const BASE_NPC_COUNT = 100;
 const BETA_TEST_PARTY_DATE = '2005-09-21';
+const BETA_TEST_PARTY_END_DATE = '2005-09-22';
+const BETA_TEST_PARTY_GATE: TimelineGate = { after: BETA_TEST_PARTY_DATE, before: BETA_TEST_PARTY_END_DATE };
 const BETA_TEST_PARTY_NPC_MULTIPLIER = 3;
 const BETA_TEST_PARTY_NPC_COUNT = BASE_NPC_COUNT * BETA_TEST_PARTY_NPC_MULTIPLIER;
 const DEV_NPC_NAMES = ['Rsnail', 'Billybob', 'Gizmo', 'Screenhog'] as const;
@@ -48,7 +50,7 @@ const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> =
 };
 
 /** Exact timeline snapshots that enable the NPC module */
-const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE]);
+const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE, '2005-09-22']);
 
 const SNOW_FORTS_ROOM_ID = 801;
 const ICE_RINK_ROOM_ID = 802;
@@ -91,10 +93,10 @@ const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
   { roomId: 121, weight: 2, gate: { after: '2005-09-13' } },
 
   // 2005-09-21: Beta Test Party concentrates more traffic in the social hubs.
-  { roomId: 121, weight: -1, gate: { after: BETA_TEST_PARTY_DATE } },
-  { roomId: 100, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
-  { roomId: 130, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
-  { roomId: 120, weight: 1, gate: { after: BETA_TEST_PARTY_DATE } },
+  { roomId: 121, weight: -1, gate: BETA_TEST_PARTY_GATE },
+  { roomId: 100, weight: 1, gate: BETA_TEST_PARTY_GATE },
+  { roomId: 130, weight: 1, gate: BETA_TEST_PARTY_GATE },
+  { roomId: 120, weight: 1, gate: BETA_TEST_PARTY_GATE },
 ];
 
 /**

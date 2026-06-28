@@ -2377,16 +2377,24 @@ const CURIOUS: PersonalityDialogue = {
 };
 
 const BETA_TEST_PARTY_GATE = { after: '2005-09-21', before: '2005-09-22' } as const;
+const POST_BETA_TEST_PARTY_GATE = { after: '2005-09-22', before: '2005-09-23' } as const;
 
 FRIENDLY.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta test party day!! there are penguins everywhere :)' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone has a party hat on and it looks so cute' } }] },
+);
+FRIENDLY.onIdle.any?.push(
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is over but i still like seeing the hats around :)' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'im keeping this party hat forever' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'kinda feel bad for penguins who missed the party hat..' } }] },
 );
 FRIENDLY.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'walk to one of the hat boxes in town!! they have the party hats :)' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant get the party hat anymore, sorry. the party is over' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'sorry, you missed it :( i got mine during the party though' } }] },
   ],
 });
 FRIENDLY.npcExchanges.push({
@@ -2410,6 +2418,8 @@ SHY.onPlayerChat.unshift({
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'um.. try walking to one of the hat boxes in town' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'oh.. i dont think you can get one now.. the party is over' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'sorry.. i think you missed the hat.. i barely got mine yesterday' } }] },
   ],
 });
 SHY.npcExchanges.push({
@@ -2433,6 +2443,8 @@ GRUMPY.onPlayerChat.unshift({
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town. one of the hat boxes. hard to miss.' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant. party is over. you missed it.' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'missed the party, missed the hat. thats how it works.' } }] },
   ],
 });
 GRUMPY.npcExchanges.push({
@@ -2456,6 +2468,8 @@ EXCITABLE.onPlayerChat.unshift({
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO TOWN!! THE HAT BOXES HAVE THE PARTY HATS!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 350, action: { type: 'chat', message: 'NOOO THE PARTY IS OVER!!! YOU CANT GET IT NOW!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.45, steps: [{ delayMs: 350, action: { type: 'chat', message: 'I GOT MINE YESTERDAY!!! IM NEVER TAKING IT OFF!!!' } }] },
   ],
 });
 EXCITABLE.npcExchanges.push({
@@ -2479,6 +2493,8 @@ CURIOUS.onPlayerChat.unshift({
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'pretty sure you just walk to one of the hat boxes in town and pick one up' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant get it now. the hat boxes were only for the party' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you missed it. the hat is kinda the only proof you were there' } }] },
   ],
 });
 CURIOUS.npcExchanges.push({
@@ -2510,7 +2526,7 @@ FRIENDLY.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'welcome to the beta test party!! grab a hat from the boxes :)' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 900, action: { type: 'chat', message: 'hey! glad you made it to the party :)' } }] },
 );
-FRIENDLY.onPlayerChat.unshift(
+FRIENDLY.onPlayerChat.push(
   {
     keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
     cooldownMs: 20_000,
@@ -2518,6 +2534,8 @@ FRIENDLY.onPlayerChat.unshift(
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'yeah!! the whole island feels packed today :)' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town is suuuper busy because of the party hats lol' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'beta test party day is way more lively than usual!!' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is over now.. but you still see party hats everywhere' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'im kinda glad i made it in time for the party hat' } }] },
     ],
   },
   {
@@ -2545,6 +2563,11 @@ SHY.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'hi.. im gizmo. thanks for testing with us today' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'if something breaks.. um.. please tell one of the devs' } }] },
 );
+SHY.onIdle.any?.push(
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'it feels quieter today.. i guess the party is over..' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'im glad i got the party hat yesterday..' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.22, steps: [{ delayMs: 0, action: { type: 'chat', message: 'if you missed the party hat.. i think you missed it for good..' } }] },
+);
 SHY.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is way too crowded for me today..' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i had to squeeze between like eight penguins to reach a hat box..' } }] },
@@ -2554,13 +2577,15 @@ SHY.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1300, action: { type: 'chat', message: 'oh.. hi. if you want a party hat, the boxes are in town' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 1500, action: { type: 'chat', message: 'welcome.. sorry if its a little chaotic in here' } }] },
 );
-SHY.onPlayerChat.unshift(
+SHY.onPlayerChat.push(
   {
     keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
     cooldownMs: 22_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah.. its a lot more crowded than usual' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'i think the party hats are making everyone gather in town..' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'party was yesterday.. its calmer now' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.3, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i keep seeing party hats still.. some penguins look really proud of them' } }] },
     ],
   },
   {
@@ -2588,6 +2613,11 @@ GRUMPY.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'yes im screenhog. no i will not fix your typo personally.' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta test party is live. try not to break everything at once.' } }] },
 );
+GRUMPY.onIdle.any?.push(
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is over. finally.' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'half the island still wearing that hat like its an achievement.' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.2, steps: [{ delayMs: 0, action: { type: 'chat', message: 'if you missed the hat, thats on you.' } }] },
+);
 GRUMPY.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is a traffic jam with beaks.' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the hat boxes are in town. that is why nobody can move.' } }] },
@@ -2597,13 +2627,15 @@ GRUMPY.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'welcome to the mob scene. hat boxes are in town.' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'congrats, you joined on the busiest day possible.' } }] },
 );
-GRUMPY.onPlayerChat.unshift(
+GRUMPY.onPlayerChat.push(
   {
     keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
     cooldownMs: 20_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'yeah. too many penguins, not enough island.' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'party day means town is basically impassable.' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'party was yesterday. its done.' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the only thing left is people bragging about the hat.' } }] },
     ],
   },
   {
@@ -2629,6 +2661,11 @@ EXCITABLE.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE BETA TEST PARTY MAKES THE WHOLE ISLAND FEEL NEW AGAIN' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'I KEEP SEEING PARTY HATS IN EVERY SINGLE ROOM AHHH' } }] },
 );
+EXCITABLE.onIdle.any?.push(
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE PARTY IS OVER BUT THE HATS ARE STILL EVERYWHERE!!!' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.5, steps: [{ delayMs: 0, action: { type: 'chat', message: 'I CANT BELIEVE I GOT THE EXCLUSIVE PARTY HAT!!!' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'IF YOU MISSED IT... THATS SO SAD... IT WAS AWESOME!!!' } }] },
+);
 EXCITABLE.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'TOWN IS ABSOLUTELY POPPING OFF TODAY!!!' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'HAT BOXES IN TOWN!!! EVERYONE GO GET ONE!!!' } }] },
@@ -2637,13 +2674,15 @@ EXCITABLE.onIdle[100]?.push(
 EXCITABLE.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 500, action: { type: 'chat', message: 'WELCOME TO THE PARTY!!! GO GRAB A HAT IN TOWN!!!' } }] },
 );
-EXCITABLE.onPlayerChat.unshift({
+EXCITABLE.onPlayerChat.push({
   keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
   cooldownMs: 18_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES!!! THIS PARTY IS MASSIVE!!!' } }] },
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 400, action: { type: 'chat', message: 'I KNOW RIGHT?? THE WHOLE ISLAND IS FULL!!!' } }] },
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'EVERY ROOM FEELS ALIVE TODAY!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 400, action: { type: 'chat', message: 'PARTY WAS YESTERDAY!!! YOU SHOULD HAVE BEEN THERE!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.5, steps: [{ delayMs: 400, action: { type: 'chat', message: 'IM STILL WEARING MY PARTY HAT!!!' } }] },
   ],
 });
 
@@ -2654,6 +2693,11 @@ CURIOUS.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'im billybob. im mostly watching how everyone explores the island today' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'the beta test party is a good way to see where penguins naturally gather' } }] },
 );
+CURIOUS.onIdle.any?.push(
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party was yesterday, but the hats are still sticking around' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder how long it takes before party hats become really rare' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.2, steps: [{ delayMs: 0, action: { type: 'chat', message: 'missing the party hat seems like instant regret' } }] },
+);
 CURIOUS.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town seems to be the center of the whole party today' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder how many hats came out of the town boxes already' } }] },
@@ -2663,13 +2707,15 @@ CURIOUS.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'hey! if you are here for the party hat, the boxes are in town' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 1000, action: { type: 'chat', message: 'welcome! let us know what you think of everything' } }] },
 );
-CURIOUS.onPlayerChat.unshift(
+CURIOUS.onPlayerChat.push(
   {
     keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
     cooldownMs: 20_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'yeah, it seems like every room got busier all at once' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the party is a good excuse to study how people move around the island' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is done now. i guess the island is back to normal' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the interesting part is how many penguins are still wearing the hat' } }] },
     ],
   },
   {
