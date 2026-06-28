@@ -98,7 +98,9 @@ const SEPTEMBER_13_ROOM_POOL: number[] = [
 ];
 
 const SEPTEMBER_21_ROOM_POOL: number[] = [
-  ...SEPTEMBER_13_ROOM_POOL,
+  ...BASE_ROOM_POOL,
+  SNOW_FORTS_ROOM_ID,
+  121, // Dance Lounge — Astro Barrier is here now
   100,
   100,
   100,
