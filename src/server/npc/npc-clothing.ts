@@ -75,27 +75,18 @@ export const CLOTHING_POOLS: Record<ClothingSlot, WeightedClothingItem[]> = {
 };
 
 /** Color IDs available in 2005-08-22 (items 1–12 are all the penguin colors) */
+// TODO: Need a way to timeline gate colors!!!
 export const COLOR_POOL: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /**
  * Set of item IDs that are considered "rare" at this date:
  * present in the game client but not available in the current catalogue.
  * When a player wears one of these, NPCs may comment on it.
+ * NOTE: Party hat will have its own unique behaviour.
+ * TODO: Need a way to timeline gate rare items!!!
  */
 export const RARE_ITEM_IDS = new Set<number>([
-  // Off-sale items from clientFiles not in clothingCatalog.newItems for 2005-08-22
-  104, 106, 107, 108, 109, 110,
-  171, 172, 173, 174, 175, 176, 177, 181,
-  216, 218, 222, 233, 234, 235, 237, 238, 240, 244, 252, 253,
-  261, 262, 263, 301,
-  351, 352, 363, 366,
-  402, 406, 407, 410, 412, 413, 414, 417, 418, 419, 420, 421, 422, 423, 424, 425,
-  453, 456, 484,
-  500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515,
-  516, 517, 518, 519, 520, 521, 522, 523, 524,
-  550, 551,
-  // Viking Helmet is in-catalogue but secret — NOT treated as rare for NPC comments
-  // (it's so secret NPCs wouldn't dare mention it)
+  452, 10452, // Viking Helmet (secret item)
 ]);
 
 /** Returns true if the item ID is considered rare / off-sale at 2005-08-22 */
