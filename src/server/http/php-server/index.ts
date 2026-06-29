@@ -97,7 +97,13 @@ const POST_LISTENERS: Record<string, PostCallback> = {
         if (sessionInfo.username.length < 1) {
           return '';
         }
-        await db.create(getDefaultPenguin(sessionInfo.username, sessionInfo.color, settings.settings.always_member, settings.getVirtualDate(0).getTime()));
+        await db.create(getDefaultPenguin(
+          sessionInfo.username,
+          sessionInfo.color,
+          settings.settings.always_member,
+          settings.getVirtualDate(0).getTime(),
+          settings.settings.version,
+        ));
         res += 'success=1';
         break;
     }
@@ -110,7 +116,13 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       return 'e=700';
     }
 
-    await db.create(getDefaultPenguin(name, Number(body.Colour), settings.settings.always_member, settings.getVirtualDate(0).getTime()));
+    await db.create(getDefaultPenguin(
+      name,
+      Number(body.Colour),
+      settings.settings.always_member,
+      settings.getVirtualDate(0).getTime(),
+      settings.settings.version,
+    ));
 
     return 'e=0';
   },
@@ -144,7 +156,13 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     }
 
     if (penguin === null) {
-      const json = getDefaultPenguin(Username, 1 /* blue as default */, settings.settings.always_member, settings.getVirtualDate(0).getTime()); 
+      const json = getDefaultPenguin(
+        Username,
+        1 /* blue as default */,
+        settings.settings.always_member,
+        settings.getVirtualDate(0).getTime(),
+        settings.settings.version,
+      ); 
       penguin = [await db.create(json), json];
     }
 

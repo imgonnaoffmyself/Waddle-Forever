@@ -1,10 +1,17 @@
 import { PenguinMessenger } from "../../socket-server/messenger";
 import { ClientSocket } from "@server/socket-server/socket-server";
 import { getDefaultIgloo, PenguinJson } from "@server/database/database";
+import { isLower } from "@server/routes/versions";
 import { logdebug } from "@server/logger";
 import { OfflinePenguin, WorldPenguin } from "@server/socket-server/world/world-penguin";
 import serverList, { getServerPopulation } from "@server/servers";
 import { LoginContext } from "@server/socket-server/xml-handler";
+
+const STARTING_COINS_CHANGE_DATE = '2008-07-15';
+
+function getStartingCoins(version: string): number {
+  return isLower(version, STARTING_COINS_CHANGE_DATE) ? 100 : 500;
+}
 
 function capitalizeName(name: string): string {
   return name.split(' ').map((name => {
@@ -12,7 +19,7 @@ function capitalizeName(name: string): string {
   })).join(' ');
 }
 
-export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number): PenguinJson {
+export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version: string): PenguinJson {
   return {
     name: capitalizeName(name),
     mascot: 0,
@@ -31,7 +38,7 @@ export function getDefaultPenguin(name: string, color: number, member: boolean, 
     pin: 0,
     inventory: [color],
 
-    coins: 500,
+    coins: getStartingCoins(version),
     registration_date: Date.now(),
 
     minutes_played: 0,
@@ -128,7 +135,13 @@ export const login: LoginHandler = async (ctx, message: string) => {
           return
         }
 
-        const json = getDefaultPenguin(nickname, 1 /* blue */, settings.settings.always_member, settings.getVirtualDate(0).getTime());
+        const json = getDefaultPenguin(
+          nickname,
+          1 /* blue */,
+          settings.settings.always_member,
+          settings.getVirtualDate(0).getTime(),
+          settings.settings.version,
+        );
         await db.create(json);
       }
     }

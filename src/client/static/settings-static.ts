@@ -153,7 +153,11 @@ window.addEventListener('get-settings', (e: any) => {
       continue;
     }
     const inputElement = document.getElementById(setting.elementId)! as HTMLInputElement;
-    inputElement.checked = settings[setting.key];
+    if (inputElement.type === 'checkbox') {
+      inputElement.checked = settings[setting.key];
+    } else {
+      inputElement.value = String(settings[setting.key]);
+    }
   }
 });
 

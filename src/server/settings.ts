@@ -1,10 +1,16 @@
 import fs from 'fs';
 import { SETTINGS_PATH } from '../common/paths';
-import { isVersionValid, processVersion, Version } from './routes/versions';
+import { isLower, isVersionValid, processVersion, Version } from './routes/versions';
 import { HTTP_PORT } from '../common/constants';
 import { LOGIN_DELTA, WORLD_DELTA } from './servers';
 import { ModManager } from './mods';
 import { EventListener } from '@common/utils';
+
+const COIN_MULTIPLIER_CHANGE_DATE = '2005-11-16';
+
+function defaultCoinMultiplier(version: Version): number {
+  return isLower(version, COIN_MULTIPLIER_CHANGE_DATE) ? 0.5 : 1;
+}
 
 export type BooleanSettingKey = 
   'fps30' | 
@@ -61,6 +67,12 @@ export class SettingsManager {
     }
 
     this.mods = new ModManager();
+    const version = this.readVersion(settingsJson);
+    const storedMultiplier = settingsJson['coin_multiplier'];
+    const coinMultiplier =
+      typeof storedMultiplier === 'number' && storedMultiplier !== 2
+        ? storedMultiplier
+        : defaultCoinMultiplier(version);
 
     this.settings = {
       fps30: this.readBoolean(settingsJson, 'fps30', false),
@@ -70,14 +82,14 @@ export class SettingsManager {
       remove_idle: this.readBoolean(settingsJson, 'remove_idle', false),
       jpa_level_selector: this.readBoolean(settingsJson, 'jpa_level_selector', false),
       swap_dance_arrow: this.readBoolean(settingsJson, 'swap_dance_arrow', false),
-      version: this.readVersion(settingsJson),
+      version,
       always_member: this.readBoolean(settingsJson, 'always_member', true),
       minified_website: this.readBoolean(settingsJson, 'minified_website', false),
       no_rainbow_quest_wait: this.readBoolean(settingsJson, 'no_rainbow_quest_wait', false),
       no_create_via_login: this.readBoolean(settingsJson, 'no_create_via_login', false),
       answered_packages: this.readString(settingsJson, 'answered_packages'),
       ignored_version: this.readString(settingsJson, 'ignored_version'),
-      coin_multiplier: this.readNumber(settingsJson, 'coin_multiplier', 1),
+      coin_multiplier: coinMultiplier,
       medieval_sound_fix: this.readBoolean(settingsJson, 'medieval_sound_fix', true),
       inventory_accuracy: this.readBoolean(settingsJson, 'inventory_accuracy', true),
       faq_warning: this.readBoolean(settingsJson, 'faq_warning', false)
@@ -126,7 +138,19 @@ export class SettingsManager {
   }
 
   updateSettings(partial: PartialSettings): void {
-    this.settings = { ...this.settings, ...partial};
+    const previousVersion = this.settings.version;
+    const previousMultiplier = this.settings.coin_multiplier;
+    const next = { ...this.settings, ...partial};
+
+    if (partial.version !== undefined && partial.coin_multiplier === undefined) {
+      const previousDefault = defaultCoinMultiplier(previousVersion);
+      const nextDefault = defaultCoinMultiplier(next.version);
+      if (previousMultiplier === previousDefault || previousMultiplier === 2) {
+        next.coin_multiplier = nextDefault;
+      }
+    }
+
+    this.settings = next;
     fs.writeFileSync(SETTINGS_PATH, JSON.stringify(this.settings));
 
     this.updateListener.fire();
