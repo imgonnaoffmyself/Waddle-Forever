@@ -24,6 +24,9 @@ export type PenguinEquipped = Record<EquipProp, number>;
 
 export type RoomState = { x: number; y: number; frame: number; };
 
+export const BOT_ID_BASE = 9_000_000;
+export const isBot = (p: WorldPenguin | number): boolean => (typeof p === 'number' ? p : p.id) >= BOT_ID_BASE;
+
 function getVirtualDate(date: [number, number, number], offset: number) {
   // simulating PST time for the current day
   const now = new Date();
@@ -1036,6 +1039,7 @@ export class WorldPenguin implements UserPenguin {
   private _medieval2012: Medieval2012Status;
   private _preference: UserPreference;
   private _avatar = new Avatar();
+  public deadInternet: boolean = false;
 
   constructor(
     id: number,

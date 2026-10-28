@@ -86,7 +86,20 @@ export const handleSendJoke: RoomHandler<[string]> = ({ room, msg, penguin }, jo
   msg.send(room.players, 'sj', penguin.id, joke);
 }
 
-export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, bot }, _penguinIdParam, message) => {
+export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, data, bot }, _penguinIdParam, message) => {
+  if (message.trim().toLowerCase() === "dead internet theory") {
+    penguin.deadInternet = !penguin.deadInternet;
+    if (penguin.deadInternet) {
+      const bots = room.players.filter(p => isBot(p));
+      bots.forEach(b => msg.send(penguin, 'rp', b.id));
+    } else {
+      const botStates = room.playerStates.filter(([p]) => isBot(p));
+      botStates.forEach(([b, s]) => {
+        msg.send(penguin, 'ap', getPenguinString(data, b, s));
+      });
+    }
+  }
+
   msg.send(room.players, 'sm', _penguinIdParam, message);
   if (!isBot(penguin)) {
     bot?.onPlayerChat(room, penguin, message);

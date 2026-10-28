@@ -23,10 +23,8 @@ import { PERSONALITY_DIALOGUE } from '@server/npc/npc-dialogue';
 import { pickFromPool, SNOW_FORTS_ROOM_ID } from '@server/npc/npc-manager';
 import { isRareItem } from '@server/npc/npc-clothing';
 import { isGreaterOrEqual } from '@server/routes/versions';
-
-export const BOT_ID_BASE = 9_000_000;
-
-export const isBot = (p: WorldPenguin | number): boolean => (typeof p === 'number' ? p : p.id) >= BOT_ID_BASE;
+import { BOT_ID_BASE, isBot } from './world-penguin';
+export { BOT_ID_BASE, isBot };
 
 
 // TODO -> Similar to item trackign system, a furniture and igloo type/music tracking system
@@ -137,7 +135,7 @@ export class BotManager {
    * If it's a bot's igloo, gives a chance for the bot to be home when the player arrives.
    */
   public prepareIglooVisit(room: WorldRoom, visitor: WorldPenguin): void {
-    if (isBot(visitor)) return;
+    if (isBot(visitor) || visitor.deadInternet) return;
     if (room.id < IGLOO_ROOM_BASE) return;
 
     const ownerId = room.id - IGLOO_ROOM_BASE;
@@ -172,7 +170,7 @@ export class BotManager {
    * If they entered a public room, bots can greet or compliment rare items.
    */
   public onPlayerEnterRoom(room: WorldRoom, visitor: WorldPenguin): void {
-    if (isBot(visitor)) return;
+    if (isBot(visitor) || visitor.deadInternet) return;
 
     if (room.id < IGLOO_ROOM_BASE) {
       this.onPlayerJoinPublicRoom(room, visitor);
@@ -236,7 +234,7 @@ export class BotManager {
   }
 
   public onPlayerLeaveRoom(room: WorldRoom, visitor: WorldPenguin): void {
-    if (isBot(visitor)) return;
+    if (isBot(visitor) || visitor.deadInternet) return;
 
     const botsInRoom = room.players
       .filter(p => isBot(p))
@@ -258,7 +256,7 @@ export class BotManager {
   }
 
   public onPlayerChat(room: WorldRoom, player: WorldPenguin, message: string): void {
-    if (isBot(player)) return;
+    if (isBot(player) || player.deadInternet) return;
     const currentDate = this._data.getDate();
     const lower = message.toLowerCase();
     const now = Date.now();
@@ -313,7 +311,7 @@ export class BotManager {
   }
 
   public onPlayerSnowball(room: WorldRoom, player: WorldPenguin, targetX: number, targetY: number): void {
-    if (isBot(player)) return;
+    if (isBot(player) || player.deadInternet) return;
     const currentDate = this._data.getDate();
     const now = Date.now();
     const isSnowForts = room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(currentDate, '2005-09-12');
@@ -367,7 +365,7 @@ export class BotManager {
   }
 
   public onPlayerEmote(room: WorldRoom, player: WorldPenguin, emoteId: number): void {
-    if (isBot(player)) return;
+    if (isBot(player) || player.deadInternet) return;
     const currentDate = this._data.getDate();
 
     const botsInRoom = room.players
@@ -608,7 +606,7 @@ export class BotManager {
     for (const waddle of room.getWaddleRooms()) {
       const seats = waddle.getSeats();
       const occupants = seats.filter((p): p is WorldPenguin => p !== null);
-      const waitingHuman = occupants.some(p => !isBot(p));
+      const waitingHuman = occupants.some(p => !isBot(p) && !p.deadInternet);
       const id = waddle.getId();
 
       if (!waitingHuman || waddle.isFull()) {
@@ -667,7 +665,7 @@ export class BotManager {
       }
       const seats = table.getSeats();
       const occupants = seats.filter((p): p is WorldPenguin => p !== null);
-      const human = occupants.some(p => !isBot(p));
+      const human = occupants.some(p => !isBot(p) && !p.deadInternet);
       const hasBot = occupants.some(p => isBot(p));
 
       if (!human || hasBot || occupants.length !== 1) {

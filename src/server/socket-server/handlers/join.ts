@@ -1,7 +1,7 @@
 import { PenguinRepository } from '@server/database/database';
 import { isGameRoom, Room } from '@server/game-logic/rooms';
 import { World } from '@server/socket-server/world/world';
-import { WorldPenguin } from '@server/socket-server/world/world-penguin';
+import { WorldPenguin, isBot } from '@server/socket-server/world/world-penguin';
 import { WorldRoom } from '@server/socket-server/world/world-room';
 import { GameData } from '@server/timelines/game-data';
 import { XtMessenger } from '../xt-messenger';
@@ -105,7 +105,10 @@ const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) =>
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });
   // Send jr to the joining player — includes ALL occupants (real + NPCs)
-  msg.send(penguin, 'jr', r.id, ...r.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
+  const occupants = penguin.deadInternet
+    ? r.playerStates.filter(([p]) => !isBot(p))
+    : r.playerStates;
+  msg.send(penguin, 'jr', r.id, ...occupants.map(([p, s]) => getPenguinString(data, p, s)));
   if (!data.isSpOnJr() || x !== 0 || y !== 0) {
     msg.send(r.players, 'ap', getPenguinString(data, penguin, { x, y, frame: 1 }));
   }

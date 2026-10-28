@@ -1,4 +1,5 @@
 import { World } from "@server/socket-server/world/world";
+import { isBot } from "@server/socket-server/world/world-penguin";
 import { Igloo, IglooFurniture, PenguinJson, PenguinRepository } from "@server/database/database";
 import { FURNITURE } from "@server/game-logic/furniture";
 import { getFlooringCost, getIglooCost } from "@server/game-logic/iglooItems";
@@ -223,7 +224,10 @@ export const handleGetOpenIgloos: PenguinHandler<[]> = (ctx) => {
   // on showHint, without modding. Seems to require an old shell
   // (and for the newer shells, what is the proper map SWF to use?)
   //TODO sendXtEmptyLast?
-  msg.send(penguin, 'gr', ...world.getOpenIglooPlayers().map(p => `${p.id}|${p.name}`));
+  const openIglooPlayers = penguin.deadInternet
+    ? world.getOpenIglooPlayers().filter(p => !isBot(p))
+    : world.getOpenIglooPlayers();
+  msg.send(penguin, 'gr', ...openIglooPlayers.map(p => `${p.id}|${p.name}`));
 }
 
 export const handleUpdateMusic: PenguinHandler<[number]> = (ctx, music) => {

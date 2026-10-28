@@ -672,7 +672,7 @@ const BEHAVIORS: Behavior[] = [
       return room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(bot.data.getDate(), '2005-09-12');
     },
     async start({ bot, room, rng }) {
-      const others = room.players.filter(p => p.id !== bot.penguin.id);
+      const others = room.players.filter(p => p.id !== bot.penguin.id && !p.deadInternet);
       if (others.length === 0) return;
       const target = choose(others);
       const targetState = room.getState(target);
