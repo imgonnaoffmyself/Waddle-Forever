@@ -49,10 +49,12 @@ const FURNITURE_SPOTS: Array<[number, number]> = [
   [260, 300], [500, 300]
 ];
 
-/** How long a human sits alone in a waddle before bots start joining, in ms */
-const WADDLE_JOIN_DELAY = 4000;
+/** How long a human sits before bots consider joining when alone in the room, in ms */
+const MULTIPLAYER_JOIN_DELAY_ALONE = 12000;
+/** How long a human sits before bots consider joining when other real players are in the room, in ms */
+const MULTIPLAYER_JOIN_DELAY_WITH_PLAYERS = 35000;
 /** Gap between two bots taking waddle seats, in ms */
-const WADDLE_SEAT_GAP = 2500;
+const WADDLE_SEAT_GAP = 5000;
 
 type BotSettings = {
   /** How many bots exist on the island at once */
@@ -102,6 +104,7 @@ export class BotManager {
   private _manualPopulation = false;
   private _waddleSeen = new Map<number, number>();
   private _waddleLastSeat = new Map<number, number>();
+  private _tableSeen = new Map<number, number>();
   private _pendingGeneration = false;
   private _chatCooldowns = new Map<string, number>();
   private _roomRecentKeywords = new Map<number, Set<string>>();
@@ -463,6 +466,9 @@ export class BotManager {
   /** Removes every bot and stops the loop. Call this when the world is reset. */
   public shutdown(): void {
     this.stop();
+    this._waddleSeen.clear();
+    this._waddleLastSeat.clear();
+    this._tableSeen.clear();
     [...this._bots.keys()].forEach(id => this.despawn(id));
   }
 
@@ -603,12 +609,17 @@ export class BotManager {
         continue;
       }
 
+      const otherHumansInRoom = room.players.filter(p => !isBot(p) && !occupants.includes(p));
+      const requiredDelay = otherHumansInRoom.length > 0
+        ? MULTIPLAYER_JOIN_DELAY_WITH_PLAYERS
+        : MULTIPLAYER_JOIN_DELAY_ALONE;
+
       const since = this._waddleSeen.get(id);
       if (since === undefined) {
         this._waddleSeen.set(id, now);
         continue;
       }
-      if (now - since < WADDLE_JOIN_DELAY) {
+      if (now - since < requiredDelay) {
         continue;
       }
       const last = this._waddleLastSeat.get(id) ?? 0;
@@ -616,7 +627,7 @@ export class BotManager {
         continue;
       }
 
-      const bot = this.getFreeBotIn(room) ?? this.spawnInto(room.id);
+      const bot = this.getFreeBotIn(room) ?? (otherHumansInRoom.length === 0 ? this.spawnInto(room.id) : undefined);
       if (bot === undefined) {
         continue;
       }
@@ -638,8 +649,12 @@ export class BotManager {
   }
 
   private tickTables(room: WorldRoom): void {
+    const now = Date.now();
+
     for (const table of room.getTables()) {
+      const id = table.getId();
       if (table.hasStarted() || table.hasEnded()) {
+        this._tableSeen.delete(id);
         continue;
       }
       const seats = table.getSeats();
@@ -648,17 +663,34 @@ export class BotManager {
       const hasBot = occupants.some(p => isBot(p));
 
       if (!human || hasBot || occupants.length !== 1) {
+        this._tableSeen.delete(id);
         continue;
       }
       // treasure hunt is co-op and needs mining logic bots don't have
       if (!(table instanceof FindFourTable) && !(table instanceof MancalaTable)) {
+        this._tableSeen.delete(id);
         continue;
       }
 
-      const bot = this.getFreeBotIn(room) ?? this.spawnInto(room.id);
+      const otherHumansInRoom = room.players.filter(p => !isBot(p) && !occupants.includes(p));
+      const requiredDelay = otherHumansInRoom.length > 0
+        ? MULTIPLAYER_JOIN_DELAY_WITH_PLAYERS
+        : MULTIPLAYER_JOIN_DELAY_ALONE;
+
+      const since = this._tableSeen.get(id);
+      if (since === undefined) {
+        this._tableSeen.set(id, now);
+        continue;
+      }
+      if (now - since < requiredDelay) {
+        continue;
+      }
+
+      const bot = this.getFreeBotIn(room) ?? (otherHumansInRoom.length === 0 ? this.spawnInto(room.id) : undefined);
       if (bot === undefined) {
         continue;
       }
+      this._tableSeen.delete(id);
       bot.sitAtTable(table.getId());
     }
   }
