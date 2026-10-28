@@ -13,6 +13,8 @@ import { getExploreItems } from "@server/game-logic/items-explore";
 import { getNintendoItems, IBITZ_ITEMS } from "@server/game-logic/items-transfer";
 import { getMissionItems } from "@server/game-logic/items-mission";
 import { NPC_NAME_POOL } from "@server/npc/npc-names";
+import { PersonalityTrait } from "@server/npc/npc-types";
+import { DEV_NPC_NAMES, DEV_NPC_TRAITS } from "@server/npc/npc-manager";
 
 // TODO -> Easter Egg names
 //         Game Day NPCs
@@ -231,15 +233,20 @@ function generateNinjaStats(
   }
 }
 
-function generateRandomPenguin(data: GameData, attrs: BotAttributes): PenguinJson {
-  const name = (Math.random() < 0.6 && NPC_NAME_POOL.length > 0)
+function generateRandomPenguin(
+  data: GameData,
+  attrs: BotAttributes,
+  forcedName?: string,
+  isDev?: boolean
+): PenguinJson {
+  const name = forcedName ?? ((Math.random() < 0.6 && NPC_NAME_POOL.length > 0)
     ? choose(NPC_NAME_POOL)
-    : `${choose(NAME_PARTS_A)}${choose(NAME_PARTS_B)}${randomInt(1, 999)}`;
+    : `${choose(NAME_PARTS_A)}${choose(NAME_PARTS_B)}${randomInt(1, 999)}`);
   // TODO -> more realistic distribution
   const age = randomInt(0, getDaysDelta(START_DATE, data.getDate()));
   const startDate = addDays(data.getDate(), -age);
   const starterColor = choose(data.getStarterColors());
-  const isMember = Math.random() <= MEMBER_CHANCE;
+  const isMember = isDev ? true : (Math.random() <= MEMBER_CHANCE);
   const base = getDefaultPenguin(
     name,
     1,
@@ -259,7 +266,15 @@ function generateRandomPenguin(data: GameData, attrs: BotAttributes): PenguinJso
     waterRank,
     attrs
   );
+
+  if (isDev && data.getDate() === '2005-09-21') {
+    inventory.push(413); // Beta Party Hat
+  }
+
   const outfit = generateRandomOutfit(data, inventory);
+  if (isDev && data.getDate() === '2005-09-21') {
+    outfit.head = 413;
+  }
 
   return {
     ...base,
@@ -273,8 +288,15 @@ function generateRandomPenguin(data: GameData, attrs: BotAttributes): PenguinJso
   };
 }
 
-export function generateRandomBot(data: GameData): [BotAttributes, PenguinJson] {
+export function generateRandomBot(
+  data: GameData,
+  forcedName?: string,
+  forcedTrait?: PersonalityTrait,
+  isDev?: boolean
+): [BotAttributes, PenguinJson] {
+  const trait = forcedTrait ?? (forcedName ? DEV_NPC_TRAITS[forcedName as any] : undefined) ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);
   const attrs: BotAttributes = {
+    personalityTrait: trait,
     danceFan: Math.random(),
     snowballFan: Math.random(),
     waveFan: Math.random(),
@@ -297,10 +319,19 @@ export function generateRandomBot(data: GameData): [BotAttributes, PenguinJson] 
     transferFan: Math.random(),
     agentFan: Math.random()
   };
-  return [attrs,
-    generateRandomPenguin(data, attrs)];
+  return [attrs, generateRandomPenguin(data, attrs, forcedName, isDev)];
 }
 
 export function generateBots(data: GameData, amount: number): Array<[BotAttributes, PenguinJson]> {
-  return new Array(amount).fill(null).map(() => generateRandomBot(data));
+  const bots: Array<[BotAttributes, PenguinJson]> = [];
+  if (data.getDate() === '2005-09-21') {
+    for (const name of DEV_NPC_NAMES) {
+      if (bots.length >= amount) break;
+      bots.push(generateRandomBot(data, name, DEV_NPC_TRAITS[name], true));
+    }
+  }
+  while (bots.length < amount) {
+    bots.push(generateRandomBot(data));
+  }
+  return bots;
 }

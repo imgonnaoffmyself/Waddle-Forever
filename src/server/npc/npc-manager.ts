@@ -40,9 +40,9 @@ const BETA_TEST_PARTY_END_DATE = '2005-09-22';
 const BETA_TEST_PARTY_GATE: TimelineGate = { after: BETA_TEST_PARTY_DATE, before: BETA_TEST_PARTY_END_DATE };
 const BETA_TEST_PARTY_NPC_MULTIPLIER = 3;
 const BETA_TEST_PARTY_NPC_COUNT = BASE_NPC_COUNT * BETA_TEST_PARTY_NPC_MULTIPLIER;
-const DEV_NPC_NAMES = ['Rsnail', 'Billybob', 'Gizmo', 'Screenhog'] as const;
-const DEV_NPC_NAME_SET = new Set<string>(DEV_NPC_NAMES);
-const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> = {
+export const DEV_NPC_NAMES = ['Rsnail', 'Billybob', 'Gizmo', 'Screenhog'] as const;
+export const DEV_NPC_NAME_SET = new Set<string>(DEV_NPC_NAMES);
+export const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> = {
   Rsnail: 'friendly',
   Billybob: 'curious',
   Gizmo: 'shy',
@@ -52,16 +52,16 @@ const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> =
 /** Exact timeline snapshots that enable the NPC module */
 const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE, '2005-09-22']);
 
-const SNOW_FORTS_ROOM_ID = 801;
-const ICE_RINK_ROOM_ID = 802;
-const NIGHT_CLUB_ROOM_ID = 120;
+export const SNOW_FORTS_ROOM_ID = 801;
+export const ICE_RINK_ROOM_ID = 802;
+export const NIGHT_CLUB_ROOM_ID = 120;
 const DANCE_FRAME = 26;
 const NIGHT_CLUB_POST_MOVE_DANCE_DELAY_MS = 2_500;
 const OLD_RINK_PUCK_CHANGE_DATE = '2006-04-01';
-const RINK_SCOREBOARD_DATE = '2006-08-11';
-const RINK_PUCK_TOUCH_RADIUS = 55;
+export const RINK_SCOREBOARD_DATE = '2006-08-11';
+export const RINK_PUCK_TOUCH_RADIUS = 55;
 
-type WeightedRoomEntry = {
+export type WeightedRoomEntry = {
   roomId: number;
   weight: number;
   gate?: TimelineGate;
@@ -72,7 +72,7 @@ type WeightedRoomEntry = {
  * per-date pools. Entries stack, so later timeline entries can add weight to
  * an existing room without redefining the whole pool.
  */
-const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
+export const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
   { roomId: 100, weight: 4 }, // Town
   { roomId: 110, weight: 3 }, // Coffee Shop
   { roomId: 111, weight: 2 }, // Book Room
@@ -104,7 +104,7 @@ const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
  * NPCs pick a random point within this area when entering a room.
  * Values are approximate — adjust if penguins appear clipped.
  */
-const SPAWN_ZONES: Record<number, [number, number, number, number]> = {
+export const SPAWN_ZONES: Record<number, [number, number, number, number]> = {
   100: [200, 300, 750, 480], // Town
   110: [150, 300, 600, 480], // Coffee Shop
   111: [150, 250, 600, 420], // Book Room
@@ -165,7 +165,7 @@ function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-function spawnPosForRoom(roomId: number): [number, number] {
+export function spawnPosForRoom(roomId: number): [number, number] {
   const zone = SPAWN_ZONES[roomId] ?? [300, 350, 600, 480];
   const [xMin, yMin, xMax, yMax] = zone;
   return [randInt(xMin, xMax), randInt(yMin, yMax)];
@@ -175,7 +175,7 @@ function randomRinkPuckTarget(): [number, number] {
   return [randInt(220, 620), randInt(150, 390)];
 }
 
-function hockeyPuckTarget(currentDate: string): [number, number] {
+export function hockeyPuckTarget(currentDate: string): [number, number] {
   if (isLower(currentDate, OLD_RINK_PUCK_CHANGE_DATE)) {
     return randomRinkPuckTarget();
   }
@@ -187,14 +187,14 @@ function hockeyPuckTarget(currentDate: string): [number, number] {
   ];
 }
 
-function pointNearPuck(puck: [number, number]): [number, number] {
+export function pointNearPuck(puck: [number, number]): [number, number] {
   return [
     puck[0] + randInt(-RINK_PUCK_TOUCH_RADIUS, RINK_PUCK_TOUCH_RADIUS),
     puck[1] + randInt(-RINK_PUCK_TOUCH_RADIUS, RINK_PUCK_TOUCH_RADIUS)
   ];
 }
 
-function getRoomPool(currentDate: string): number[] {
+export function getRoomPool(currentDate: string): number[] {
   const roomWeights = new Map<number, number>();
 
   for (const entry of ROOM_POOL_ENTRIES) {
@@ -239,7 +239,7 @@ function buildUniqueNamePool(count: number): string[] {
 }
 
 /** Check whether the current timeline date passes a TimelineGate */
-function gatePass(gate: TimelineGate | undefined, currentDate: string): boolean {
+export function gatePass(gate: TimelineGate | undefined, currentDate: string): boolean {
   if (gate === undefined) return true;
   if (gate.before !== undefined && !isLower(currentDate, gate.before)) return false;
   if (gate.after  !== undefined && !isGreaterOrEqual(currentDate, gate.after)) return false;
@@ -247,18 +247,18 @@ function gatePass(gate: TimelineGate | undefined, currentDate: string): boolean 
 }
 
 /** Pick one eligible entry from a DialoguePool; returns undefined if none qualify */
-function pickFromPool(pool: DialoguePool, currentDate: string, npc?: NpcPenguin, room?: WorldRoom): DialoguePoolEntry | undefined {
+export function pickFromPool(pool: DialoguePool, currentDate: string, npc?: any, room?: WorldRoom): DialoguePoolEntry | undefined {
   const eligible = pool.filter(entry => {
     if (!gatePass(entry.gate, currentDate)) return false;
     if (npc && entry.condition && !entry.condition(npc, room)) return false;
 
     // Repetition prevention: ensure this entry wasn't recently chosen as a topic
-    if (npc && npc.recentTopics.includes(entry)) {
+    if (npc && npc.recentTopics && npc.recentTopics.includes(entry)) {
       return false;
     }
 
     // Secondary repetition prevention: ensure this entry doesn't contain a chat string the NPC recently said
-    if (npc && npc.recentMessages.length > 0) {
+    if (npc && npc.recentMessages && npc.recentMessages.length > 0) {
       const chatSteps = entry.steps.filter(s => s.action.type === 'chat');
       for (const step of chatSteps) {
         if (step.action.type === 'chat' && npc.recentMessages.includes(step.action.message)) {
@@ -275,7 +275,7 @@ function pickFromPool(pool: DialoguePool, currentDate: string, npc?: NpcPenguin,
   
   const picked = randFrom(eligible);
   
-  if (npc) {
+  if (npc && npc.recentTopics) {
     npc.recentTopics.push(picked);
     if (npc.recentTopics.length > 10) {
       npc.recentTopics.shift();
@@ -467,7 +467,7 @@ export class NpcManager {
     const room = this.npcRooms.get(npc);
     const currentDate = this.data.getDate();
     if (room !== undefined && room.players.length > 0) {
-      if (room.id === SNOW_FORTS_ROOM_ID && currentDate === '2005-09-12') {
+      if (room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(currentDate, '2005-09-12')) {
         const roll = Math.random();
         const hasOtherNpcs = this.getNpcsInRoom(room).some(other => other !== npc);
 
@@ -840,7 +840,7 @@ export class NpcManager {
     if (!this.active) return;
     const currentDate = this.data.getDate();
     const now = Date.now();
-    const isSeptemberSnowForts = room.id === SNOW_FORTS_ROOM_ID && currentDate === '2005-09-12';
+    const isSeptemberSnowForts = room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(currentDate, '2005-09-12');
 
     let respondents = 0;
     const shuffledNpcs = shuffle(this.getNpcsInRoom(room));

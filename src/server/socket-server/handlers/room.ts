@@ -7,6 +7,7 @@ import { isLower } from "@server/routes/versions";
 import { WorldRoom } from "@server/socket-server/world/world-room";
 import { WaddleRoom } from "@server/socket-server/world/waddle-room";
 import { GameData } from "@server/timelines/game-data";
+import { isBot } from "@server/socket-server/world/bots";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg, data }, x, y) => {
   const state = room.getState(penguin);
@@ -61,11 +62,14 @@ export const handleSetAction: RoomHandler<[string]> = ({ room, msg, penguin }, a
   msg.send(room.players, 'sa', penguin.id, action);
 }
 
-export const handleSetSnowball: RoomHandler<[string, string]> = ({ room, msg, penguin }, x, y) => {
+export const handleSetSnowball: RoomHandler<[string, string]> = ({ room, msg, penguin, bot }, x, y) => {
   msg.send(room.players, 'sb', penguin.id, x, y);
+  if (!isBot(penguin)) {
+    bot?.onPlayerSnowball(room, penguin, Number(x), Number(y));
+  }
 }
 
-export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, data, world }, emote) => {
+export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, data, world, bot }, emote) => {
   if (data.hasBakery() && room === world.bakery.room) {
     if (Number(emote) === world.bakery.emote) {
       world.bakery.incrementCheer();
@@ -73,14 +77,20 @@ export const handleSendEmote: RoomHandler<[string]> = ({ room, msg, penguin, dat
   }
   
   msg.send(room.players, 'se', penguin.id, emote);
+  if (!isBot(penguin)) {
+    bot?.onPlayerEmote(room, penguin, Number(emote));
+  }
 }
 
 export const handleSendJoke: RoomHandler<[string]> = ({ room, msg, penguin }, joke) => {
   msg.send(room.players, 'sj', penguin.id, joke);
 }
 
-export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin }, _penguinIdParam, message) => {
+export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, bot }, _penguinIdParam, message) => {
   msg.send(room.players, 'sm', _penguinIdParam, message);
+  if (!isBot(penguin)) {
+    bot?.onPlayerChat(room, penguin, message);
+  }
 }
 
 export const handleSafeMessage: RoomHandler<[string]> = ({ room, msg, penguin }, message) => {

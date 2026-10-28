@@ -9,7 +9,7 @@ import { GameData } from '@server/timelines/game-data';
 import { World } from './world';
 import { WorldPenguin } from './world-penguin';
 import { WorldRoom } from './world-room';
-import { choose, clamp, randomInt } from '@common/utils';
+import { choose, clamp, randomInt, shuffleArray } from '@common/utils';
 import { Bot, BotAttributes, WriteFunction } from './bot';
 import { FindFourTable } from './find-four';
 import { MancalaTable } from './mancala';
@@ -18,6 +18,11 @@ import { joinWaddle } from '../handlers/room';
 import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
 import path from 'path';
 import { generateBots, generateRandomBot } from './bot-generation';
+import { DialogueStep, DialoguePool } from '@server/npc/npc-types';
+import { PERSONALITY_DIALOGUE } from '@server/npc/npc-dialogue';
+import { pickFromPool, SNOW_FORTS_ROOM_ID } from '@server/npc/npc-manager';
+import { isRareItem } from '@server/npc/npc-clothing';
+import { isGreaterOrEqual } from '@server/routes/versions';
 
 export const BOT_ID_BASE = 9_000_000;
 
@@ -67,7 +72,7 @@ type BotSettings = {
 
 const DEFAULT_BOT_SETTINGS: BotSettings = {
   population: 0,
-  followChance: 0.5,
+  followChance: 0,
   chatChance: 0.08,
   minDelay: 2500,
   maxDelay: 9000,
@@ -98,6 +103,8 @@ export class BotManager {
   private _waddleSeen = new Map<number, number>();
   private _waddleLastSeat = new Map<number, number>();
   private _pendingGeneration = false;
+  private _chatCooldowns = new Map<string, number>();
+  private _roomRecentKeywords = new Map<number, Set<string>>();
 
   constructor(
     private _world: World,
@@ -159,10 +166,15 @@ export class BotManager {
   /**
    * Called right after a human player enters a room.
    * If they entered a bot's igloo and the owner is present, trigger the unannounced arrival reaction.
+   * If they entered a public room, bots can greet or compliment rare items.
    */
   public onPlayerEnterRoom(room: WorldRoom, visitor: WorldPenguin): void {
     if (isBot(visitor)) return;
-    if (room.id < IGLOO_ROOM_BASE) return;
+
+    if (room.id < IGLOO_ROOM_BASE) {
+      this.onPlayerJoinPublicRoom(room, visitor);
+      return;
+    }
 
     const ownerId = room.id - IGLOO_ROOM_BASE;
     if (ownerId === visitor.id) return;
@@ -174,6 +186,211 @@ export class BotManager {
     if (currentRoom?.id !== room.id) return;
 
     bot.reactToIglooVisitor(visitor, room);
+  }
+
+  private onPlayerJoinPublicRoom(room: WorldRoom, visitor: WorldPenguin): void {
+    const botsInRoom = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (botsInRoom.length === 0) return;
+
+    const currentDate = this._data.getDate();
+    const equipped = [
+      visitor.inventory.head,
+      visitor.inventory.face,
+      visitor.inventory.neck,
+      visitor.inventory.body,
+      visitor.inventory.hand,
+      visitor.inventory.feet,
+      visitor.inventory.pin
+    ];
+    const hasRare = equipped.some(id => id > 0 && isRareItem(id, currentDate));
+
+    if (hasRare && Math.random() < 0.35) {
+      const bot = choose(botsInRoom);
+      const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+      const entry = pickFromPool(dialogue.onPlayerRareItem, currentDate, bot, room);
+      if (entry) {
+        bot.executeSteps(entry.steps, 1000);
+        return;
+      }
+    }
+
+    if (Math.random() < 0.25) {
+      const candidates = botsInRoom.filter(b => b.personalityTrait === 'friendly' || b.personalityTrait === 'excitable');
+      const bot = candidates.length > 0 ? choose(candidates) : choose(botsInRoom);
+      const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+      const roomPool = dialogue.onPlayerJoin[room.id];
+      const anyPool = dialogue.onPlayerJoin['any'];
+      const pool = (roomPool && roomPool.length > 0 && Math.random() < 0.6) ? roomPool : (anyPool ?? []);
+      const entry = pickFromPool(pool, currentDate, bot, room);
+      if (entry) {
+        bot.executeSteps(entry.steps, 1000);
+      }
+    }
+  }
+
+  public onPlayerLeaveRoom(room: WorldRoom, visitor: WorldPenguin): void {
+    if (isBot(visitor)) return;
+
+    const botsInRoom = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (botsInRoom.length === 0 || Math.random() > 0.25) return;
+
+    const bot = choose(botsInRoom);
+    const currentDate = this._data.getDate();
+    const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+    const roomPool = dialogue.onPlayerLeave[room.id];
+    const anyPool = dialogue.onPlayerLeave['any'];
+    const pool = (roomPool && roomPool.length > 0 && Math.random() < 0.6) ? roomPool : (anyPool ?? []);
+    const entry = pickFromPool(pool, currentDate, bot, room);
+    if (entry) {
+      bot.executeSteps(entry.steps, 500);
+    }
+  }
+
+  public onPlayerChat(room: WorldRoom, player: WorldPenguin, message: string): void {
+    if (isBot(player)) return;
+    const currentDate = this._data.getDate();
+    const lower = message.toLowerCase();
+    const now = Date.now();
+
+    const botsInRoom = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (botsInRoom.length === 0) return;
+
+    let respondents = 0;
+    for (const bot of shuffleArray(botsInRoom)) {
+      if (respondents >= 2) break;
+      const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+
+      for (let i = 0; i < dialogue.onPlayerChat.length; i++) {
+        const trigger = dialogue.onPlayerChat[i];
+        const matchedKws = trigger.keywords.filter(kw => lower.includes(kw));
+        if (matchedKws.length === 0) continue;
+
+        const blockedKws = this._roomRecentKeywords.get(room.id);
+        if (blockedKws && matchedKws.every(kw => blockedKws.has(kw))) continue;
+
+        const cooldownKey = `${bot.penguin.id}:chat:${i}`;
+        const lastFired = this._chatCooldowns.get(cooldownKey) ?? 0;
+        const cooldown = trigger.cooldownMs ?? 30_000;
+        if (now - lastFired < cooldown) continue;
+
+        const entry = pickFromPool(trigger.responses, currentDate, bot, room);
+        if (entry !== undefined) {
+          this._chatCooldowns.set(cooldownKey, now);
+
+          let cur = this._roomRecentKeywords.get(room.id);
+          if (!cur) {
+            cur = new Set<string>();
+            this._roomRecentKeywords.set(room.id, cur);
+          }
+          for (const kw of matchedKws) {
+            cur.add(kw);
+            setTimeout(() => {
+              this._roomRecentKeywords.get(room.id)?.delete(kw);
+            }, 15_000);
+          }
+
+          bot.executeSteps(entry.steps, respondents * 1200);
+          respondents++;
+          break;
+        }
+      }
+    }
+  }
+
+  public onPlayerSnowball(room: WorldRoom, player: WorldPenguin, targetX: number, targetY: number): void {
+    if (isBot(player)) return;
+    const currentDate = this._data.getDate();
+    const now = Date.now();
+    const isSnowForts = room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(currentDate, '2005-09-12');
+
+    const botsInRoom = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (botsInRoom.length === 0) return;
+
+    let respondents = 0;
+    for (const bot of shuffleArray(botsInRoom)) {
+      if (respondents >= (isSnowForts ? 3 : 2)) break;
+      const state = room.getState(bot.penguin);
+      if (!state) continue;
+
+      const dx = targetX - state.x;
+      const dy = targetY - state.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      const hitRadius = isSnowForts ? 110 : 80;
+      if (distance > hitRadius) continue;
+
+      const cooldownKey = `${bot.penguin.id}:snowball_hit`;
+      const lastHit = this._chatCooldowns.get(cooldownKey) ?? 0;
+      const snowballCooldownMs = isSnowForts ? 4_000 : 8_000;
+      if (now - lastHit < snowballCooldownMs) continue;
+
+      const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+      const entry = pickFromPool(dialogue.onPlayerSnowball, currentDate, bot, room);
+
+      if (entry !== undefined) {
+        this._chatCooldowns.set(cooldownKey, now);
+
+        const playerState = room.getState(player);
+        const resolvedSteps: DialogueStep[] = entry.steps.map(step => {
+          if (step.action.type === 'snowball' && step.action.target === 'origin' && playerState) {
+            return {
+              ...step,
+              action: { ...step.action, x: playerState.x, y: playerState.y }
+            };
+          }
+          return step;
+        });
+
+        bot.executeSteps(resolvedSteps, respondents * 1000);
+        respondents++;
+      }
+    }
+  }
+
+  public onPlayerEmote(room: WorldRoom, player: WorldPenguin, emoteId: number): void {
+    if (isBot(player)) return;
+    const currentDate = this._data.getDate();
+
+    const botsInRoom = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (botsInRoom.length === 0) return;
+
+    let respondents = 0;
+    for (const bot of shuffleArray(botsInRoom)) {
+      if (respondents >= 2) break;
+      const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
+
+      for (const trigger of dialogue.onPlayerEmote) {
+        if (trigger.emoteId !== emoteId) continue;
+        if (Math.random() >= trigger.chance) continue;
+
+        const entry = pickFromPool(trigger.responses, currentDate, bot, room);
+        if (entry !== undefined) {
+          bot.executeSteps(entry.steps, respondents * 1000);
+          respondents++;
+          break;
+        }
+      }
+    }
   }
 
   public setOff() {

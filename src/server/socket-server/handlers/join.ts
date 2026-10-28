@@ -243,9 +243,10 @@ export const handleJoinServer: PenguinHandler<[]> = async (ctx) => {
 }
 
 export const leaveRoom: RoomHandler<[]> = async (ctx) => {
-  const { room, penguin, msg, data } = ctx;
+  const { room, penguin, msg, data, bot } = ctx;
   handleLeaveWaddle(ctx);
   room.removePenguin(penguin);
+  bot?.onPlayerLeaveRoom(room, penguin);
   await msg.send(room.players, 'rp', penguin.id, ...room.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
 }
 

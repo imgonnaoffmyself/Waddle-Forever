@@ -11,6 +11,24 @@ import { CardJitsu, NinjaPlayer } from "./card";
 import { getNameFromId, getRoomFromName, IGLOO_ROOM_BASE, ROOMS } from "@server/game-data/rooms";
 import { getItemTypeFromEquipProp } from "@server/timelines/items";
 import { getBlock, findPathBetweenBlockPoints, compactPath, findLeftmostMiddlemostPosition, getRandomPositionFromBlock } from "./bot-block";
+import { PersonalityTrait, DialogueStep, DialoguePool } from "@server/npc/npc-types";
+import { PERSONALITY_DIALOGUE } from "@server/npc/npc-dialogue";
+import {
+  DEV_NPC_NAMES,
+  DEV_NPC_TRAITS,
+  DEV_NPC_NAME_SET,
+  getRoomPool,
+  pickFromPool,
+  SPAWN_ZONES,
+  SNOW_FORTS_ROOM_ID,
+  ICE_RINK_ROOM_ID,
+  RINK_SCOREBOARD_DATE,
+  pointNearPuck,
+  hockeyPuckTarget,
+  RINK_PUCK_TOUCH_RADIUS
+} from "@server/npc/npc-manager";
+import { RINK_PUCK_START } from "./world";
+import { isGreaterOrEqual, isLower } from "@server/routes/versions";
 
 const CHANCE_NO_ITEM = 0.3;
 const CHANCE_AVAILABLE_ITEM = 0.2;
@@ -103,7 +121,7 @@ export const IGLOO_PISSED_LINES = [
   "what the fuck are you doing in my igloo?!",
   "trespasser!! OUT!",
   "did you really just walk into my house unannounced?!",
-  "i'm calling the EPF. GET OUT.",
+  "i'm calling the cops. GET OUT.",
   "fuck off creep!!",
   "do you mind?! this is a PRIVATE igloo!",
   "seriously?! get the fuck out!",
@@ -397,6 +415,7 @@ class CardJitsuBrain implements BotBrain {
 }
 
 export type BotAttributes = {
+  personalityTrait?: PersonalityTrait;
   emptyRoomTolerance: number;
   roomDistraction: number;
   snowballFan: number;
@@ -433,7 +452,9 @@ enum BehaviorId {
   JoinDanceFloor,
   MatchDanceColor,
   TipTheBerg,
-  FormBand
+  FormBand,
+  SnowFortsFight,
+  PlayHockey
 }
 
 // this variable is usede to access all behaviors at compile time
@@ -450,7 +471,9 @@ const allBehaviors: Record<BehaviorId, 0> = {
   [BehaviorId.JoinDanceFloor]: 0,
   [BehaviorId.MatchDanceColor]: 0,
   [BehaviorId.TipTheBerg]: 0,
-  [BehaviorId.FormBand]: 0
+  [BehaviorId.FormBand]: 0,
+  [BehaviorId.SnowFortsFight]: 0,
+  [BehaviorId.PlayHockey]: 0
 }
 
 interface Behavior {
@@ -536,7 +559,7 @@ const BEHAVIORS: Behavior[] = [
     id: BehaviorId.RandomWalk,
     uses: ['locomotion'],
     duration() {
-      return 0
+      return 0;
     },
     cooldown({ rng, attrs }) {
       return eagerness(attrs.walkFan, rng.random() * 30);
@@ -544,8 +567,9 @@ const BEHAVIORS: Behavior[] = [
     success({ attrs }) {
       return attrs.walkFan > Math.random();
     },
-    async start({ bot, rng }) {
-      await bot.walk(rng.int(WALK_AREA.minX, WALK_AREA.maxX), rng.int(WALK_AREA.minY, WALK_AREA.maxY));
+    async start({ bot, room }) {
+      const [x, y] = getRandomPointInRoom(room);
+      await bot.walk(x, y);
     }
   },
   {
@@ -560,8 +584,8 @@ const BEHAVIORS: Behavior[] = [
     success({ rng, attrs }) {
       return attrs.chatFan > rng.random();
     },
-    async start({ bot, rng }) {
-      bot.sendMessage(rng.choose(CHAT_LINES));
+    async start({ bot, room }) {
+      bot.sendDynamicMessage(room);
     }
   },
   {
@@ -603,13 +627,79 @@ const BEHAVIORS: Behavior[] = [
       return 0;
     },
     cooldown({ rng, attrs }) {
-      return eagerness(attrs.roomDistraction, rng.random() * 300);
+      return eagerness(attrs.roomDistraction, rng.random() * 120 + 30);
     },
-    success({ rng, attrs, room }) {
-      return (rng.random() * attrs.emptyRoomTolerance + (1 - attrs.emptyRoomTolerance) * clamp(room.players.length / 30, 0, 30)) < 0.5;
+    success({ rng, room }) {
+      if (room.players.length <= 1) return true;
+      if (room.players.length > 20) return rng.random() < 0.8;
+      return rng.random() < 0.4;
     },
     async start({ bot }) {
       await bot.enter(bot.chooseRoom());
+    }
+  },
+  {
+    id: BehaviorId.SnowFortsFight,
+    uses: ['pose'],
+    duration() {
+      return 0;
+    },
+    cooldown({ rng, attrs }) {
+      return eagerness(attrs.snowballFan, rng.random() * 8 + 3);
+    },
+    success({ room, bot }) {
+      return room.id === SNOW_FORTS_ROOM_ID && isGreaterOrEqual(bot.data.getDate(), '2005-09-12');
+    },
+    async start({ bot, room, rng }) {
+      const others = room.players.filter(p => p.id !== bot.penguin.id);
+      if (others.length === 0) return;
+      const target = choose(others);
+      const targetState = room.getState(target);
+      if (targetState) {
+        bot.throwSnowball(targetState.x, targetState.y);
+        if (rng.random() < 0.3) {
+          bot.doEmote(choose([1, 4, 7, 9, 10]));
+        }
+      }
+    }
+  },
+  {
+    id: BehaviorId.PlayHockey,
+    uses: ['locomotion', 'room'],
+    duration({ rng }) {
+      return rng.random() * 3 + 2;
+    },
+    cooldown({ rng }) {
+      return rng.random() * 8 + 4;
+    },
+    success({ room }) {
+      return room.id === ICE_RINK_ROOM_ID;
+    },
+    async start({ bot, room }) {
+      const puck = bot.world.getPuck(room) ?? RINK_PUCK_START;
+      const [nearX, nearY] = pointNearPuck(puck);
+      await bot.walk(nearX, nearY);
+
+      const currentRoom = bot.world.getPenguinRoom(bot.penguin);
+      if (currentRoom?.id !== room.id) return;
+
+      const state = room.getState(bot.penguin);
+      if (!state) return;
+
+      const dx = state.x - puck[0];
+      const dy = state.y - puck[1];
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= RINK_PUCK_TOUCH_RADIUS + 25) {
+        const [targetX, targetY] = hockeyPuckTarget(bot.data.getDate());
+        if (bot.world.updatePuck(targetX, targetY, room)) {
+          if (bot.data.isPreCpip() && isLower(bot.data.getDate(), RINK_SCOREBOARD_DATE)) {
+            bot.simulate('z', 'zm', targetX, targetY);
+          } else {
+            bot.simulate('z', 'm', bot.penguin.id, targetX, targetY, targetX - puck[0], targetY - puck[1]);
+          }
+        }
+      }
     }
   },
   {
@@ -743,8 +833,19 @@ function getPositionsFromRoom(room: WorldRoom): Array<[number, number]> {
   });
 }
 
-function getRandomPointInRoom(room: WorldRoom) {
-  return getRandomPositionFromBlock(getBlock(getNameFromId(room.id)));;
+export function getRandomPointInRoom(room: WorldRoom): [number, number] {
+  if (room.id === ROOMS.berg.id) {
+    return getRandomPositionFromBlock(getBlock('berg'));
+  }
+  const zone = SPAWN_ZONES[room.id];
+  if (zone) {
+    const [xMin, yMin, xMax, yMax] = zone;
+    return [randomInt(xMin, xMax), randomInt(yMin, yMax)];
+  }
+  if (room.id === ROOMS.town.id) {
+    return getRandomPositionFromBlock(getBlock('town'));
+  }
+  return [randomInt(250, 550), randomInt(330, 440)];
 }
 
 export class Bot implements ClientSocket {
@@ -773,6 +874,30 @@ export class Bot implements ClientSocket {
     }
   }
 
+  public personalityTrait: PersonalityTrait;
+  public recentMessages: string[] = [];
+  public recentTopics: any[] = [];
+
+  public get name() {
+    return this._penguin.name;
+  }
+
+  public get membership() {
+    return this._penguin.membership;
+  }
+
+  public get isDev() {
+    return DEV_NPC_NAME_SET.has(this._penguin.name);
+  }
+
+  public get data() {
+    return this._data;
+  }
+
+  public get world() {
+    return this._world;
+  }
+
   constructor(
     private _penguin: WorldPenguin,
     private _data: GameData,
@@ -782,6 +907,13 @@ export class Bot implements ClientSocket {
     private _attributes: BotAttributes
   ) {
     this._simulate = (e, c, ...a) => writeFn(this, e, c, ...a);
+    this.personalityTrait = _attributes.personalityTrait
+      ?? DEV_NPC_TRAITS[this._penguin.name as any]
+      ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);
+  }
+
+  public simulate(ext: string, code: string, ...args: Array<string | number>): void {
+    this._simulate(ext, code, ...args);
   }
 
   public get penguin() {
@@ -948,44 +1080,126 @@ export class Bot implements ClientSocket {
     if (room === undefined) {
       return;
     }
-    
-    const roomBlock = getBlock(getNameFromId(room.id));
-    const [scaledX, scaledY] = [Math.floor(x / roomBlock.scale), Math.floor(y / roomBlock.scale)];
+
     const state = room.getState(this._penguin);
+    if (state === undefined) {
+      return;
+    }
 
-    return new Promise<void>((res) => {
-      if (state !== undefined) {
-        const path = compactPath(findPathBetweenBlockPoints([state.x, state.y], [scaledX, scaledY], roomBlock), roomBlock);
-        const nextStep = (step: number) => {
-          if (step < path.length) {
-            const [unscaledX, unscaledY] = [path[step][0] * roomBlock.scale, path[step][1] * roomBlock.scale];
+    // Only Iceberg and Town have authentic collision block grids
+    if (room.id === ROOMS.town.id || room.id === ROOMS.berg.id) {
+      const roomBlock = getBlock(getNameFromId(room.id));
+      const [scaledX, scaledY] = [Math.floor(x / roomBlock.scale), Math.floor(y / roomBlock.scale)];
+      const path = compactPath(findPathBetweenBlockPoints([state.x, state.y], [scaledX, scaledY], roomBlock), roomBlock);
 
-            const distance = Math.sqrt(Math.pow(unscaledX - state.x, 2) + Math.pow(unscaledY - state.y, 2));
-            this._simulate('s', this._data.isPreCpip() ? 'sp' : 'u#sp', unscaledX, unscaledY);
+      if (path.length > 0) {
+        return new Promise<void>((res) => {
+          const nextStep = (step: number) => {
+            if (step < path.length) {
+              const [unscaledX, unscaledY] = [path[step][0] * roomBlock.scale, path[step][1] * roomBlock.scale];
+              const distance = Math.sqrt(Math.pow(unscaledX - state.x, 2) + Math.pow(unscaledY - state.y, 2));
+              this._simulate('s', this._data.isPreCpip() ? 'sp' : 'u#sp', unscaledX, unscaledY);
 
-            // 4.8 pixels per frame at 24 fps
-            // exgtra time of lenience
-            const time = distance / 4.8 / 24 + 1;
-          
-            this.schedule(() => {
-              nextStep(step + 1);
-            }, time);
-          } else {
-            res();
-          }
-        }
-        nextStep(0);
-      } else {
-        res();
+              // 4.8 pixels per frame at 24 fps
+              const time = distance / 4.8 / 24 + 1;
+
+              this.schedule(() => {
+                nextStep(step + 1);
+              }, time);
+            } else {
+              res();
+            }
+          };
+          nextStep(0);
+        });
       }
+    }
+
+    // Direct movement for rooms without collision grids
+    return new Promise<void>((res) => {
+      const distance = Math.sqrt(Math.pow(x - state.x, 2) + Math.pow(y - state.y, 2));
+      this._simulate('s', this._data.isPreCpip() ? 'sp' : 'u#sp', x, y);
+      const time = distance / 4.8 / 24 + 0.5;
+      this.schedule(() => {
+        res();
+      }, time);
     });
   }
 
   public chooseRoom(): number {
-    const canGo = this._data.getAvailableRooms().filter(r => {
+    const availableRooms = this._data.getAvailableRooms();
+    const canGo = availableRooms.filter(r => {
       return this._penguin.membership.isMember || !this._data.isRoomMember(r);
     });
+    const canGoSet = new Set(canGo.map(name => ROOMS[name]?.id).filter(id => id !== undefined));
+
+    const pool = getRoomPool(this._data.getDate()).filter(roomId => canGoSet.has(roomId));
+    if (pool.length > 0) {
+      return choose(pool);
+    }
     return ROOMS[choose(canGo)].id;
+  }
+
+  public executeSteps(steps: DialogueStep[], extraDelayMs = 0): void {
+    for (const step of steps) {
+      this.schedule(() => {
+        const room = this._world.getPenguinRoom(this._penguin);
+        if (!room) return;
+
+        switch (step.action.type) {
+          case 'chat': {
+            this.sendMessage(step.action.message);
+            this.recentMessages.push(step.action.message);
+            if (this.recentMessages.length > 10) {
+              this.recentMessages.shift();
+            }
+            break;
+          }
+          case 'emote': {
+            this.doEmote(step.action.emoteId);
+            break;
+          }
+          case 'frame': {
+            this.doFrame(step.action.frame);
+            break;
+          }
+          case 'snowball': {
+            this.throwSnowball(step.action.x ?? 300, step.action.y ?? 300);
+            break;
+          }
+          case 'move': {
+            this.walk(step.action.x, step.action.y);
+            break;
+          }
+        }
+      }, (step.delayMs + extraDelayMs) / 1000);
+    }
+  }
+
+  public sendDynamicMessage(room: WorldRoom): void {
+    const dialogue = PERSONALITY_DIALOGUE[this.personalityTrait];
+    if (!dialogue) {
+      this.sendMessage(choose(CHAT_LINES));
+      return;
+    }
+
+    const currentDate = this._data.getDate();
+    const roomPool = dialogue.onIdle[room.id];
+    const anyPool = dialogue.onIdle['any'];
+
+    let pool: DialoguePool;
+    if (roomPool && roomPool.length > 0 && Math.random() < 0.7) {
+      pool = roomPool;
+    } else {
+      pool = anyPool ?? [];
+    }
+
+    const entry = pickFromPool(pool, currentDate, this, room);
+    if (entry !== undefined) {
+      this.executeSteps(entry.steps);
+    } else {
+      this.sendMessage(choose(CHAT_LINES));
+    }
   }
 
   public openIgloo(): void {
