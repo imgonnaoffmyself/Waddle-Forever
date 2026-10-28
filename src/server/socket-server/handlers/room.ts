@@ -236,10 +236,6 @@ export const handleGetTableGame: RoomHandler<[string]> = ({ msg, room, penguin }
   const table = room.getTable(resolvedTableId);
   const boardState = table.serializeBoard();
 
-  if (WorldTable.MANCALA_TABLE_IDS.has(resolvedTableId)) {
-    console.log(`[gz] Player "${penguin.name}" requested table ${resolvedTableId}. names=${JSON.stringify(table.getNames())}, board="${boardState}", seats=${JSON.stringify(table.getSeats().map(s => s?.name ?? null))}, joined=${JSON.stringify((table as any).joined)}, started=${table.hasStarted()}`);
-  }
-
   msg.send(penguin, 'gz', ...table.getNames(), boardState);
 }
 

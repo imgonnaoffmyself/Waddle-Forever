@@ -71,7 +71,26 @@ type SendFunction = (ext: string, code: string, ...args: Array<string | number>)
  * floors sit in the lower half of it. Bots that pick a spot outside the walkable
  * area of a specific room just stand there, which is harmless.
  */
-export const WALK_AREA = { minX: 120, maxX: 640, minY: 300, maxY: 440 };
+export const WALK_AREA = { minX: 120, maxX: 640, minY: 300, maxY: 410 };
+
+export interface TableSeatConfig {
+  x: number;
+  y: number;
+  frame: number;
+}
+
+export const TABLE_SEAT_POSITIONS: Record<number, [TableSeatConfig, TableSeatConfig]> = {
+  // Mancala tables in Book Room (111)
+  100: [{ x: 501, y: 205, frame: 24 }, { x: 441, y: 241, frame: 20 }],
+  101: [{ x: 351, y: 205, frame: 24 }, { x: 291, y: 241, frame: 20 }],
+  102: [{ x: 241, y: 305, frame: 24 }, { x: 181, y: 341, frame: 20 }],
+  103: [{ x: 428, y: 322, frame: 24 }, { x: 368, y: 358, frame: 20 }],
+  104: [{ x: 671, y: 365, frame: 24 }, { x: 611, y: 401, frame: 20 }],
+  // Find Four tables in Ski Lodge (220)
+  205: [{ x: 331, y: 236, frame: 24 }, { x: 276, y: 273, frame: 20 }],
+  206: [{ x: 302, y: 376, frame: 17 }, { x: 354, y: 407, frame: 23 }],
+  207: [{ x: 545, y: 410, frame: 23 }, { x: 480, y: 386, frame: 19 }],
+};
 
 /** How long a bot "thinks" before playing a table move, in s */
 const TABLE_THINK_MIN = 1.8;
@@ -191,7 +210,9 @@ class TableBrain implements BotBrain {
   }
 
   handle(name: string, args: string[]): void {
-    
+    if (name === 'zo' || name === 'cz' || name === 'lz') {
+      this.dispose();
+    }
   }
 
   dispose(): void {
@@ -203,7 +224,7 @@ class TableBrain implements BotBrain {
     return setTimeout(() => {
       // human walked off, or the round was reset out from under us
       const stillSeated = this._table.getSeatIndex(this._penguin) === this._seat;
-      const opponent = this._table.getSeats().some(p => p !== null);
+      const opponent = this._table.getSeats().some(p => p !== null && p !== this._penguin);
 
       if (!stillSeated || !opponent) {
         this.dispose();
@@ -835,17 +856,19 @@ function getPositionsFromRoom(room: WorldRoom): Array<[number, number]> {
 
 export function getRandomPointInRoom(room: WorldRoom): [number, number] {
   if (room.id === ROOMS.berg.id) {
-    return getRandomPositionFromBlock(getBlock('berg'));
+    const pt = getRandomPositionFromBlock(getBlock('berg'));
+    return [pt[0], Math.min(pt[1], 410)];
   }
   const zone = SPAWN_ZONES[room.id];
   if (zone) {
     const [xMin, yMin, xMax, yMax] = zone;
-    return [randomInt(xMin, xMax), randomInt(yMin, yMax)];
+    return [randomInt(xMin, xMax), Math.min(randomInt(yMin, yMax), 410)];
   }
   if (room.id === ROOMS.town.id) {
-    return getRandomPositionFromBlock(getBlock('town'));
+    const pt = getRandomPositionFromBlock(getBlock('town'));
+    return [pt[0], Math.min(pt[1], 410)];
   }
-  return [randomInt(250, 550), randomInt(330, 440)];
+  return [randomInt(250, 550), randomInt(330, 410)];
 }
 
 export class Bot implements ClientSocket {
@@ -1001,8 +1024,9 @@ export class Bot implements ClientSocket {
         this._penguin,
         this._simulate,
         () => {
-          this.exitGameMode();
           this._brain = null;
+          this.doFrame(1);
+          this._lenghts[BehaviorId.RandomWalk] = Date.now() + 5000;
         },
         this._rng
       );
@@ -1031,7 +1055,26 @@ export class Bot implements ClientSocket {
     );
   }
 
-  public sitAtTable(tableId: number): void {
+  public async sitAtTable(tableId: number): Promise<void> {
+    const room = this._world.getPenguinRoom(this._penguin);
+    if (!room) return;
+    const table = room.getTable(tableId);
+    if (!table) return;
+
+    // Which seat is open?
+    const seats = table.getSeats();
+    const targetSeatIndex = seats[0] === null ? 0 : 1;
+
+    // Stop all wandering/ambient actions so bot is not interrupted while walking to chair
+    this.stopAllActions();
+
+    const seatConfig = TABLE_SEAT_POSITIONS[tableId]?.[targetSeatIndex];
+    if (seatConfig) {
+      await this.walk(seatConfig.x, seatConfig.y);
+      this.doFrame(seatConfig.frame);
+      await this.wait(0.5);
+    }
+
     this._simulate('s', this._data.isPreCpip() ? 'jt' : 'a#jt', tableId);
   }
 
@@ -1076,6 +1119,7 @@ export class Bot implements ClientSocket {
   }
 
   public async walk(x: number, y: number) {
+    y = Math.min(y, 410);
     const room = this._world.getPenguinRoom(this._penguin);
     if (room === undefined) {
       return;
@@ -1096,7 +1140,7 @@ export class Bot implements ClientSocket {
         return new Promise<void>((res) => {
           const nextStep = (step: number) => {
             if (step < path.length) {
-              const [unscaledX, unscaledY] = [path[step][0] * roomBlock.scale, path[step][1] * roomBlock.scale];
+              const [unscaledX, unscaledY] = [path[step][0] * roomBlock.scale, Math.min(path[step][1] * roomBlock.scale, 410)];
               const distance = Math.sqrt(Math.pow(unscaledX - state.x, 2) + Math.pow(unscaledY - state.y, 2));
               this._simulate('s', this._data.isPreCpip() ? 'sp' : 'u#sp', unscaledX, unscaledY);
 
@@ -1288,6 +1332,9 @@ export class Bot implements ClientSocket {
   }
 
   public act(): void {
+    if (this._brain !== null) {
+      return;
+    }
     const room = this._world.getPenguinRoom(this.penguin);
     if (room === undefined) {
       return;

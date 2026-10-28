@@ -19,7 +19,7 @@ import { WorldPenguin } from '@server/socket-server/world/world-penguin';
 import { WorldTable } from '@server/socket-server/world/world-table';
 import { getPenguinString } from '@server/socket-server/handlers/join';
 import { isRareItem } from './npc-clothing';
-import { NpcPenguin, MancalaSkill } from './npc-penguin';
+import { NpcPenguin } from './npc-penguin';
 import { NPC_NAME_POOL } from './npc-names';
 import { PERSONALITY_DIALOGUE } from './npc-dialogue';
 import {
@@ -105,31 +105,20 @@ export const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
  * Values are approximate — adjust if penguins appear clipped.
  */
 export const SPAWN_ZONES: Record<number, [number, number, number, number]> = {
-  100: [200, 300, 750, 480], // Town
-  110: [150, 300, 600, 480], // Coffee Shop
-  111: [150, 250, 600, 420], // Book Room
-  120: [200, 300, 650, 480], // Dance Club
-  121: [150, 280, 600, 450], // Dance Lounge
-  130: [180, 300, 550, 460], // Gift Shop
-  200: [150, 320, 650, 480], // Ski Village
-  800: [250, 350, 700, 480], // Dock
-  801: [160, 260, 730, 470], // Snow Forts
-  802: [150, 200, 750, 480], // Ice Rink
-  320: [200, 250, 600, 480], // Dojo
+  100: [200, 300, 750, 410], // Town
+  110: [150, 300, 600, 410], // Coffee Shop
+  111: [150, 250, 600, 410], // Book Room
+  120: [200, 300, 650, 410], // Dance Club
+  121: [150, 280, 600, 410], // Dance Lounge
+  130: [180, 300, 550, 410], // Gift Shop
+  200: [150, 320, 650, 410], // Ski Village
+  800: [250, 350, 700, 410], // Dock
+  801: [160, 260, 730, 410], // Snow Forts
+  802: [150, 200, 750, 410], // Ice Rink
+  320: [200, 250, 600, 410], // Dojo
   221: [150, 200, 500, 380], // Lodge Attic
 };
 
-/**
- * Approximate positions for NPCs to teleport to when joining a mancala table
- * in the Book Room (111). These put the NPC right beside the table.
- */
-const MANCALA_TABLE_NPC_POS: Record<number, [number, number]> = {
-  100: [220, 330],
-  101: [310, 330],
-  102: [400, 330],
-  103: [490, 330],
-  104: [580, 330],
-};
 
 /** Min/max seconds an NPC stays in a room before roaming */
 const DWELL_MIN_MS = 15_000;
@@ -320,9 +309,6 @@ export class NpcManager {
 
   private active = false;
 
-  /** NPCs currently seated at a mancala table (suppresses roaming and ambient movement) */
-  private npcMancalaTables = new Set<NpcPenguin>();
-
   constructor(
     private world: World,
     private msg: PenguinMessenger,
@@ -425,8 +411,6 @@ export class NpcManager {
 
   private roamNpc(npc: NpcPenguin): void {
     if (!this.active) return;
-    // Don't roam while playing mancala
-    if (this.npcMancalaTables.has(npc)) { this.scheduleDwell(npc); return; }
     const currentRoom = this.npcRooms.get(npc);
     if (currentRoom === undefined) return;
 
@@ -461,8 +445,6 @@ export class NpcManager {
 
   private fireAmbient(npc: NpcPenguin): void {
     if (!this.active) return;
-    // Don't wander while playing mancala
-    if (this.npcMancalaTables.has(npc)) { this.scheduleAmbient(npc); return; }
 
     const room = this.npcRooms.get(npc);
     const currentDate = this.data.getDate();
@@ -550,7 +532,6 @@ export class NpcManager {
     setTimeout(() => {
       if (!this.active) return;
       if (this.npcRooms.get(npc) !== room) return;
-      if (this.npcMancalaTables.has(npc)) return;
 
       this.dispatchAction(npc, room, { type: 'frame', frame: DANCE_FRAME });
     }, delayMs);
@@ -994,356 +975,10 @@ export class NpcManager {
         }
         break;
       }
-      case 'join_table': {
-        if (targets.length === 0) return;
-        const table = room.getTable(action.tableId);
-        
-        const before = table.getCount();
-        const seatId = table.getSeatIndex(npc as any) ?? table.assignSeatIndex(npc as any);
-        console.log(`[NPC join_table] NPC "${npc.name}" joining table ${action.tableId}: before=${before}, seatId=${seatId}, joined=${JSON.stringify((table as any).joined)}, started=${table.hasStarted()}`);
-        
-        // Ensure table resets if it was empty
-        if (seatId !== 99 && before === 0) { // 99 is TABLE_SPECTATOR_SEAT
-          table.reset();
-          console.log(`[NPC join_table] Table ${action.tableId} was empty, reset.`);
-        }
-
-        if (seatId !== 99) {
-          const count = table.getCount();
-          if (count !== before) {
-            this.msg.send(room.players, 'ut', table.getId(), table.getCount());
-          }
-          
-          // The table is now joined by the NPC.
-          // Simulate the `jz` flow: mark joined and notify real players.
-          table.setJoined(seatId);
-          this.msg.send(table.penguins, 'uz', seatId, npc.name);
-          console.log(`[NPC join_table] After setJoined: joined=${JSON.stringify((table as any).joined)}, everyoneJoined=${table.hasEveryoneJoined()}, realPlayers=${table.penguins.map(p => p.name).join(', ') || 'none'}`);
-
-          // If both sides are now joined, start the game.
-          if (!table.hasStarted() && table.hasEveryoneJoined()) {
-            console.log(`[NPC join_table] Starting game on table ${action.tableId}, turn=${table.getTurn()}`);
-            table.setStarted();
-            this.msg.send(table.penguins, 'sz', table.getTurn());
-
-            // NPC seat 0 goes first — fire their move
-            if (table.getTurn() === seatId) {
-              console.log(`[NPC join_table] NPC goes first, firing handleMancalaTurn`);
-              this.handleMancalaTurn(npc, room, action.tableId);
-            }
-          } else {
-            console.log(`[NPC join_table] Game not started yet: hasStarted=${table.hasStarted()}, everyoneJoined=${table.hasEveryoneJoined()}`);
-          }
-        } else {
-          console.log(`[NPC join_table] NPC "${npc.name}" became spectator at table ${action.tableId} (full)`);
-        }
-        break;
-      }
     }
   }
 
   // ── Helpers ────────────────────────────────────────────────
-
-  /**
-   * Called when a real player has sat alone at a Mancala table.
-   * Picks a free NPC in the room and has them join the table as the opponent.
-   */
-  public onPlayerJoinedMancala(room: WorldRoom, table: WorldTable): void {
-    const mancalaIds = [100, 101, 102, 103, 104];
-    console.log(`[NPC] onPlayerJoinedMancala called for table ${table.getId()}`);
-
-    // Find NPCs in this room not already seated at any Mancala table
-    const freeNpcs = this.getNpcsInRoom(room).filter(npc => {
-      return !mancalaIds.some(id => {
-        const t = room.getTable(id);
-        const idx = t.getSeatIndex(npc as any);
-        return idx !== undefined && idx !== WorldTable.TABLE_SPECTATOR_SEAT;
-      });
-    });
-
-    console.log(`[NPC] onPlayerJoinedMancala: freeNpcs=${freeNpcs.map(n => n.name).join(', ') || 'none'}, totalNpcsInRoom=${this.getNpcsInRoom(room).length}`);
-
-    if (freeNpcs.length === 0) return;
-
-    const chosenNpc = randFrom(freeNpcs);
-    console.log(`[NPC] NPC "${chosenNpc.name}" selected to play Mancala at table ${table.getId()}`);
-
-    // Mark as in-game: suppress roaming/ambient
-    this.npcMancalaTables.add(chosenNpc);
-    const dwellTimer = this.dwellTimers.get(chosenNpc);
-    if (dwellTimer) { clearTimeout(dwellTimer); this.dwellTimers.delete(chosenNpc); }
-    const ambientTimer = this.ambientTimers.get(chosenNpc);
-    if (ambientTimer) { clearTimeout(ambientTimer); this.ambientTimers.delete(chosenNpc); }
-    const idleTimer = this.idleTimers.get(chosenNpc);
-    if (idleTimer) { clearTimeout(idleTimer); this.idleTimers.delete(chosenNpc); }
-
-    // Waddle the NPC to the table
-    const pos = MANCALA_TABLE_NPC_POS[table.getId()];
-    if (pos) {
-      this.dispatchAction(chosenNpc, room, { type: 'move', x: pos[0], y: pos[1] });
-    }
-
-    // Wait for them to walk to the table (approx 3.5s), then sit and join the game
-    setTimeout(() => {
-      if (this.npcRooms.get(chosenNpc) !== room) return;
-
-      // Determine which way to face based on the player's position
-      // Find the player at the table
-      const seats = table.getSeats();
-      const playerOpponent = seats.find(s => s instanceof WorldPenguin) as WorldPenguin | undefined;
-      
-      let sitFrame = 19; // Default West
-      if (playerOpponent && pos) {
-        const stateEntry = room.playerStates.find(([occ]) => occ === playerOpponent);
-        if (stateEntry) {
-          const playerState = stateEntry[1];
-          const dx = playerState.x - pos[0];
-          const dy = playerState.y - pos[1]; // Y increases downwards in Flash
-          
-          let angle = Math.atan2(dy, dx);
-          if (angle < 0) angle += 2 * Math.PI;
-          
-          const index = Math.round(angle / (Math.PI / 4)) % 8;
-          // Indices correspond to: E, SE, S, SW, W, NW, N, NE
-          const frameMap = [23, 24, 17, 18, 19, 20, 21, 22];
-          sitFrame = frameMap[index];
-        }
-      }
-      
-      this.dispatchAction(chosenNpc, room, { type: 'frame', frame: sitFrame });
-
-      console.log(`[NPC] Dispatching join_table for NPC "${chosenNpc.name}" to table ${table.getId()}`);
-      this.dispatchAction(chosenNpc, room, { type: 'join_table', tableId: table.getId() });
-
-      // Brief greeting on join
-      const greetings: Record<MancalaSkill, string[]> = {
-        clueless:     ["what do i do again lol", "um.. how do you play this", "i think i know how to play!"],
-        novice:       ["im not very good but ill try!", "lets play!", "i hope i do ok lol"],
-        intermediate: ["good luck!", "lets have a good game", "im ready when you are!"],
-        expert:       ["good luck, you'll need it ;)", "lets play", "get ready"],
-      };
-      const lines = greetings[chosenNpc.mancalaSkill];
-      this.dispatchAction(chosenNpc, room, { type: 'chat', message: randFrom(lines) });
-    }, 3500);
-  }
-
-  /** Pick a mancala move for an NPC based on their skill level */
-  private pickMancalaMove(
-    skill: MancalaSkill,
-    board: number[],
-    seatId: number,
-    validMoves: number[],
-    mancalaTable: any
-  ): number {
-    // Clueless: pure random
-    if (skill === 'clueless') return randFrom(validMoves);
-
-    const playerMancala = seatId === 0 ? 6 : 13;
-
-    if (!mancalaTable.applyMancalaMove) return randFrom(validMoves);
-
-    // Score all valid moves
-    const scored = validMoves.map(move => {
-      const boardClone = [...board];
-      const result: { command: string; nextTurn: number; gameOver: boolean } =
-        mancalaTable.applyMancalaMove(boardClone, seatId, move);
-      let score = 0;
-
-      // Extra turn bonus
-      if (result.nextTurn === seatId) score += 100;
-      // Stones captured
-      score += (boardClone[playerMancala] - board[playerMancala]) * 10;
-      // Capture opponent stones via 'c' command
-      if (result.command === 'c') score += 50;
-
-      return { move, score };
-    });
-    scored.sort((a, b) => b.score - a.score);
-
-    if (skill === 'novice') {
-      // 40% chance of picking the best move, otherwise random
-      if (Math.random() < 0.4) return scored[0].move;
-      return randFrom(validMoves);
-    }
-
-    if (skill === 'intermediate') {
-      // 70% best, 20% second best (if exists), 10% random
-      const r = Math.random();
-      if (r < 0.70) return scored[0].move;
-      if (r < 0.90 && scored.length > 1) return scored[1].move;
-      return randFrom(validMoves);
-    }
-
-    // Expert: always best move, tiny random noise to seem human
-    if (scored.length > 1 && scored[0].score === scored[1].score) {
-      return randFrom([scored[0].move, scored[1].move]);
-    }
-    return scored[0].move;
-  }
-
-  public handleMancalaTurn(npc: NpcPenguin, room: WorldRoom, tableId: number): void {
-    const table = room.getTable(tableId);
-    if (!table || table.hasEnded()) return;
-
-    const seatId = table.getSeatIndex(npc as any);
-    if (seatId === undefined || seatId === 99) return;
-
-    const boardStateStr = table.serializeBoard();
-    if (!boardStateStr) return;
-
-    const board = boardStateStr.split(',').map(Number);
-    const startIdx = seatId === 0 ? 0 : 7;
-    const endIdx = seatId === 0 ? 5 : 12;
-
-    const validMoves: number[] = [];
-    for (let i = startIdx; i <= endIdx; i++) {
-      if (board[i] > 0) validMoves.push(i);
-    }
-
-    if (validMoves.length === 0) return;
-
-    const mancalaTable = table as any;
-    const chosenCup = this.pickMancalaMove(npc.mancalaSkill, board, seatId, validMoves, mancalaTable);
-
-    // Skill-based think time
-	// Higher skill thinks longer
-	// 6000 is the minimum to avoid turns overlapping with each other
-    const thinkTime: Record<MancalaSkill, [number, number]> = {
-      clueless:     [6000, 7000],
-      novice:       [6000, 8000],
-      intermediate: [6000, 10000],
-      expert:       [6000, 12500],
-    };
-    const [minT, maxT] = thinkTime[npc.mancalaSkill];
-
-    // Occasional mid-game chatter
-    const chatChance: Record<MancalaSkill, number> = {
-      clueless: 0.3, novice: 0.15, intermediate: 0.08, expert: 0.05
-    };
-    if (Math.random() < chatChance[npc.mancalaSkill]) {
-      const midGameLines: Record<MancalaSkill, string[]> = {
-        clueless:     ["wait how do i do this again", "oops lol", "um..", "i have no idea what im doing"],
-        novice:       ["hmm", "lets see..", "okay okay", "i think i got this"],
-        intermediate: ["interesting...", "hmm let me think", "ok"],
-        expert:       ["hmm", "...", "ok"],
-      };
-      setTimeout(() => {
-        if (this.npcRooms.get(npc) !== room || table.hasEnded()) return;
-        this.dispatchAction(npc, room, { type: 'chat', message: randFrom(midGameLines[npc.mancalaSkill]) });
-      }, randInt(300, minT - 100));
-    }
-
-    setTimeout(() => {
-      if (!this.active || table.hasEnded() || table.getTurn() !== seatId) return;
-
-      const [endState, zmArgs] = table.sendMove([chosenCup]);
-      console.log(`[NPC zm] NPC "${npc.name}" (${npc.mancalaSkill}) played cup ${chosenCup} on table ${tableId}: endState=${JSON.stringify(endState)}, zmArgs=${JSON.stringify(zmArgs)}, newTurn=${table.getTurn()}`);
-
-      if (zmArgs !== null) {
-        this.msg.send(table.penguins, 'zm', ...zmArgs);
-      }
-
-      if (endState !== null) {
-        console.log(`[NPC zo] Game over on table ${tableId} after NPC move. Sending zo.`);
-        this.msg.send(table.penguins, 'zo', ...endState);
-        this.msg.send(room.players, 'ut', table.getId(), table.getCount());
-
-        // Determine winner: compare mancala cup scores
-        const finalBoard = table.serializeBoard().split(',').map(Number);
-        const npcScore = seatId === 0 ? finalBoard[6] : finalBoard[13];
-        const oppScore = seatId === 0 ? finalBoard[13] : finalBoard[6];
-        const npcWon = npcScore > oppScore;
-
-        this.fireMancalaEndReaction(npc, room, npcWon, table.penguins);
-        table.resetRound();
-        return;
-      }
-
-      // Extra turn
-      if (!table.hasEnded() && table.getTurn() === seatId) {
-        console.log(`[NPC zm] NPC "${npc.name}" gets another turn on table ${tableId}`);
-        this.handleMancalaTurn(npc, room, tableId);
-      }
-    }, randInt(minT, maxT));
-  }
-
-  /** Releases the NPC from a mancala game and restarts their roaming/ambient timers */
-  public releaseMancalaNpc(npc: NpcPenguin): void {
-    if (this.npcMancalaTables.has(npc)) {
-      this.npcMancalaTables.delete(npc);
-      
-      const room = this.npcRooms.get(npc);
-      if (room) {
-        this.dispatchAction(npc, room, { type: 'frame', frame: 1 });
-      }
-
-      this.scheduleDwell(npc);
-      this.scheduleAmbient(npc);
-      this.scheduleIdle(npc);
-    }
-  }
-
-  /** Fire post-game reaction chat/emote/snowball based on skill and personality */
-  public fireMancalaEndReaction(npc: NpcPenguin, room: WorldRoom, won: boolean, players: WorldPenguin[]): void {
-    this.releaseMancalaNpc(npc);
-    setTimeout(() => {
-      if (this.npcRooms.get(npc) !== room) return;
-
-      if (won) {
-        const winLines: Record<MancalaSkill, string[]> = {
-          clueless:     ["wait i won?? lol", "yay!!! i did it!!", "haha i won somehow!"],
-          novice:       ["yes!! good game!", "i won! nice game :)", "woohoo!"],
-          intermediate: ["good game!", "nice match!", "gg"],
-          expert:       ["gg", "good game", "as expected ;)"],
-        };
-        this.msg.send(room.players, 'sm', String(npc.id), randFrom(winLines[npc.mancalaSkill]));
-        // emote: happy = 1
-        setTimeout(() => this.msg.send(room.players, 'se', npc.id, 1), 800);
-      } else {
-        const loseLines: Record<MancalaSkill, string[]> = {
-          clueless:     ["oh well lol", "i never know what im doing anyway", "good job!!"],
-          novice:       ["aww good game", "ill get you next time!", "nice one"],
-          intermediate: ["good game, well played", "gg", "nicely done"],
-          expert:       ["impressive", "gg, i underestimated you", "well played"],
-        };
-        this.msg.send(room.players, 'sm', String(npc.id), randFrom(loseLines[npc.mancalaSkill]));
-
-        // Grumpy/excitable NPCs may throw a snowball at the winner on loss
-        const throwsSnowball =
-          (npc.personalityTrait === 'grumpy' && Math.random() < 0.6) ||
-          (npc.personalityTrait === 'excitable' && Math.random() < 0.3);
-
-        if (throwsSnowball && players.length > 0) {
-          setTimeout(() => {
-            if (this.npcRooms.get(npc) !== room) return;
-            const target = randFrom(players);
-            const state = room.playerStates.find(([occ]) => occ === target);
-            if (state) {
-              this.msg.send(room.players, 'sb', npc.id, state[1].x, state[1].y);
-            }
-          }, randInt(1200, 2500));
-        }
-      }
-    }, randInt(500, 1500));
-  }
-
-  /** Fire a reaction when the player quits the game early */
-  public fireMancalaAbortedReaction(npc: NpcPenguin, room: WorldRoom): void {
-    if (this.npcRooms.get(npc) !== room) return;
-
-    const abortLines: Record<MancalaSkill, string[]> = {
-      clueless:     ["wait where did you go", "aw i wanted to play", "did i do something wrong?"],
-      novice:       ["hey we didn't finish!", "aww bye then", "i guess i win?"],
-      intermediate: ["i win by default!", "quitting already?", "bye then!"],
-      expert:       ["too scared to finish? ;)", "another easy win", "coward."],
-    };
-    
-    // Slight delay so the player leaving animation happens first
-    setTimeout(() => {
-      if (this.npcRooms.get(npc) !== room) return;
-      this.msg.send(room.players, 'sm', String(npc.id), randFrom(abortLines[npc.mancalaSkill]));
-    }, 1000);
-  }
 
   private getNpcsInRoom(room: WorldRoom): NpcPenguin[] {
     return [...this.npcRooms.entries()]

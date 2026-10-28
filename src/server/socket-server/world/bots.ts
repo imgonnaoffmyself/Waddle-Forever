@@ -553,12 +553,20 @@ export class BotManager {
     this._bots.delete(id);
   }
 
-  /** Rooms that a real, human player is currently standing in */
+  /** Unique rooms that a real, human player is currently standing in */
   private humanRooms(): WorldRoom[] {
-    return this._world.players
-      .filter(p => !isBot(p))
-      .map(p => this._world.getPenguinRoom(p))
-      .filter((r): r is WorldRoom => r !== undefined);
+    const seen = new Set<number>();
+    const rooms: WorldRoom[] = [];
+    for (const p of this._world.players) {
+      if (!isBot(p)) {
+        const room = this._world.getPenguinRoom(p);
+        if (room !== undefined && !seen.has(room.id)) {
+          seen.add(room.id);
+          rooms.push(room);
+        }
+      }
+    }
+    return rooms;
   }
 
   // -------------------------------------------------------------------------
@@ -686,7 +694,8 @@ export class BotManager {
         continue;
       }
 
-      const bot = this.getFreeBotIn(room) ?? (otherHumansInRoom.length === 0 ? this.spawnInto(room.id) : undefined);
+      // Only choose a bot that is already freely roaming in this room
+      const bot = this.getFreeBotIn(room);
       if (bot === undefined) {
         continue;
       }
