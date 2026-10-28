@@ -15,6 +15,10 @@ const parseXtMessage = (message: string): [string, string[]] => {
   return [name, args];
 }
 
+export const convertXtMessage = (ext: string, code: string, ...args: Array<string | number>): string => {
+  return ['', 'xt', ext, code, '-1', ...args.map(a => String(a)), ''].join('%');
+}
+
 type CtxGuard<Ctx extends WorldContext> = [(ctx: WorldContext) => ctx is Ctx,
   (ctx: Ctx) => boolean];
 
@@ -63,6 +67,7 @@ class CallbackManager<Ctx extends WorldContext> {
         console.log('Rate limited');
         return;
       }
+      this._timestamps.set(client, Date.now());
     }
 
     if (this._once) {
@@ -70,7 +75,9 @@ class CallbackManager<Ctx extends WorldContext> {
         console.log('Already handled');
         return;
       }
+      this._handled.set(client, true);
     }
+
 
     this._callback(ctx, ...args);
   }
@@ -92,7 +99,9 @@ export class XtHandler {
   public handle(client: ClientSocket, context: WorldContext, message: string) {
     const [name, args] = parseXtMessage(message);
     
-    logverbose(getBlueString('incoming XT: '), name, args);
+    if ('penguin' in context) {
+      logverbose(getBlueString(`incoming XT [${context.penguin.name}]: `), name, args);
+    }
 
     const callbacks = this._callbacks.get(name);
 
@@ -108,7 +117,12 @@ export class XtHandler {
       if (parsedArgs === null) {
         logverbose(getRedString('incorrect type signature: ' + name));
       } else {
-        callback.call(client, context, ...parsedArgs);
+        // prevent server crash from a handler gone wrong
+        try {
+          callback.call(client, context, ...parsedArgs);
+        } catch (e) {
+          console.error(`Error handling XT ${name}:`, e);
+        }
       }
     } else {
       logverbose(getRedString('unhandled XT: ' + name));

@@ -156,10 +156,6 @@ would need to investigated`
       comment: 'Domain check removed'
     },
     {
-      file: 'GamesDancingDance.swf',
-      comment: 'Domain check removed'
-    },
-    {
       file: 'GamesJetPackAdventureMain.swf',
       comment: 'Domain check removed'
     },
@@ -250,6 +246,14 @@ would need to investigated`
     {
       file: 'ArtworkRoomsTown4_luau.swf',
       comment: 'Chat 291 compatibility fixes'
+    },
+    {
+      file: 'GamesSenseiSenseiWidget-June2009.swf',
+      comment: 'Removed domain check'
+    },
+    {
+      file: 'Card-July2009.swf',
+      comment: 'Removed domain check, and added the full list of power anims in com.clubpenguin.games.card.BattleController'
     }
   ],
   [APPROXIMATION]: [
@@ -531,6 +535,25 @@ so that it works with newer clients (newer being around 2007)`,
     {
       file: 'system.txt',
       comment: 'removed all versions'
+    },
+    {
+      file: 'christmas_05/village.swf',
+      comment: 'Made by indiana, used as basis the fixed version CP05Village.swf but added the door to the lodge'
+    },
+    {
+      file: 'ninjaprogress_set2.swf',
+      comment: 'Removed the set 3 cards in com.clubpenguin.merch.ninja.CardDetails, so its only sets 1 and 2',
+      base: 'archives:NinjaProgressJuly2009.swf'
+    },
+    {
+      file: 'ninjaprogress_set5.swf',
+      comment: 'Adds card set 5 in com.clubpenguin.merch.ninja.CardDetails',
+      base: 'archives:NinjaProgressNov2009.swf'
+    },
+    {
+      file: 'circuitmatch.swf',
+      comment: 'Changes the completed signal variable name from "succeeded" to "completed", to work in Field-Ops',
+      base: 'svanilla:media/play/v2/games/circuitmatch/circuitmatch.swf'
     }
   ],
   [RECREATION]: [
@@ -1590,7 +1613,7 @@ Unknown if its teleporting to village functions would be accurate`
     },
     {
       file: 'agent1.swf',
-      comment: 'Made by Randomno'
+      comment: 'Made by Randomno. In order for it to be compatible with how archives:EditEdit8.swf reads the player\'s age, the age calculation code was slightly changed'
     },
     {
       file: 'chat339_instrument_hunt.swf',
@@ -1997,8 +2020,12 @@ Unknown if its teleporting to village functions would be accurate`
       comment: 'Moved Airtower code out of class file and added shell.getLoginServer() call'
     },
     {
+      file: 'engine_apr2009.swf',
+      comment: 'Used the Jun 2009 engine as base. Made self-initialising. Changed .path to .file_path. Added showInterface call after roomInitiated. Changed myMediaPath assigning for game_mc.'
+    },
+    {
       file: 'engine_cpip.swf',
-      comment: 'Used the Jun 2009 engine as base. Made self-initialising. Changed .path to .file_path. Added showInterface call after roomInitiated. Changed myMediaPath assigning for game_mc. Added to the addPlayer function code to add balloon to the balloons_mc interface (fixes the balloons not showing up). Added the removeBalloonByPlayerId function and updated the call to INTERFACE.removeBalloonByPlayerId to call that function instead.'
+      comment: 'Same as engine_apr2009, with balloon fixes: Added to the addPlayer function code to add balloon to the balloons_mc interface (fixes the balloons not showing up). Added the removeBalloonByPlayerId function and updated the call to INTERFACE.removeBalloonByPlayerId to call that function instead.'
     },
     {
       file: 'telescope_holiday.swf',
@@ -2023,6 +2050,50 @@ Unknown if its teleporting to village functions would be accurate`
     {
       file: 'clothing_10_01.swf',
       comment: 'Made by Randomno, the January 2010 penguin style but with the proper year label'
+    },
+    {
+      file: 'ninjabelts_2008.swf',
+      comment: 'Made by ChrisCPI, the original ninja belts legend (different text and symbol at the bottom)'
+    },
+    {
+      file: 'senseiwidget_2008/SenseiWidget.swf',
+      comment: 'Made by ChrisCPI. Removed icons for the main menu',
+      base: 'fix:GamesSenseiSenseiWidget-June2009.swf'
+    },
+    {
+      file: 'senseiwidget_2008/locale_en.swf',
+      comment: 'Made by ChrisCPI. Changed the strings to match the launch version',
+      base: 'slegacy:media/play/v2/games/sensei/lang/en/locale.swf'
+    },
+    {
+      file: 'circuitmatch_locale_en.swf',
+      comment: 'Made by ChrisCPI. Changes the strings to match what they were for Field-Ops',
+      base: 'svanilla:media/play/v2/games/circuitmatch/lang/en/locale.swf'
+    },
+    {
+      file: 'commandline_locale_en.swf',
+      comment: 'Made by ChrisCPI. Changes the strings to match what they were for Field-Ops',
+      base: 'svanilla:media/play/v2/games/commandline/lang/en/locale.swf'
+    },
+    {
+      file: 'chipmaze_locale_en.swf',
+      comment: 'Made by ChrisCPI. Changes the strings to match what they were for Field-Ops',
+      base: 'svanilla:media/play/v2/games/chipmaze/lang/en/locale.swf'
+    },
+    {
+      file: 'codebreak_locale_en.swf',
+      comment: 'Made by ChrisCPI. Changes the strings to match what they were for Field-Ops',
+      base: 'svanilla:media/play/v2/games/codebreak/lang/en/locale.swf'
+    },
+    {
+      file: 'firewall_game.swf',
+      comment: 'Made by ChrisCPI. Removed FPS counter and bitmap renderer, fixed "Engage" button not re-appearing after losing, changed the code for the "firerow" mc to change alpha, added a mask for the game taken from Chip Maze, and changed the background to be from the final version.',
+      base: 'svanilla:media/play/v2/games/firewall/firewall_game_FPS.swf'
+    },
+    {
+      file: 'firewall_locale_en.swf',
+      comment: 'Made by ChrisCPI. Changes the strings to match what they were for Field-Ops',
+      base: 'svanilla:media/play/v2/games/firewall/lang/en/locale.swf'
     }
   ],
   [MOD]: [
@@ -2050,10 +2121,6 @@ Unknown if its teleporting to village functions would be accurate`
 Originally from solero legacy-media, modified to work in the flat domain any port model of WF`
     },
     {
-      file: 'boots30.swf',
-      comment: 'Copy of boots.swf but in 30 FPS'
-    },
-    {
       file: 'dynamic_igloo_music.swf',
       comment: 'File that loads the igloo music from a XML file. Originally by Ben, refined by Randomno to include bold names and remove pagination'
     },
@@ -2078,8 +2145,8 @@ Originally from solero legacy-media, modified to work in the flat domain any por
       comment: 'From mammoth. Used dynamic constant replacement. Overrides the XMLSocket.connect function to always connect to IP:WORLD PORT (because of the hardcoded values in join.swf); Overrides the LoadVars.sendAndLoad function to omit "support.clubpenguin.com" from the url (also for join.swf); Overrides String.split to make it think the URL is play.clubpenguin.com (Can be used to bypass domain checks and reduce the amount of modified SWFs).'
     },
     {
-      file: 'load30.swf',
-      comment: 'Copy of tool:load.swf, but in 30 FPS, and the code for loading the chat swf slightly altered to accommodate for it'
+      file: 'rollerscapecp_30.swf',
+      comment: 'Vanilla media RollerscapeCP_CP.swf, but com.clubpenguin.games.collisioncourse.Main.endGame() is modified to request 30 FPS instead of 24.'
     }
   ],
   [UNKNOWN]: [

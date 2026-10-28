@@ -3,7 +3,26 @@ import { Update } from ".";
 export const UPDATES_2006: Update[] = [
   {
     date: '2006-01-01',
-    clothingCatalog: 'archives:Clothing_0601.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0601.swf',
+      newItems: [
+        237,
+        238,
+        419,
+        108,
+        421,
+        420,
+        406,
+        253,
+        456
+      ],
+      removedItems: [
+        131,
+        408,
+        401,
+        201
+      ]
+    },
     end: ['party'],
     indexHtml: 'old-precpip',
     websiteFolder: 'old',
@@ -16,6 +35,14 @@ export const UPDATES_2006: Update[] = [
     date: '2006-01-15',
     iglooVersion: 15,
     furnitureCatalog: 'archives:Furniture_0601.swf',
+  },
+  {
+    date: '2006-01-16',
+    testingItems: [216]
+  },
+  {
+    date: '2006-01-23',
+    testingItems: [109]
   },
   {
     date: '2006-01-27',
@@ -43,7 +70,26 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-02-03',
-    clothingCatalog: 'archives:Clothing_0602.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0602.swf',
+      newItems: [
+        451,
+        212,
+        219,
+        422,
+        175,
+        174,
+        110,
+        404,
+        220,
+        405
+      ],
+      removedItems: [
+        220,
+        404,
+        405
+      ]
+    }
   },
   {
     roomComment: 'Mancala is removed from the HQ',
@@ -94,7 +140,8 @@ export const UPDATES_2006: Update[] = [
     rooms: {
       pizza: 'archives:ArtworkRoomsPizza12.swf',
       plaza: 'archives:ArtworkRoomsPlaza10.swf'
-    }
+    },
+    availableRooms: ['pizza', 'plaza']
   },
   {
     date: '2006-02-28',
@@ -107,7 +154,30 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-03-03',
-    clothingCatalog: 'archives:Clothing_0603.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0603.swf',
+      newItems: [
+        218,
+        262,
+        263,
+        351,
+        352,
+        363,
+        424,
+        520,
+        521,
+        522,
+        523,
+        524
+      ],
+      removedItems: [
+        106,
+        301,
+        420,
+        421,
+        484
+      ]
+    }
   },
   {
     date: '2006-03-10',
@@ -138,7 +208,8 @@ export const UPDATES_2006: Update[] = [
     rooms: {
       plaza: 'archives:ArtworkRoomsPlaza12.swf',
       pet: 'mammoth:artwork/rooms/pet11.swf'
-    }
+    },
+    availableRooms: ['pet']
   },
   {
     date: '2006-03-20',
@@ -160,6 +231,7 @@ export const UPDATES_2006: Update[] = [
       agent: 'archives:ArtworkRoomsAgent11.swf',
       berg: 'mammoth:artwork/rooms/berg10.swf'
     },
+    availableRooms: ['berg'],
     music: {
       agent: 7
     },
@@ -198,7 +270,6 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-04-01',
-    dateReference: 'old-rink',
     rooms: {
       // unknown date, you can now walk to the audience in the rink
       // only evidence is after april fools party
@@ -213,7 +284,23 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-04-07',
-    clothingCatalog: 'archives:Clothing_0604.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0604.swf',
+      newItems: [
+        176,
+        177,
+        181,
+        261,
+        366,
+        423
+      ],
+      removedItems: [
+        102,
+        175,
+        419,
+        453
+      ]
+    }
   },
   {
     date: '2006-04-14',
@@ -333,11 +420,38 @@ export const UPDATES_2006: Update[] = [
     roomComment: 'Find Four tables are added to the Ski Lodge',
     rooms: {
       lodge: 'archives:ArtworkRoomsLodge14.swf'
-    }
+    },
+    availableRooms: ['attic']
   },
   {
     date: '2006-05-05',
-    clothingCatalog: 'archives:Clothing_0605.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0605.swf',
+      newItems: [
+        131,
+        224,
+        236,
+        302,
+        362,
+        401,
+        403,
+        404,
+        901,
+        902,
+        903,
+        904,
+        905,
+        906,
+        907,
+        908
+      ],
+      removedItems: [
+        172,
+        406,
+        410,
+        412
+      ]
+    }
   },
   {
     date: '2006-05-12',
@@ -347,7 +461,9 @@ export const UPDATES_2006: Update[] = [
     date: '2006-05-19',
     iglooVersion: 20,
     furnitureCatalog: 'archives:Furniture_0605.swf',
-    dateReference: 'igloo-music',
+    flags: {
+      iglooMusicReleased: true
+    },
     iglooList: 'Penguins can now add music to their igloo'
   },
   {
@@ -383,7 +499,11 @@ export const UPDATES_2006: Update[] = [
       // 2006 client boiler, the party vesion isn't archived
       boiler: 'archives:ArtworkRoomsBoiler11.swf',
       mine: 'archives:ArtworkRoomsMine13.swf'
-    }
+    },
+    newRoomTransitions: [
+      { from: 'dance', to: 'boiler', pos: [480, 210], spawn: [560, 320] },
+    ],
+    availableRooms: ['cave', 'cavemine', 'boiler', 'mine']
   },
   {
     date: '2006-05-29',
@@ -392,11 +512,34 @@ export const UPDATES_2006: Update[] = [
       cave: 'archives:ArtworkRoomsCave13.swf',
       shack: 'archives:ArtworkRoomsShack10.swf'
     },
+    availableRooms: ['shack'],
     map: 'approximation:map_shack.swf'
   },
   {
     date: '2006-06-02',
-    clothingCatalog: 'archives:Clothing_0606.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0606.swf',
+      newItems: [
+        215,
+        267,
+        269,
+        270,
+        272,
+        273,
+        323,
+        409,
+        457,
+        909,
+        910,
+        911,
+        912
+      ],
+      removedItems: [
+        103,
+        235,
+        451
+      ]
+    }
   },
   {
     date: '2006-06-06',
@@ -454,6 +597,7 @@ export const UPDATES_2006: Update[] = [
 
       beach: 'archives:ArtworkRoomsBeach12.swf'
     },
+    availableRooms: ['beach'],
     // beach opens
     map: 'archives:ArtworkMapsIsland10.swf'
   },
@@ -478,8 +622,38 @@ export const UPDATES_2006: Update[] = [
     end: ['party']
   },
   {
+    date: '2006-06-30',
+    missionItems: [801, 802]
+  },
+  {
     date: '2006-07-07',
-    clothingCatalog: 'archives:Clothing_0607.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0607.swf',
+      newItems: [
+        201,
+        217,
+        275,
+        327,
+        368,
+        433,
+        434,
+        525,
+        526,
+        527,
+        528,
+        529,
+        530,
+        913,
+        914,
+        915,
+        916
+      ],
+      removedItems: [
+        218,
+        233,
+        234
+      ]
+    }
   },
   {
     date: '2006-07-14',
@@ -548,7 +722,39 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-08-04',
-    clothingCatalog: 'archives:Clothing_0608.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0608.swf',
+      newItems: [
+        220,
+        254,
+        255,
+        277,
+        278,
+        329,
+        435,
+        436,
+        461,
+        462,
+        463,
+        488,
+        918,
+        919,
+        920,
+        921
+      ],
+      removedItems: [
+        237,
+        238,
+        252,
+        409,
+        417,
+        481,
+        901,
+        902,
+        906,
+        907
+      ]
+    }
   },
   {
     date: '2006-08-11',
@@ -694,11 +900,49 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-09-01',
-    clothingCatalog: 'archives:September06Style.swf'
+    clothingCatalog: {
+      file: 'archives:September06Style.swf',
+      newItems: [
+        113,
+        114,
+        172,
+        182,
+        202,
+        206,
+        234,
+        256,
+        279,
+        280,
+        306,
+        307,
+        353,
+        412,
+        922,
+        923,
+        924,
+        925
+      ],
+      removedItems: [
+        219,
+        221,
+        222,
+        224,
+        302,
+        422,
+        913,
+        914,
+        915,
+        916
+      ]
+    }
   },
   {
     date: '2006-09-07',
     constructionComment: 'Construction begins at the Beach',
+    newspaperItems: {
+      newItems: [282],
+      removed: []
+    },
     temp: {
       event: {
         rooms: {
@@ -735,6 +979,10 @@ export const UPDATES_2006: Update[] = [
     date: '2006-09-21',
     iglooVersion: 40,
     chatVersion: 506,
+    newspaperItems: {
+      newItems: [],
+      removed: [282]
+    },
     fileChanges: {
       'interface.swf': 'recreation:old_interface/old_toolbar.swf'
     },
@@ -1303,7 +1551,8 @@ export const UPDATES_2006: Update[] = [
       pet: 'archives:ArtworkRoomsPet40.swf',
       dojo: 'archives:ArtworkRoomsDojo41.swf',
       shack: 'archives:ArtworkRoomsShack40.swf'
-    }
+    },
+    availableRooms: ['light', 'beacon']
   },
   {
     date: '2006-09-24',
@@ -1339,7 +1588,31 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-10-06',
-    clothingCatalog: 'archives:October06Style.swf'
+    clothingCatalog: {
+      file: 'archives:October06Style.swf',
+      newItems: [
+        106,
+        247,
+        301,
+        303,
+        354,
+        451,
+        474,
+        927,
+        928
+      ],
+      removedItems: [
+        108,
+        110,
+        212,
+        236,
+        363,
+        401,
+        423,
+        911,
+        912
+      ]
+    }
   },
   {
     date: '2006-10-13',
@@ -1383,7 +1656,16 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-10-27',
-    clothingCatalog: 'archives:October06Style_2.swf',
+    clothingCatalog: {
+      file: 'archives:October06Style_2.swf',
+      newItems: [
+        244,
+        246,
+        310,
+        332
+      ],
+      removedItems: []
+    },
     temp: {
       party: {
         partyName: 'Halloween Party',
@@ -1425,7 +1707,51 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-11-03',
-    clothingCatalog: 'archives:Nov06Style.swf'
+    clothingCatalog: {
+      file: 'archives:Nov06Style.swf',
+      newItems: [
+        136,
+        179,
+        243,
+        281,
+        283,
+        361,
+        415,
+        419,
+        445,
+        483,
+        531,
+        929,
+        930,
+        931
+      ],
+      removedItems: [
+        106,
+        176,
+        177,
+        217,
+        244,
+        246,
+        247,
+        261,
+        267,
+        269,
+        270,
+        272,
+        273,
+        301,
+        303,
+        310,
+        327,
+        332,
+        354,
+        368,
+        474,
+        909,
+        910,
+        918
+      ]
+    }
   },
   {
     date: '2006-11-06',
@@ -1456,6 +1782,7 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-11-27',
+    missionItems: [803, 804],
     end: ['party'],
     miscComments: ['The second secret agent mission is released'],
     fileChanges: {
@@ -1471,7 +1798,39 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-12-01',
-    clothingCatalog: 'archives:Dec06Style.swf'
+    clothingCatalog: {
+      file: 'archives:Dec06Style.swf',
+      newItems: [
+        13,
+        218,
+        221,
+        224,
+        284,
+        365,
+        370,
+        426,
+        447,
+        448,
+        464,
+        932,
+        933,
+        934,
+        935
+      ],
+      removedItems: [
+        181,
+        215,
+        362,
+        404,
+        434,
+        457,
+        488,
+        904,
+        920,
+        921,
+        922
+      ]
+    }
   },
   {
     date: '2006-12-08',
@@ -1481,6 +1840,13 @@ export const UPDATES_2006: Update[] = [
     roomComment: 'Red Puffles are now in the Pet Shop',
     rooms: {
       pet: 'archives:ArtworkRoomsPet43.swf'
+    }
+  },
+  {
+    date: '2006-12-14',
+    newspaperItems: {
+      newItems: [570],
+      removed: []
     }
   },
   {
@@ -1509,7 +1875,11 @@ export const UPDATES_2006: Update[] = [
   },
   {
     date: '2006-12-21',
-    end: ['event']
+    end: ['event'],
+    newspaperItems: {
+      newItems: [],
+      removed: [570]
+    }
   },
   {
     date: '2006-12-22',

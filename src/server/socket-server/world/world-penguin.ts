@@ -1,19 +1,26 @@
 import { getDefaultIgloo, Igloo, Mail, PenguinJson, PlayerPuffle, RainbowPuffleStage, StampbookCover } from "@server/database/database";
-import { CardJitsuFireProgress, CardJitsuProgress } from "@server/game-logic/ninja-progress";
+import { MASCOTS } from "@server/game-data/mascots";
+import { CARDS } from "@server/game-logic/cards";
+import { CardJitsuFireProgress, CardJitsuProgress, CardJitsuSnowProgress } from "@server/game-logic/ninja-progress";
 import { processVersion } from "@server/routes/versions";
 import settingsManager, { SettingsManager } from "@server/settings";
+import { GameData } from "@server/timelines/game-data";
 
-export type PenguinEquipped = {
-  color: number
-  head: number
-  face: number
-  neck: number
-  body: number
-  hand: number
-  feet: number
-  pin: number
-  background: number  
-}
+export const equipProp = [
+  'color',
+  'head',
+  'face',
+  'neck',
+  'body',
+  'hand',
+  'feet',
+  'pin',
+  'background'
+] as const;
+
+export type EquipProp = typeof equipProp[number];
+
+export type PenguinEquipped = Record<EquipProp, number>;
 
 export type RoomState = { x: number; y: number; frame: number; };
 
@@ -32,15 +39,21 @@ function getVirtualDate(date: [number, number, number], offset: number) {
 
 class Profile {
   private _name: string;
+  private _displayName: string;
   private _mascot: number;
 
   constructor(private _id: number, data: PenguinJson) {
     this._name = data.name;
     this._mascot = data.mascot;
+    this._displayName = MASCOTS.find(m => this._id === m.id)?.display ?? this._name;
   }
 
   get name() {
     return this._name;
+  }
+
+  get displayName() {
+    return this._displayName;
   }
 
   public changeName(name: string) {
@@ -73,15 +86,19 @@ class Membership {
 }
 
 class PSA {
-  private _agent: boolean;
+  private _isAgent: boolean;
   private _pending = false;
 
   constructor(data: PenguinJson) {
-    this._agent = data.is_agent;
+    this._isAgent = data.is_agent;
   }
 
-  get isAgent() {
-    return this._agent;
+  public get isAgent() {
+    return this._isAgent;
+  }
+
+  public setAgent() {
+    this._isAgent = true;
   }
 
   setAgentPending() {
@@ -163,6 +180,10 @@ class Inventory {
 
   public add(id: number): void {
     this._items.add(id);
+  }
+
+  public delete(id: number): void {
+    this._items.delete(id);
   }
 }
 
@@ -300,11 +321,13 @@ class Stampbook {
   }
 
   public add(stamp: number) {
-    if (!this._cover.recent_stamps.includes(stamp)) {
-      this._cover.recent_stamps.push(stamp);
+    if (!this.has(stamp)) {
+      if (!this._cover.recent_stamps.includes(stamp)) {
+        this._cover.recent_stamps.push(stamp);
+      }
+      this._sessionStamps.add(stamp);
+      this._stamps.add(stamp);
     }
-    this._sessionStamps.add(stamp);
-    this._stamps.add(stamp);
   }
 
   public has(stamp: number) {
@@ -409,7 +432,7 @@ class PuffleInventory {
   }
 
   public addItem(itemId: number, amount: number): number {
-    const owned = this._items.get(itemId) ?? 0 + amount;
+    const owned = (this._items.get(itemId) ?? 0) + amount;
     this._items.set(itemId, owned);
     return owned;
   }
@@ -704,13 +727,17 @@ class PuffleLaunchData {
   }
 }
 
-class EpfInventory {
+class EpfProfile {
   private _careerMedals: number;
   private _medals: number;
+  private _fieldOpsRead: Set<number>;
+  private _fieldOpsCompleted: Set<number>;
 
   constructor(data: PenguinJson) {
     this._careerMedals = data.careerMedals;
     this._medals = data.ownedMedals;
+    this._fieldOpsRead = new Set(data.fieldOpsRead ?? []);
+    this._fieldOpsCompleted = new Set(data.fieldOpsCompleted ?? []);
   }
 
   public get careerMedals() {
@@ -729,6 +756,40 @@ class EpfInventory {
   public addMedals(medals: number) {
     this._medals += medals;
     this._careerMedals += medals;
+  }
+
+  public get fieldOpsRead() {
+    return [...this._fieldOpsRead];
+  }
+
+  public hasReadFieldOp(id: number) {
+    return this._fieldOpsRead.has(id);
+  }
+
+  public readFieldOp(id: number) {
+    return this._fieldOpsRead.add(id);
+  }
+
+  public get fieldOpsCompleted() {
+    return [...this._fieldOpsCompleted];
+  }
+
+  public hasCompletedFieldOp(id: number) {
+    return this._fieldOpsCompleted.has(id);
+  }
+
+  public completeFieldOp(id: number) {
+    return this._fieldOpsCompleted.add(id);
+  }
+
+  public resetFieldOp(id: number) {
+    this._fieldOpsRead.delete(id);
+    this._fieldOpsCompleted.delete(id);
+  }
+
+  public resetAllFieldOps() {
+    this._fieldOpsRead.clear();
+    this._fieldOpsCompleted.clear();
   }
 }
 
@@ -763,23 +824,38 @@ class GoldPuffleInventory {
 }
 
 class NinjaProfile {
-  private _cards: Map<number, number>;
+  private _cards: Map<number, [number, number]>;
   private _cardProgress: CardJitsuProgress;
   private _cardWins: number;
   
   private _fireProgress: CardJitsuFireProgress;
   private _fireWins: number;
-  private _water: boolean;
-  private _snow: boolean;
 
-  constructor(data: PenguinJson) {
+  private _snowProgress: CardJitsuSnowProgress;
+  private _snowWins: { f: number, w: number, s: number };
+
+  private _water: boolean;
+
+  private _cardAvailable: (id: number) => boolean;
+
+  constructor(data: PenguinJson, gameData: GameData) {
     this._cards = new Map(Object.entries(data.cards).map(([k, v]) => [Number(k), v]));
+
     this._cardProgress = new CardJitsuProgress(data.cardProgress, data.senseiAttempts, data.isNinja);
     this._fireProgress = new CardJitsuFireProgress(data.fireXP ?? 0, data.fireNinja ?? false);
-    this._cardWins = data.cardWins;
+    this._snowProgress = new CardJitsuSnowProgress(data.snowXP ?? 0, data.snowNinja ?? false);
+
     this._water = data.waterNinja ?? false;
-    this._snow = data.snowNinja ?? false;
+
+    this._cardWins = data.cardWins;
     this._fireWins = data.fireWins ?? 0;
+    this._snowWins = {
+      f: data.snowWinsF ?? 0,
+      w: data.snowWinsW ?? 0,
+      s: data.snowWinsS ?? 0,
+    }
+
+    this._cardAvailable = (id) => gameData.isCardAvailable(id);
   }
 
   public get cards() {
@@ -790,20 +866,8 @@ class NinjaProfile {
     return this._cardProgress.xp;
   }
 
-  public get cardRank() {
-    return this._cardProgress.rank;
-  }
-
-  public get cardPercentage() {
-    return this._cardProgress.percentage;
-  }
-
-  public get isNinja() {
-    return this._cardProgress.isNinja;
-  }
-
-  public get senseiAttempts() {
-    return this._cardProgress.senseiAttempts;
+  get cardProgress() {
+    return this._cardProgress;
   }
 
   public get cardWins() {
@@ -814,44 +878,29 @@ class NinjaProfile {
     return this._water;
   }
 
-  public get isSnowNinja() {
-    return this._snow;
-  }
-
   public setWaterNinja(value: boolean) {
     this._water = value;
   }
 
-  public setSnowNinja(value: boolean) {
-    this._snow = value;
-  }
-
-  public addCard(cardId: number, amount = 1): void {
-    this._cards.set(cardId, (this._cards.get(cardId) ?? 0) + amount);
+  public addCard(cardId: number, amount = 1, memberAmount = 0): void {
+    const amounts = this._cards.get(cardId);
+    const currentAmount = amounts ? amounts[0] : 0;
+    const currentMemberAmount = amounts ? amounts[1] : 0;
+    this._cards.set(cardId, [currentAmount + amount, currentMemberAmount + memberAmount]);
   }
 
   public addMatchProgress(won: boolean) {
     this._cardProgress.earnXP(won ? 5 : 1);
   }
 
-  getDeck(): number[] {
-    return [...this._cards.entries()].flatMap(([id, amount]) => new Array(amount).fill(id));
+  getDeck(isMember: boolean = true): number[] {
+    return this.cards.filter(([id]) => this._cardAvailable(id)).flatMap(([id, [amount, memberAmount]]) =>
+      new Array(amount + (isMember ? memberAmount : 0)).fill(id)
+    );
   }
 
   public addWin() {
     this._cardWins++;
-  }
-
-  public earnXP(xp: number) {
-    this._cardProgress.earnXP(xp);
-  }
-
-  public becomeNinja() {
-    this._cardProgress.becomeNinja();
-  }
-
-  public addAttempt() {
-    this._cardProgress.addAttempt();
   }
 
   public get fireProgress() {
@@ -864,6 +913,21 @@ class NinjaProfile {
 
   public addFireWin() {
     this._fireWins++;
+  }
+
+  public get snowProgress() {
+    return this._snowProgress;
+  }
+
+  public get snowWins() {
+    return this._snowWins;
+  }
+
+  public addSnowWin(element: string) {
+    if (!['f', 'w', 's'].includes(element)) {
+      throw new Error(`Invalid element given for snow win: ${element}`);
+    }
+    this._snowWins[element]++;
   }
 }
 
@@ -965,7 +1029,7 @@ export class WorldPenguin implements UserPenguin {
   private _igloo: IglooInventory;
   private _mail: MailInventory;
   private _puffleLaunch: PuffleLaunchData;
-  private _epf: EpfInventory;
+  private _epf: EpfProfile;
   private _gold: GoldPuffleInventory;
   private _ninja: NinjaProfile;
   private _battleOfDoom: BattleOfDoomStatus;
@@ -976,7 +1040,8 @@ export class WorldPenguin implements UserPenguin {
   constructor(
     id: number,
     json: PenguinJson,
-    settings: SettingsManager
+    settings: SettingsManager,
+    data: GameData
   ) {
     this._profile = new Profile(id, json);
     this._membership = new Membership(json);
@@ -993,9 +1058,9 @@ export class WorldPenguin implements UserPenguin {
     this._igloo = new IglooInventory(json);
     this._mail = new MailInventory(json);
     this._puffleLaunch = new PuffleLaunchData(json);
-    this._epf = new EpfInventory(json);
+    this._epf = new EpfProfile(json);
     this._gold = new GoldPuffleInventory(json);
-    this._ninja = new NinjaProfile(json);
+    this._ninja = new NinjaProfile(json, data);
     this._battleOfDoom = new BattleOfDoomStatus(json);
     this._medieval2012 = new Medieval2012Status(json);
     this._preference = new UserPreference(json);
@@ -1006,7 +1071,7 @@ export class WorldPenguin implements UserPenguin {
   }
 
   public get name() {
-    return this._profile.name;
+    return this._profile.displayName;
   }
 
   public changeName(name: string) {
@@ -1160,21 +1225,28 @@ export class WorldPenguin implements UserPenguin {
 
       careerMedals: this._epf.careerMedals,
       ownedMedals: this._epf.medals,
+      fieldOpsRead: this._epf.fieldOpsRead,
+      fieldOpsCompleted: this._epf.fieldOpsCompleted,
 
       nuggets: this._gold.nuggets,
 
       cards: Object.fromEntries(this._ninja.cards),
       cardProgress: this._ninja.xp,
-      isNinja: this._ninja.isNinja,
-      senseiAttempts: this._ninja.senseiAttempts,
+      isNinja: this._ninja.cardProgress.isNinja,
+      senseiAttempts: this._ninja.cardProgress.senseiAttempts,
       cardWins: this._ninja.cardWins,
 
       fireXP: this._ninja.fireProgress.xp,
       fireNinja: this._ninja.fireProgress.isFireNinja,
       fireWins: this._ninja.fireWins,
 
+      snowXP: this._ninja.snowProgress.xp,
+      snowNinja: this._ninja.snowProgress.isSnowNinja,
+      snowWinsF: this._ninja.snowWins.f,
+      snowWinsW: this._ninja.snowWins.w,
+      snowWinsS: this._ninja.snowWins.s,
+
       waterNinja: this._ninja.isWaterNinja,
-      snowNinja: this._ninja.isSnowNinja,
 
       battleOfDoom: this._battleOfDoom.completed,
 

@@ -1,6 +1,8 @@
 import path from "path";
 import fs from 'fs';
 import { readFile, writeFile } from "@common/utils";
+import { MASCOTS } from "@server/game-data/mascots";
+import { isLower } from "@server/routes/versions";
 
 export type StampbookCover = {
   color: number,
@@ -142,12 +144,14 @@ export interface PenguinJson {
 // EPF
   careerMedals: number
   ownedMedals: number
+  fieldOpsRead?: number[],
+  fieldOpsCompleted?: number[],
   
 // GOLD PUFFLE
   nuggets: number // Total number of golden nuggets in the gold puffle quest
   
 // CARD-JITSU
-  cards: Record<number, number>
+  cards: Record<number, [number, number]>
   cardProgress: number
   isNinja: boolean;
   senseiAttempts: number;
@@ -157,9 +161,15 @@ export interface PenguinJson {
   fireNinja?: boolean;
   fireWins?: number;
 
+  snowXP?: number;
+  snowNinja?: boolean;
+  // Wins playing as each element
+  snowWinsF?: number,
+  snowWinsW?: number,
+  snowWinsS?: number,
+
   /** Temporary data for cheaters who want the amulet to be completed */
   waterNinja?: boolean;
-  snowNinja?: boolean;
   
 
 // BATTLE OF DOOM
@@ -171,6 +181,87 @@ export interface PenguinJson {
 // USER PREFERENCE
   noSave?: boolean;
   safeChat?: boolean;
+}
+
+function capitalizeName(name: string): string {
+  return name.split(' ').map((name => {
+    return name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase();
+  })).join(' ');
+}
+
+const STARTING_COINS_CHANGE_DATE = '2008-07-15';
+
+function getStartingCoins(version?: string): number {
+  if (!version) return 500;
+  return isLower(version, STARTING_COINS_CHANGE_DATE) ? 100 : 500;
+}
+
+export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string): PenguinJson {
+  return {
+    name: capitalizeName(name),
+    mascot: 0,
+
+    is_member: member,
+    is_agent: false,
+
+    color: color,
+    head: 0,
+    face: 0,
+    neck: 0,
+    body: 0,
+    hand: 0,
+    feet: 0,
+    background: 0,
+    pin: 0,
+    inventory: [color],
+
+    coins: getStartingCoins(version),
+    registration_date: Date.now(),
+
+    minutes_played: 0,
+    virtualRegistrationTimestamp: virtualTimestamp,
+
+    stamps: [],
+    stampbook: {
+      color: 1,
+      highlight: 1,
+      pattern: 0,
+      icon: 1,
+      stamps: [],
+      recent_stamps: []
+    },
+    puffleSeq: 0,
+    puffles: [],
+    backyard: [],
+    puffleItems: {},
+    hasDug: false,
+    treasureFinds: [],
+    rainbow: {
+      adoptability: false,
+      currentTask: 0,
+      coinsCollected: []
+    },
+    igloo: 1,
+    igloos: [getDefaultIgloo(1)],
+    furniture: {},
+    iglooFloorings: [],
+    iglooTypes: [1],
+    iglooLocations: [1],
+    iglooSeq: 1,
+    mail: [],
+    mailSeq: 0,
+    ownedMedals: 0,
+    careerMedals: 0,
+    fieldOpsRead: [],
+    fieldOpsCompleted: [],
+    nuggets: 0,
+    cards: {},
+    cardProgress: 0,
+    isNinja: false,
+    senseiAttempts: 0,
+    cardWins: 0,
+    battleOfDoom: false
+  }
 }
 
 export class DataFolder {
@@ -348,6 +439,24 @@ class DatabaseMigrator {
     }
   }
 
+  private migrate_1_6_0() {
+    const penguinsDir = path.join(this._folderPath, 'penguins')
+    const penguins = fs.readdirSync(penguinsDir)
+    for (const penguin of penguins) {
+      if (penguin.match(/\d+\.json/) !== null) {
+        const penguinDir = path.join(penguinsDir, penguin)
+        const content = JSON.parse(fs.readFileSync(penguinDir, { encoding: 'utf-8' }))
+
+        for (const cardId in content.cards) {
+          const amount = content.cards[cardId];
+          content.cards[cardId] = [amount, 0];
+        }
+
+        fs.writeFileSync(penguinDir, JSON.stringify(content))
+      }
+    }
+  }
+
   private migrateVersion(version: string): string {
     switch (version) {
       case '0.2.0':
@@ -403,6 +512,10 @@ class DatabaseMigrator {
         return '1.4.4';
       case '1.4.4':
         return '1.4.5';
+      case '1.4.5':
+        return '1.5.0';
+      case '1.5.0':
+        return '1.5.1';
       default:
         throw new Error('Invalid database version: ' + version);
     }
@@ -423,6 +536,7 @@ class DatabaseMigrator {
 export class PenguinRepository {
   private _path: string;
   private _seq: SeqFile;
+  private _writes = new Map<number, Promise<void>>();
   
   constructor(userFolder: string) {
     this._path = path.join(userFolder, 'penguins');
@@ -432,6 +546,30 @@ export class PenguinRepository {
     }
 
     this._seq = new SeqFile(this._path, 100);
+    this.createMascots().catch(e => {
+      throw e;
+    });
+  }
+
+  private async createMascots() {
+    await Promise.all(MASCOTS.map(mascot => {
+      return (async () => {
+        if (await this.get(mascot.id) === null) {
+          const penguin: PenguinJson = {
+            ...getDefaultPenguin(mascot.name, 1, true, new Date(2005, 9, 24).getTime()),
+            inventory: [...mascot.starterItems]
+          };
+          await new Promise<void>((resolve, reject) => {
+            fs.writeFile(this.getFolderPath(mascot.id), JSON.stringify(penguin), (err) => {
+              if (err) {
+                reject();
+              }
+              resolve();
+            });
+          });
+        }
+      })();
+    }));
   }
 
   private getFolderPath(id: number): string {
@@ -461,8 +599,26 @@ export class PenguinRepository {
     return id;
   }
 
-  public async write(id: number, data: PenguinJson): Promise<void> {
-    await writeFile(this.getFolderPath(id), JSON.stringify(data));
+  public write(id: number, data: PenguinJson): Promise<void> {
+    const filePath = this.getFolderPath(id);
+    const content = JSON.stringify(data);
+    const previous = this._writes.get(id) ?? Promise.resolve();
+    const temporaryPath = path.join(this._path, `.${id}.tmp`);
+    const queued = previous.catch(() => undefined).then(async () => {
+      await writeFile(temporaryPath, content);
+      await fs.promises.rename(temporaryPath, filePath);
+    });
+
+    this._writes.set(id, queued);
+
+    const cleanUp = () => {
+      if (this._writes.get(id) === queued) {
+        this._writes.delete(id);
+      }
+    };
+    queued.then(cleanUp, cleanUp);
+
+    return queued;
   }
 
   public async fromName(name: string): Promise<[number, PenguinJson] | null> {

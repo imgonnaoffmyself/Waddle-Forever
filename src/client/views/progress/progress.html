@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Running...</title>
+    <link href="progress.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+    <div>
+      <img src="spinner.webp" width="60px">
+    </div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div>
+      <span id="prompt"></span>
+      <span id="progress-number"></span>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        function updateProgress(value) {
+          const percentage = value * 100;  
+          document.getElementById('progress-bar').style.width = `${percentage}%`;
+          document.getElementById('progress-number').textContent = `${Math.round(percentage)}%`;
+        }
+
+        ipcRenderer.on('update-progress', (event, value) => updateProgress(value));
+
+        ipcRenderer.on('prompt-name', (event, value) => {
+          document.getElementById('prompt').textContent = value;
+          updateProgress(0);
+        })
+    </script>
+</body>
+</html>

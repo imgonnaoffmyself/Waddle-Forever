@@ -7,7 +7,54 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-01-04',
-    clothingCatalog: 'archives:Clothing_0801.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0801.swf',
+      newItems: [
+        221,
+        223,
+        251,
+        286,
+        287,
+        342,
+        380,
+        411,
+        449,
+        450,
+        764,
+        904,
+        913,
+        979
+      ],
+      removedItems: [
+        137,
+        209,
+        233,
+        242,
+        265,
+        284,
+        290,
+        299,
+        338,
+        357,
+        359,
+        370,
+        373,
+        377,
+        378,
+        415,
+        423,
+        439,
+        446,
+        447,
+        454,
+        465,
+        481,
+        485,
+        933,
+        967,
+        978
+      ]
+    }
   },
   {
     date: '2008-01-09',
@@ -72,6 +119,7 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-01-21',
+    missionItems: [813, 814],
     end: ['party']
   },
   {
@@ -102,7 +150,51 @@ export const UPDATES_2008: Update[] = [
       'Rockhopper is seen leaving Club Penguin from the telescope',
       'Save the Migrator is setup at the Beach'
     ],
-    clothingCatalog: 'archives:Feb2008.swf',
+    clothingCatalog: {
+      file: 'archives:Feb2008.swf',
+      newItems: [
+        131,
+        181,
+        239,
+        308,
+        362,
+        403,
+        457,
+        478,
+        768,
+        769,
+        770,
+        924,
+        930,
+        980,
+        981
+      ],
+      removedItems: [
+        111,
+        117,
+        118,
+        182,
+        210,
+        260,
+        261,
+        262,
+        263,
+        296,
+        305,
+        312,
+        313,
+        314,
+        334,
+        347,
+        360,
+        372,
+        424,
+        927,
+        968,
+        969,
+        976
+      ]
+    },
     temp: {
       'migrator-crash': {
         fileChanges: {
@@ -395,7 +487,35 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-02-28',
-    sportCatalog: 'archives:Sport_0802.swf'
+    sportCatalog: {
+      file: 'archives:Sport_0802.swf',
+      items: [
+        220,
+        254,
+        255,
+        349,
+        405,
+        406,
+        461,
+        701,
+        702,
+        703,
+        711,
+        712,
+        919,
+        453,
+        462,
+        463,
+        720,
+        721,
+        722,
+        974,
+        321,
+        775,
+        778,
+        918
+      ]
+    }
   },
   {
     date: '2008-02-29',
@@ -418,7 +538,45 @@ export const UPDATES_2008: Update[] = [
         }
       }
     },
-    clothingCatalog: 'archives:PenguinStyleMar2008.swf'
+    clothingCatalog: {
+      file: 'archives:PenguinStyleMar2008.swf',
+      newItems: [
+        108,
+        110,
+        262,
+        291,
+        324,
+        351,
+        417,
+        660,
+        780,
+        781,
+        782,
+        923,
+        982,
+        983
+      ],
+      removedItems: [
+        113,
+        114,
+        203,
+        204,
+        213,
+        214,
+        234,
+        249,
+        306,
+        323,
+        352,
+        358,
+        403,
+        438,
+        770,
+        963,
+        966,
+        975
+      ]
+    }
   },
   {
     date: '2008-03-14',
@@ -615,7 +773,50 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-04-04',
-    clothingCatalog: 'archives:Apr2008.swf'
+    clothingCatalog: {
+      file: 'archives:Apr2008.swf',
+      newItems: [
+        167,
+        176,
+        177,
+        187,
+        188,
+        189,
+        275,
+        307,
+        381,
+        437,
+        464,
+        713,
+        783,
+        784,
+        785,
+        908,
+        922,
+        985,
+        986
+      ],
+      removedItems: [
+        169,
+        229,
+        232,
+        241,
+        243,
+        262,
+        289,
+        379,
+        419,
+        448,
+        467,
+        482,
+        483,
+        484,
+        930,
+        932,
+        935,
+        979
+      ]
+    }
   },
   {
     date: '2008-04-10',
@@ -667,6 +868,7 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-04-21',
+    missionItems: [815, 816],
     rooms: {
       agent: 'recreation:agent_2008_apr_pre_cpip.swf'
     }
@@ -674,7 +876,33 @@ export const UPDATES_2008: Update[] = [
   {
     date: '2008-04-25',
     end: ['migrator-reconstruction'],
-    sportCatalog: 'archives:SportCatalog_0804.swf',
+    sportCatalog: {
+      file: 'archives:SportCatalog_0804.swf',
+      items: [
+        220,
+        254,
+        255,
+        349,
+        461,
+        701,
+        702,
+        703,
+        711,
+        712,
+        919,
+        722,
+        321,
+        775,
+        778,
+        918,
+        435,
+        436,
+        717,
+        791,
+        792,
+        965
+      ]
+    },
     temp: {
       party: {
         partyName: 'Rockhopper & Yarr\'s Arr-ival Parr-ty',
@@ -706,11 +934,59 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-04-28',
-    end: ['party']
+    exploreItems: [609],
+    end: ['party'],
+    flags: {
+      quartersAvailable: true,
+      nestAvailable: true
+    }
   },
   {
     date: '2008-05-02',
-    clothingCatalog: 'archives:May2008.swf'
+    clothingCatalog: {
+      file: 'archives:May2008.swf',
+      newItems: [
+        196,
+        197,
+        198,
+        410,
+        667,
+        668,
+        669,
+        673,
+        718,
+        723,
+        724,
+        725,
+        793,
+        794,
+        795,
+        796,
+        797,
+        798,
+        963,
+        988,
+        989
+      ],
+      removedItems: [
+        221,
+        223,
+        251,
+        286,
+        287,
+        342,
+        380,
+        411,
+        449,
+        450,
+        464,
+        764,
+        785,
+        904,
+        913,
+        924
+      ]
+    }
   },
   {
     date: '2008-05-09',
@@ -791,8 +1067,58 @@ export const UPDATES_2008: Update[] = [
     end: ['party']
   },
   {
+    date: '2008-05-30',
+    testingItems: [674]
+  },
+  {
     date: '2008-06-06',
-    clothingCatalog: 'archives:Jun2008.swf'
+    clothingCatalog: {
+      file: 'archives:Jun2008.swf',
+      newItems: [
+        125,
+        139,
+        211,
+        267,
+        269,
+        270,
+        271,
+        272,
+        273,
+        297,
+        298,
+        382,
+        383,
+        384,
+        830,
+        831,
+        832,
+        833,
+        909,
+        910,
+        912,
+        991
+      ],
+      removedItems: [
+        110,
+        131,
+        181,
+        239,
+        291,
+        308,
+        324,
+        351,
+        362,
+        478,
+        768,
+        769,
+        781,
+        798,
+        923,
+        980,
+        981,
+        982
+      ]
+    }
   },
   {
     date: '2008-06-13',
@@ -916,16 +1242,85 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-06-24',
+    missionItems: [817, 818],
     miscComments: ['The earthquake ends'],
     end: ['earthquake']
   },
   {
     date: '2008-06-27',
-    sportCatalog: 'archives:SASJun2008.swf'
+    sportCatalog: {
+      file: 'archives:SASJun2008.swf',
+      items: [
+        254,
+        255,
+        349,
+        701,
+        702,
+        703,
+        711,
+        712,
+        321,
+        775,
+        778,
+        918,
+        435,
+        436,
+        717,
+        791,
+        792,
+        965,
+        385,
+        719,
+        726,
+        727,
+        836,
+        837,
+        993
+      ]
+    }
   },
   {
     date: '2008-07-04',
-    clothingCatalog: 'archives:July08Style.swf'
+    clothingCatalog: {
+      file: 'archives:July08Style.swf',
+      newItems: [
+        214,
+        368,
+        386,
+        387,
+        388,
+        433,
+        434,
+        728,
+        730,
+        731,
+        732,
+        839,
+        840,
+        841,
+        842,
+        843,
+        844,
+        846,
+        937,
+        946,
+        947,
+        994
+      ],
+      removedItems: [
+        108,
+        297,
+        417,
+        660,
+        780,
+        782,
+        795,
+        908,
+        983,
+        985,
+        986
+      ]
+    }
   },
   {
     date: '2008-07-11',
@@ -979,7 +1374,9 @@ export const UPDATES_2008: Update[] = [
   {
     date: '2008-07-15',
     miscComments: ['The Club Penguin Improvement Project is implemented'],
-    dateReference: 'cpip',
+    flags: {
+      preCpip: false
+    },
     indexHtml: 'classic-cpip',
     websiteFolder: 'classic',
     rooms: {
@@ -1034,7 +1431,6 @@ export const UPDATES_2008: Update[] = [
       'play/v2/shell/shell.swf': 'archives:ClientShell_January_2009.swf',
       'play/v2/airtower/airtower.swf': 'recreation:airtower_cpip.swf',
       'play/v2/gridview/gridview.swf': 'slegacy:media/play/v2/client/gridview.swf',
-      'play/v2/client/engine.swf': 'archives:ClientEngine2009-06-15.swf',
       'play/v2/engine/engine.swf': 'recreation:engine_cpip.swf',
       'play/v2/interface/interface.swf': 'recreation:interfaces/2008_july.swf',
       'play/v2/client/login.swf': 'archives:ClientLoginJun2009.swf',
@@ -1044,9 +1440,8 @@ export const UPDATES_2008: Update[] = [
       'play/v2/music/music.swf': 'archives:PlayV2MusicMusic2009-04-02.swf',
       'play/v2/client/igloo.swf': 'archives:ClientIgloo2009-04-02.swf',
       'play/v2/igloo/igloo.swf': 'archives:ClientIgloo2009-04-02.swf',
-      'play/v2/content/global/binoculars/empty.swf': 'slegacy:media/play/v2/content/global/binoculars/empty.swf',
-      // TODO igloo background wasn't used until late 2009?
       'play/v2/content/global/telescope/empty.swf': 'archives:TelescopeEmpty2010.swf',
+      // TODO igloo background wasn't used until late 2009?
       'play/v2/content/global/igloo/assets/igloo_background.swf': 'slegacy:media/play/v2/content/global/igloo/assets/igloo_background.swf',
       // this puffle roundup is a placeholder, TODO needs to be updated
       'play/v2/games/roundup/PuffleRoundup.swf': 'fix:PuffleRoundupWhitePuffle.swf'
@@ -1097,6 +1492,17 @@ export const UPDATES_2008: Update[] = [
       cart: 105,
       roundup: 102,
       thinice: 111
+    },
+    postcardgiftItems: {
+      newItems: [317],
+      removed: []
+    }
+  },
+  {
+    date: '2008-07-16',
+    postcardgiftItems: {
+      newItems: [],
+      removed: [317]
     }
   },
   {
@@ -1173,7 +1579,53 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-08-01',
-    clothingCatalog: 'archives:PSAug2008.swf',
+    clothingCatalog: {
+      file: 'archives:PSAug2008.swf',
+      newItems: [
+        101,
+        281,
+        299,
+        465,
+        938,
+        952,
+        997,
+        3000,
+        3001,
+        4000,
+        4001,
+        5001,
+        6001,
+        6002,
+        6003,
+        6004,
+        6005,
+        6006
+      ],
+      removedItems: [
+        167,
+        176,
+        177,
+        187,
+        188,
+        189,
+        214,
+        275,
+        307,
+        381,
+        437,
+        457,
+        673,
+        713,
+        718,
+        783,
+        784,
+        796,
+        846,
+        922,
+        988,
+        989
+      ]
+    },
     temp: {
       party: {
         rooms: {
@@ -1451,7 +1903,43 @@ export const UPDATES_2008: Update[] = [
     rooms: {
       dance: 'recreation:dance_cpip_postmusicjam2.swf'
     },
-    sportCatalog: 'archives:SportAug08.swf'
+    sportCatalog: {
+      file: 'archives:SportAug08.swf',
+      items: [
+        254,
+        255,
+        349,
+        701,
+        702,
+        703,
+        711,
+        712,
+        321,
+        775,
+        778,
+        918,
+        435,
+        436,
+        717,
+        791,
+        792,
+        385,
+        719,
+        726,
+        727,
+        836,
+        837,
+        993,
+        453,
+        462,
+        463,
+        720,
+        721,
+        920,
+        4005,
+        4006
+      ]
+    }
   },
   {
     date: '2008-08-18',
@@ -1524,7 +2012,51 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-09-05',
-    clothingCatalog: 'archives:Sep2008.swf',
+    clothingCatalog: {
+      file: 'archives:Sep2008.swf',
+      newItems: [
+        111,
+        219,
+        222,
+        312,
+        314,
+        929,
+        966,
+        1004,
+        1005,
+        1006,
+        3004,
+        4007,
+        4008,
+        4009,
+        4010,
+        4011,
+        5002,
+        9000
+      ],
+      removedItems: [
+        196,
+        197,
+        198,
+        211,
+        298,
+        299,
+        410,
+        465,
+        667,
+        668,
+        669,
+        723,
+        724,
+        725,
+        793,
+        794,
+        797,
+        910,
+        912,
+        963
+      ]
+    },
     hairCatalog: 'archives:SptWigs.swf',
     constructionComment: 'A construction begins at the Plaza for the Stage',
     rooms: {
@@ -1804,7 +2336,53 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-10-03',
-    clothingCatalog: 'archives:CatOct2008.swf'
+    clothingCatalog: {
+      file: 'archives:CatOct2008.swf',
+      newItems: [
+        106,
+        227,
+        244,
+        246,
+        247,
+        309,
+        354,
+        460,
+        472,
+        474,
+        928,
+        973,
+        1013,
+        1014,
+        1015,
+        2003,
+        3006,
+        4016,
+        4017,
+        4018,
+        9004
+      ],
+      removedItems: [
+        125,
+        139,
+        267,
+        269,
+        270,
+        271,
+        272,
+        273,
+        382,
+        383,
+        384,
+        830,
+        831,
+        832,
+        833,
+        909,
+        947,
+        991,
+        4011
+      ]
+    }
   },
   {
     date: '2008-10-06',
@@ -1812,6 +2390,7 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-10-07',
+    missionItems: [819, 820],
     miscComments: ['Mission 9: Operation: Spy & Seek is added'],
     localChanges: {
       'forms/missions.swf': {
@@ -2150,7 +2729,8 @@ export const UPDATES_2008: Update[] = [
           dojoext: 'archives:DojoExtConstruction2008.swf'
         }
       }
-    }
+    },
+    availableRooms: ['dojoext']
   },
   {
     date: '2008-11-05',
@@ -2169,7 +2749,63 @@ export const UPDATES_2008: Update[] = [
   {
     date: '2008-11-07',
     end: ['party'],
-    clothingCatalog: 'archives:CatNov2008.swf',
+    clothingCatalog: {
+      file: 'archives:CatNov2008.swf',
+      newItems: [
+        175,
+        179,
+        213,
+        226,
+        243,
+        249,
+        342,
+        365,
+        380,
+        419,
+        467,
+        935,
+        939,
+        940,
+        1020,
+        4023,
+        4024,
+        5010,
+        5011,
+        9008
+      ],
+      removedItems: [
+        227,
+        244,
+        246,
+        247,
+        309,
+        354,
+        368,
+        388,
+        433,
+        434,
+        460,
+        472,
+        474,
+        730,
+        732,
+        841,
+        842,
+        843,
+        844,
+        937,
+        938,
+        952,
+        994,
+        1013,
+        1014,
+        1015,
+        3006,
+        4016,
+        4017,
+        4018
+      ]
+    },
     hairCatalog: 'archives:NovWigs.swf'
   },
   {
@@ -2205,19 +2841,32 @@ export const UPDATES_2008: Update[] = [
   {
     date: '2008-11-17',
     roomComment: 'The dojo now has the Card-Jitsu game',
+    dateReference: 'card-jitsu-release',
     rooms: {
       dojo: 'recreation:dojo_november_2008.swf',
       dojohide: 'recreation:dojohide_2008.swf',
       dojoext: 'recreation:dojoext.swf'
+    },
+    availableRooms: ['dojohide'],
+    localChanges: {
+      'close_ups/ninjabelts.swf': {
+        en: 'recreation:ninjabelts_2008.swf'
+      }
+    },
+    fileChanges: {
+      'play/v2/games/card/card.swf': 'fix:Card-July2009.swf',
+      'play/v2/games/sensei/lang/en/locale.swf': 'recreation:senseiwidget_2008/locale_en.swf',
+      'play/v2/games/sensei/SenseiWidget.swf': 'recreation:senseiwidget_2008/SenseiWidget.swf',
     },
     music: {
       dojoext: 0
     },
     martialArtworks: {
       announce: false,
-      newItems: [4034],
+      newItems: [4034, 5012],
       removedItems: []
-    }
+    },
+    cardSets: [1]
   },
   {
     date: '2008-11-18',
@@ -2293,15 +2942,91 @@ export const UPDATES_2008: Update[] = [
     rooms: {
       agent: 'archives:RoomsAgent.swf',
       agentcom: 'archives:RoomsAgentcomFormer.swf'
-    }
+    },
+    availableRooms: ['agentcom'],
+    nintendoItems: [8000, 8001, 8002, 8003, 8004]
   },
   {
     date: '2008-11-28',
-    sportCatalog: 'archives:SASNov2008.swf'
+    sportCatalog: {
+      file: 'archives:SASNov2008.swf',
+      items: [
+        254,
+        255,
+        701,
+        702,
+        703,
+        711,
+        712,
+        321,
+        775,
+        778,
+        918,
+        385,
+        726,
+        727,
+        993,
+        462,
+        463,
+        720,
+        721,
+        220,
+        277,
+        278,
+        361,
+        461,
+        464,
+        785,
+        919,
+        4040,
+        6011,
+        6013
+      ]
+    }
   },
   {
     date: '2008-12-05',
-    clothingCatalog: 'archives:December08Style.swf'
+    clothingCatalog: {
+      file: 'archives:December08Style.swf',
+      newItems: [
+        172,
+        284,
+        370,
+        420,
+        424,
+        447,
+        484,
+        933,
+        936,
+        978,
+        1026,
+        4041,
+        4042,
+        4043,
+        4044,
+        4045,
+        4046,
+        9011
+      ],
+      removedItems: [
+        342,
+        386,
+        387,
+        728,
+        731,
+        839,
+        840,
+        929,
+        946,
+        966,
+        997,
+        3000,
+        3001,
+        4001,
+        5001,
+        6001
+      ]  
+    }
   },
   {
     date: '2008-12-12',
@@ -2610,6 +3335,11 @@ export const UPDATES_2008: Update[] = [
       agent: 'archives:RoomsAgent.swf',
       dojo: 'recreation:dojo_2008.swf'
     },
+    localChanges: {
+      'instructions/card_jitsu.swf': {
+        en: 'archives:InstructionsCardJitsuDecember2008.swf'
+      }
+    },
     map: 'archives:Map2008-2011Rink.swf'
   },
   {
@@ -2635,6 +3365,7 @@ export const UPDATES_2008: Update[] = [
   },
   {
     date: '2008-12-29',
+    missionItems: [822, 823],
     end: ['party'],
     miscComments: ['Mission 10: Waddle Squad is added'],
     localChanges: {

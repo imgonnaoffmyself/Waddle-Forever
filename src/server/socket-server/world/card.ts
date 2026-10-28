@@ -1,12 +1,10 @@
 import { choose, iterateEntries, randomInt } from "@common/utils";
 import { Card, CardColor, CardElement, CARDS } from "@server/game-logic/cards";
-import { CardJitsuProgress } from "@server/game-logic/ninja-progress";
 import { Room } from "@server/game-logic/rooms";
-import { WaddleName } from "@server/game-logic/waddles";
 import { WaddleGame } from "./waddle-game";
-import { WaddleRoom } from "./waddle-room";
-import { ContextAdder, ContextRemover } from "./world-penguin";
 import { WorldPenguin } from "./world-penguin";
+import { DEFAULT_DECK } from "@server/game-logic/starter-deck";
+import { GameData } from "@server/timelines/game-data";
 
 export class Hand {
   private _canDrawCards: number[];
@@ -18,14 +16,19 @@ export class Hand {
   }
 
   draw(): number {
-    const index = randomInt(0, this._canDrawCards.length - 1);
-    const card = this._canDrawCards.splice(index, 1)[0];
-    this._cantDrawCards.push(card);
     if (this._canDrawCards.length === 0) {
       this._canDrawCards = this._cantDrawCards;
       this._cantDrawCards = [];
     }
-    return card;
+    if (this._canDrawCards.length === 0) {
+      throw new Error('Cannot draw a card while every card is held');
+    }
+    const index = randomInt(0, this._canDrawCards.length - 1);
+    return this._canDrawCards.splice(index, 1)[0];
+  }
+
+  discard(card: number): void {
+    this._cantDrawCards.push(card);
   }
 }
 
@@ -69,7 +72,7 @@ abstract class Ninja {
 
   choose(id: number): void {
     this._chosen = id;
-    this._cardsOnHand = this._cardsOnHand.filter(id => id !== id);
+    this._cardsOnHand = this._cardsOnHand.filter(i => i !== id);
   }
 
   unchoose(): void {
@@ -156,7 +159,9 @@ export class NinjaPlayer extends Ninja {
   constructor(player: WorldPenguin, seat: number) {
     super(seat);
 
-    this._hand = new Hand(player.ninja.getDeck());
+    const deck = player.ninja.getDeck();
+    // use fallback for it to not crash
+    this._hand = new Hand(deck.length > 0 ? deck : [...DEFAULT_DECK]);
     this._player = player;
   }
 
@@ -168,6 +173,16 @@ export class NinjaPlayer extends Ninja {
     const cardId = this._hand.draw();
     this._sessionToCard.set(id, cardId);
     return cardId;
+  }
+
+  choose(id: number): void {
+    const cardId = this._sessionToCard.get(id);
+    if (cardId === undefined) {
+      throw new Error('Couldn\'t find card');
+    }
+    this._sessionToCard.delete(id);
+    this._hand.discard(cardId);
+    super.choose(id);
   }
 
   public getCardInfo(sessionId: number): Card {
@@ -191,10 +206,14 @@ export class Sensei extends Ninja {
   
   private _pupil: NinjaPlayer;
 
-  constructor(unbeatable: boolean, opponent: NinjaPlayer) {
+  /** Full list of cards, filtered by what sets are available */
+  private _availableCards: Card[];
+
+  constructor(unbeatable: boolean, opponent: NinjaPlayer, gameData: GameData) {
     super(0);
     this._unbeatable = unbeatable;
     this._pupil = opponent;
+    this._availableCards = CARDS.rows.filter(c => gameData.isCardAvailable(c.id));
   }
 
   private _sessionToElement = new Map<number, string>();
@@ -212,9 +231,10 @@ export class Sensei extends Ninja {
       }
       this.choose(cardToTuse);
     } else {
-      // no criteria
+      // choosing a card at random
+      // this would raise an error if all cards on hand are of a blocked element
       const canPlayCards = this._cardsOnHand.filter(id => {
-        if (this._blockedElement) {
+        if (this._blockedElement === undefined) {
           return true;
         }
         return this._sessionToElement.get(id) !== this._blockedElement;
@@ -245,24 +265,27 @@ export class Sensei extends Ninja {
         unbeatableCard = cardToCounter.id;
       } else {
         const winningElement = RULES[RULES[cardToCounter.element]];
-        const card = choose(CARDS.rows.filter(card => card.element === winningElement));
+        const card = choose(this._availableCards.filter(card => card.element === winningElement));
         unbeatableCard = card.id;
       }
       this._cardsToUse.set(cardToCounterId, id);
       cardId = unbeatableCard;
     } else {
-      cardId = choose(CARDS.rows).id;
+      const elements = this._cardsOnHand.map(id => this._sessionToElement.get(id)).filter(e => e !== undefined);
+      // must have at least two different elements
+      // to prevent death by block element
+      // (unknown if this mechanism existed in the original, but this will greatly simplify this)
+      if (elements.length === 1) {
+        const elementComplement = this._availableCards.filter(c => c.element !== elements[0]);
+        cardId = choose(elementComplement).id;
+      } else {
+        cardId = choose(this._availableCards).id;
+      }
     }
 
-    this._sessionToElement.set(cardId, CARDS.getStrict(cardId).element);
+    this._sessionToElement.set(id, CARDS.getStrict(cardId).element);
     return cardId;
   }
-}
-
-function getNinjasWithSensei(player: WorldPenguin): [Ninja, Ninja] {
-  const ninja = new NinjaPlayer(player, 1);
-  const sensei = new Sensei(player.ninja.senseiAttempts < 5, ninja);
-  return [ninja, sensei];
 }
 
 const REPLACEMENT_POWER_CARDS: Record<number, [CardElement, CardElement] | undefined> = {
@@ -336,43 +359,6 @@ export class CardJitsu extends WaddleGame {
   /** If in Sensei fight */
   private _sensei: boolean;
 
-  // static DEAL_ACTION = 'deal';
-
-  // static PICK_ACTION = 'pick';
-
-  // static RULES: Record<CardElement, CardElement> = {
-  //   'f': 's',
-  //   'w': 'f',
-  //   's': 'w'
-  // };
-
-  // static ON_PLAYED_POWER_CARDS = new Set([1, 16, 17, 18]);
-  // static SELF_EFFECT_POWER_CARDS = new Set([2]);
-  // static ELEMENT_BLOCK_POWER_CARDS: Record<number, CardElement | undefined> = {
-  //   13: 's',
-  //   14: 'f',
-  //   15: 'w'
-  // };
-
-  // static REPLACEMENT_POWER_CARDS: Record<number, [CardElement, CardElement] | undefined> = {
-  //   16: ['w', 'f'],
-  //   17: ['s', 'w'],
-  //   18: ['f', 's']
-  // };
-  // static COLOR_DISCARD_POWER_CARDS: Record<number, CardColor | undefined> = {
-  //   7: 'r',
-  //   8: 'b',
-  //   9: 'g',
-  //   10: 'y',
-  //   11: 'o',
-  //   12: 'p'
-  // };
-  // static ELEMENT_DISCARD_POWER_CARDS: Record<number, CardElement | undefined> = {
-  //   4: 's',
-  //   5: 'w',
-  //   6: 'f'
-  // };
-
   /** Whether or not lowest value wins this round */
   private _swapValue: boolean = false;
 
@@ -381,16 +367,23 @@ export class CardJitsu extends WaddleGame {
 
   private _opponents = new Map<Ninja, Ninja>();
 
-  constructor(players: WorldPenguin[]) {    
+  constructor(players: WorldPenguin[], private gameData: GameData) {    
     super(players);
 
     this._sensei = players.length === 1;
 
-    const ninjas: [Ninja, Ninja] = this._sensei
-      ? getNinjasWithSensei(players[0])
-      : [new NinjaPlayer(players[0], 0), new NinjaPlayer(players[1], 1)];
+    let ninjas: [Ninja, Ninja];
 
-    players.forEach((p, i) => this._ninjas.set(p, ninjas[i] as NinjaPlayer));
+    if (this._sensei) {
+      const player = players[0];
+      const ninja = new NinjaPlayer(player, 1);
+      const sensei = new Sensei(player.ninja.cardProgress.senseiAttempts < 5, ninja, this.gameData);
+      ninjas = [sensei, ninja];
+      this._ninjas.set(player, ninja);
+    } else {
+      ninjas = [new NinjaPlayer(players[0], 0), new NinjaPlayer(players[1], 1)];
+      players.forEach((p, i) => this._ninjas.set(p, ninjas[i] as NinjaPlayer));
+    }
 
     this._opponents.set(ninjas[0], ninjas[1]);
     this._opponents.set(ninjas[1], ninjas[0]);
@@ -578,7 +571,7 @@ export class CardJitsu extends WaddleGame {
   playerCanPlay(ninja: Ninja): boolean {
     // the only condition for not being able to play is an element being blocked
     const blockedElement = ninja.blockedElement;
-    if (blockedElement) {
+    if (blockedElement === undefined) {
       return true;
     }
 
@@ -586,25 +579,4 @@ export class CardJitsu extends WaddleGame {
 
     return cards.some(c => this.getCard(c)?.element !== blockedElement);
   }
-
-  // removePlayer(penguin: WorldPenguin) {
-  //   // for when the player got stamps in older versions
-  //   for (let i = 0; i <= penguin.info.ninjaProgress.rank; i++) {
-  //     const stamp = CardJitsuProgress.STAMP_AWARDS[i];
-  //     if (stamp !== undefined) {
-  //       penguin.giveStamp(stamp);
-  //     }
-  //   }
-
-  //   penguin.sendCardJitsuStampInfo();
-  //   // client.leaveWaddleRoom();
-  // }
-
-  // setWinner(winnerSeat: number, ...winningCards: number[]) {
-  //   // players are removed so that they don't get the "player quit" popup even though the game ended normally
-  //   this.players.forEach(p => {
-  //     this.removePlayer(p)
-  //   });
-  //   this.sendXt('czo', 0, winnerSeat, ...winningCards);
-  // }
 }

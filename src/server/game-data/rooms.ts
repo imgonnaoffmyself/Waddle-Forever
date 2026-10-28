@@ -4,6 +4,9 @@ type Room = {
   preCpipName: string| null;
 };
 
+/** Igloo rooms live at 2000 + the owner's penguin id, on every client version (in Waddle Forever specifically) */
+export const IGLOO_ROOM_BASE = 2000;
+
 export type RoomName = 'town' |
   'coffee' |
   'book' |
@@ -473,3 +476,25 @@ export const ROOMS: Record<RoomName, Room> = {
     preCpipName: null
   }
 };
+
+const naturalNames = new Map<string, number>();
+
+Object.values(ROOMS).forEach(r => {
+  if (r.name !== '') {
+    naturalNames.set(r.name.toLowerCase(), r.id);
+  }
+});
+
+export function getRoomFromName(name: string): number | undefined {
+  return naturalNames.get(name.toLowerCase());
+}
+
+const idNameIndex = new Map<number, RoomName>();
+Object.entries(ROOMS).forEach(([name, { id }]) => {
+  idNameIndex.set(id, name as RoomName);
+});
+
+
+export function getNameFromId(roomId: number): RoomName | undefined {
+  return idNameIndex.get(roomId);
+}

@@ -1,39 +1,14 @@
 import { FindFourTable } from "./find-four";
 import { MancalaTable } from "./mancala";
+import { TreasureHuntTable } from "./treasure-hunt";
 import { WaddleRoom } from "./waddle-room";
 import { RoomState, WorldPenguin } from "./world-penguin";
 import { WorldTable } from "./world-table";
 
-/**
- * Minimal interface satisfied by both WorldPenguin and NpcPenguin.
- * Used everywhere a room needs to store or display an occupant.
- */
-export interface RoomOccupant {
-  id: number;
-  name: string;
-  inventory: {
-    color: number;
-    head: number;
-    face: number;
-    neck: number;
-    body: number;
-    hand: number;
-    feet: number;
-    pin: number;
-    background: number;
-  };
-  membership: { isMember: boolean };
-  time: { age: number };
-  avatar: { id: number };
-}
-
 export class WorldRoom {
-  private penguins = new Map<RoomOccupant, RoomState>();
+  private penguins = new Map<WorldPenguin, RoomState>();
   private waddles = new Map<number, WaddleRoom>();
   private tables = new Map<number, WorldTable>();
-
-  static MANCALA_TABLE_IDS = new Set([100, 101, 102, 103, 104]);
-  static FIND_FOUR_TABLE_IDS = new Set([200, 201, 202, 203, 204, 205, 206, 207]);
 
   constructor(private _id: number) {}
 
@@ -45,53 +20,16 @@ export class WorldRoom {
     return this.penguins.entries();
   }
 
-  /** All occupants in this room (real players + NPCs). Used for join-string building. */
-  public get occupants(): RoomOccupant[] {
+  public get players() {
     return [...this.penguins.keys()];
   }
 
-  /** Only real WorldPenguin players (excludes NPCs). Used as msg.send() targets. */
-  public get realPlayers(): WorldPenguin[] {
-    return [...this.penguins.keys()].filter((o): o is WorldPenguin => o instanceof WorldPenguin);
-  }
-
-  /** Alias for realPlayers — kept for backward compatibility with existing call sites. */
-  public get players(): WorldPenguin[] {
-    return this.realPlayers;
-  }
-
-  public get playerStates(): [RoomOccupant, RoomState][] {
+  public get playerStates() {
     return [...this.penguins.entries()];
   }
 
   public addPenguin(penguin: WorldPenguin, x: number, y: number): void {
-    this.penguins.set(penguin, { x, y, frame: 1 });
-  }
-
-  /** Add any RoomOccupant (real player or NPC) to this room. */
-  public addOccupant(occupant: RoomOccupant, x: number, y: number): void {
-    this.penguins.set(occupant, { x, y, frame: 1 });
-  }
-
-  /** Remove any RoomOccupant from this room. */
-  public removeOccupant(occupant: RoomOccupant): void {
-    this.penguins.delete(occupant);
-  }
-
-  /** Update an occupant's position (used by NPC movement actions). */
-  public updateOccupantPosition(occupant: RoomOccupant, x: number, y: number): void {
-    const state = this.penguins.get(occupant);
-    if (state !== undefined) {
-      this.penguins.set(occupant, { x, y, frame: state.frame });
-    }
-  }
-
-  /** Update an occupant's frame (used by NPC frame actions). */
-  public updateOccupantFrame(occupant: RoomOccupant, frame: number): void {
-    const state = this.penguins.get(occupant);
-    if (state !== undefined) {
-      this.penguins.set(occupant, { ...state, frame });
-    }
+    this.penguins.set(penguin, { x, y, frame : 1});
   }
 
   public getState(penguin: WorldPenguin) {
@@ -133,6 +71,8 @@ export class WorldRoom {
         table = new FindFourTable(id);
       } else if (WorldTable.MANCALA_TABLE_IDS.has(id)) {
         table = new MancalaTable(id);
+      } else if (WorldTable.TREASURE_HUNT_TABLE_IDS.has(id)) {
+        table = new TreasureHuntTable(id);
       } else {
         throw new Error('Unknown table id');
       }

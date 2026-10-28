@@ -18,25 +18,44 @@ import { MATCHMAKERS } from "@server/game-data/games";
 export const RINK_PUCK_START: [number, number] = [390, 170];
 
 export class World {
-  private penguins = new Map<number, WorldPenguin>();
-  private states = new Map<WorldPenguin, PenguinEnvironment>
-  private rooms = new Map<number, WorldRoom>();
-  private games = new Map<number, WorldGame>();
-  private spectators = new Set<WorldPenguin>();
-  private igloos = new Set<WorldPenguin>();
+  private penguins: Map<number, WorldPenguin>;
+  private states: Map<WorldPenguin, PenguinEnvironment>;
+  private rooms: Map<number, WorldRoom>;
+  private games: Map<number, WorldGame>;
+  private spectators: Set<WorldPenguin>;
+  private igloos: Set<WorldPenguin>;
   private _bakery: Bakery;
   
   // create class responsible for the puck
-  private _puckPosition = new Vector(...RINK_PUCK_START);
-  private _puckPositionParty = new Vector(0, 0);
+  private _puckPosition: Vector;
+  private _puckPositionParty: Vector;
   private _teamsScore: [number, number] = [0, 0];
 
   constructor(private gameData: GameData) {
     this.init();
+  }
+
+  public init() {
+    this.penguins = new Map();
+    this.states = new Map();
+    this.rooms = new Map();
+    this.games = new Map();
+    this.spectators = new Set();
+    this.igloos = new Set();
     this._bakery = new Bakery(this.getRoom(853));
 
+    this._puckPosition = new Vector(...RINK_PUCK_START);
+    this._puckPositionParty = new Vector(0, 0);
+    this._teamsScore[0] = this._teamsScore[1] = 0;
+
+    const extraWaddleRooms = this.gameData.getExtraWaddleRooms();
+    [...WADDLE_ROOMS, ...extraWaddleRooms].forEach((waddle) => {
+      const room = this.getRoom(waddle.roomId);
+      room.addWaddle(waddle.waddleId, new WaddleRoom(waddle.waddleId, waddle.seats, waddle.game));
+    });
+
     MATCHMAKERS.forEach(({ id, count }) => {
-      this.games.set(id, new WorldGame(id, new MatchMaker(count)));
+      this.games.set(id, new WorldGame(id, new MatchMaker<WorldPenguin>(count)));
     });
   }
 
@@ -85,14 +104,8 @@ export class World {
   public disconnect(penguin: WorldPenguin) {
     this.penguins.delete(penguin.id);
     this.states.delete(penguin);
-  }
-
-  public init() {
-    const extraWaddleRooms = this.gameData.getExtraWaddleRooms();
-    [...WADDLE_ROOMS, ...extraWaddleRooms].forEach((waddle) => {
-      const room = this.getRoom(waddle.roomId);
-      room.addWaddle(waddle.waddleId, new WaddleRoom(waddle.waddleId, waddle.seats, waddle.game));
-    });
+    this.igloos.delete(penguin);
+    this.spectators.delete(penguin);
   }
 
   public getWaddleGame(name: WaddleName, players: WorldPenguin[]): WaddleGame {
@@ -100,7 +113,7 @@ export class World {
 
     switch (name) {
       case 'card':
-        game = new CardJitsu(players);
+        game = new CardJitsu(players, this.gameData);
         players.forEach(p => this.enterState(p, { card: game as CardJitsu }));
         break;
       case 'fire':

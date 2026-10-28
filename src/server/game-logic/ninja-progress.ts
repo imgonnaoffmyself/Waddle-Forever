@@ -24,7 +24,9 @@ export class CardJitsuProgress {
   };
 
   /** Max rank XP-wise, ie ninja is a rank above this */
-  static MAX_RANK: number = 9;
+  static HIGHEST_BELT_RANK: number = 9;
+
+  static HIGHEST_RANK: number = this.HIGHEST_BELT_RANK + 1;
 
   constructor(xp: number, attempts: number, ninja: boolean) {
     this._xp = xp;
@@ -35,7 +37,7 @@ export class CardJitsuProgress {
 
   private calculateRank(): number {
     if (this._ninja) {
-      return CardJitsuProgress.MAX_RANK + 1;
+      return CardJitsuProgress.HIGHEST_BELT_RANK + 1;
     }
 
     // can be optimized, but unecessary
@@ -65,7 +67,7 @@ export class CardJitsuProgress {
   }
 
   get percentage(): number {
-    if (this._rank >= CardJitsuProgress.MAX_RANK) {
+    if (this._rank >= CardJitsuProgress.HIGHEST_BELT_RANK) {
       return 0;
     }
 
@@ -100,8 +102,66 @@ const FIRE_RANK_THRESHOLD = [
   150
 ];
 
+// each value is how much xp is needed between levels to rank up
+// 600 total xp needed for rank 1, then 1200 total for rank 2, etc.
+const SNOW_RANK_THRESHOLD = [
+  600,
+  600,
+  1130,
+  1130,
+  1130,
+  1500,
+  1500,
+  2000,
+  2000,
+  2000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000,
+  3000
+];
+
 export const getFireReward = (rank: number): number | undefined => {
   return [6025, 4120, 2013, 1086, 3032][rank - 1];
+}
+
+export const getSnowReward = (rank: number): number | null => {
+  return [
+    null,  // Movie 1
+    6163,  // Glacial Sandals
+    null,  // Movie 2
+    null,  // Movie 3
+    4834,  // Coat of Frost
+    null,  // Movie 4
+    null,  // Movie 5
+    2119,  // Icy Mask
+    null,  // Movie 6
+    null, // Movie 7
+    1581, // Blizzard Helmet
+    null, // Movie 8
+    null, // Snow Gem
+    1582, // Black Ice Headband
+    4835, // Frozen Armor
+    5223, // Ice Cap Cuffs
+    4836, // Black Ice Training Plates
+    1583, // The Flurry
+    6164, // Cold Snap Sandals
+    4837, // Snowstorm Gi
+    5224, // Storm Cloud Bracers,
+    5225, // Snow Shuriken
+    5226, // Fire Nunchaku
+    5227  // Water Hammer
+  ][rank - 1] ?? null;
 }
 
 export const getFireStampReward = (rank: number): number | undefined => {
@@ -112,7 +172,12 @@ export const getFireStampReward = (rank: number): number | undefined => {
   }[rank];
 }
 
-export const MIN_SENSEI_RANK = FIRE_RANK_THRESHOLD.length;
+export const MIN_FIRE_SENSEI_RANK = FIRE_RANK_THRESHOLD.length;
+export const MAX_FIRE_RANK = MIN_FIRE_SENSEI_RANK + 1;
+
+// rank 13 is the snow gem, but can go all the way to rank 24
+export const SNOW_NINJA_RANK = 13;
+export const MAX_SNOW_RANK = SNOW_RANK_THRESHOLD.length;
 
 // EXP manager using the modern system
 export class CardJitsuFireProgress {
@@ -158,10 +223,13 @@ export class CardJitsuFireProgress {
   }
 
   public getRank(): number {
+    if (this._ninja) {
+      return MAX_FIRE_RANK;
+    }
     const unbeatenThreshold = FIRE_RANK_THRESHOLD.map((t, i) => [t, i]).find(([t]) => this._xp < t);
 
     return unbeatenThreshold === undefined
-      ? FIRE_RANK_THRESHOLD.length + (this._ninja ? 1 : 0)
+      ? FIRE_RANK_THRESHOLD.length
       : unbeatenThreshold[1];
   }
 
@@ -170,6 +238,70 @@ export class CardJitsuFireProgress {
   }
 
   public get isFireNinja(): boolean {
+    return this._ninja;
+  }
+}
+
+export class CardJitsuSnowProgress {
+  private _xp: number;
+  private _ninja: boolean;
+
+  constructor(xp: number, ninja: boolean) {
+    this._xp = xp;
+    this._ninja = ninja;
+  }
+
+  public addXp(xp: number): void {
+    const maxXp = SNOW_RANK_THRESHOLD.reduce((total, threshold) => total + threshold);
+    this._xp = Math.min(this._xp + xp, maxXp);
+  }
+
+  public setNinja() {
+    this._ninja = true;
+  }
+
+  public get percentage(): number {
+    if (this.rank >= MAX_SNOW_RANK) {
+      return 0;
+    }
+
+    let cumulative = 0;
+
+    for (const threshold of SNOW_RANK_THRESHOLD) {
+      if (this._xp < cumulative + threshold) {
+        return Math.floor(
+          (this._xp - cumulative) / threshold * 100
+        );
+      }
+      cumulative += threshold;
+    }
+
+    return 0;
+  }
+
+  public get rank(): number {
+    // if xp is the sum of all the thresholds, we're max rank
+    if (this._xp >= SNOW_RANK_THRESHOLD.reduce((a, b) => a + b)) {
+      return MAX_SNOW_RANK;
+    }
+
+    let cumulative = 0;
+
+    for (let rank = 0; rank < MAX_SNOW_RANK; rank++) {
+      cumulative += SNOW_RANK_THRESHOLD[rank];
+      if (this.xp < cumulative) {
+        return rank;
+      }
+    }
+
+    return MAX_SNOW_RANK;
+  }
+
+  public get xp(): number {
+    return this._xp;
+  }
+
+  public get isSnowNinja(): boolean {
     return this._ninja;
   }
 }

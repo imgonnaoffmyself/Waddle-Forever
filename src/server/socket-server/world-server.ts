@@ -9,36 +9,38 @@ import { GameData } from "@server/timelines/game-data";
 
 import { ClientSocket, MessageHandler, setupSocketServer } from "./socket-server";
 
-import { PenguinMessenger } from "@server/socket-server/messenger";
+import { XtMessenger } from "@server/socket-server/xt-messenger";
 
 import { World } from "./world/world";
 
 import { addBakeryListener } from "./handlers/party";
 import { addMatchmakerListeners } from "./handlers/ninja";
 
-import { XtHandler } from "./xt-handler";
+import { convertXtMessage, XtHandler } from "./xt-handler";
 import { XmlHandler } from "./xml-handler";
 import { createWorldXtHandler } from "./world-handlers";
 import { createLoginXmlHandler } from "./login-handlers";
 import { PenguinPersister, WorldContext } from "@server/socket-server/handlers/handlers";
 import { CommandsHandler, getCommandsHandler } from "@server/commands/commands";
 import { OfflineWorld } from "./offline-world";
-import { NpcManager } from "@server/npc";
+import { BotManager } from "./world/bots";
+import { ModManager } from "@server/mods";
 
 export class WorldServer implements MessageHandler {
-  private _world: World;
-  private _msg = new PenguinMessenger();
+  private _msg = new XtMessenger();
   private _off: OfflineWorld;
   private _commandsHandler: CommandsHandler;
   private _xtHandler: XtHandler;
   private _xmlHandler: XmlHandler;
   private _persister: PenguinPersister;
-  private _npc: NpcManager;
+  private _botManager: BotManager;
+  private _mods: ModManager;
   
-  constructor(private _settings: SettingsManager, private _gameData: GameData, private _db: PenguinRepository) {
+  constructor(private _settings: SettingsManager, private _gameData: GameData, private _db: PenguinRepository, private _world: World) {
     this._off = new OfflineWorld(_db);
-    this._world = new World(_gameData);
-    this._npc = new NpcManager(this._world, this._msg, this._gameData);
+    this._botManager = this.getBotManager();
+
+    this._mods = new ModManager(this._gameData);
 
     this._commandsHandler = getCommandsHandler();
 
@@ -53,17 +55,40 @@ export class WorldServer implements MessageHandler {
 
     this.init();
 
-    // Re-evaluate NPC activation whenever the timeline date changes
+    // Re-evaluate Bot activation whenever the timeline date changes
     this._gameData.addListener(() => {
-      this.syncNpcState();
+      this._botManager.syncTimelineDate();
     });
   }
 
-  public runCommand(penguinId: number, name: string, args: string[]) {
+  private getBotManager(): BotManager {
+    return new BotManager(
+      this._world, this._msg, this._gameData, this._settings,
+      (b, e, c, ...a) => {
+        this._xtHandler.handle(
+          b,
+          this.getContext(b),
+          convertXtMessage(e, c, ...a)
+        );
+      },
+      (b) => this.disconnect(b)
+    );
+  }
+
+  public runCommand(penguinId: number, command: string) {
+    const commandMatch = command.match(/(\w+)(.*)/);
+    if (commandMatch === null) {
+      return 'Invalid command';
+    }
+
+    const name = commandMatch[1];
+    const argString = commandMatch[2].trim();
+    const args = argString == '' ? [] : argString.split(/\s+/);
+  
     const penguin = this._world.getById(penguinId);
     if (penguin !== undefined) {
       const client = this._msg.getClient(penguin);
-      this._commandsHandler.run({
+      const res = this._commandsHandler.run({
         world: this._world,
         penguin,
         prst: this._persister,
@@ -73,9 +98,12 @@ export class WorldServer implements MessageHandler {
         settings: this._settings,
         off: this._off,
         client,
-        room: this._world.getPenguinRoom(penguin)
+        room: this._world.getPenguinRoom(penguin),
+        bot: this._botManager
       }, name, args);
+      return res || `Command '${name}' ran successfully`;
     }
+    return "Couldn't run command - penguin is not online!";
   }
 
   public getAllPlayersInfo() {
@@ -88,26 +116,16 @@ export class WorldServer implements MessageHandler {
   private init() {
     addBakeryListener(this._world, this._msg);
     addMatchmakerListeners(this._world, this._msg);
-    this.syncNpcState();
-  }
-
-  /** Activate or deactivate NPCs depending on the current timeline date */
-  private syncNpcState(): void {
-    if (NpcManager.isActiveDate(this._gameData.getDate())) {
-      this._npc.activate();
-    } else {
-      this._npc.deactivate();
-    }
   }
 
   public async reset() {
     await Promise.all(this._msg.getClients().map(client => this.disconnect(client)));
-    this._npc.deactivate();
+    this._botManager.shutdown();
     this._msg.close();
-    this._msg = new PenguinMessenger();
-    this._world = new World(this._gameData);
-    this._npc = new NpcManager(this._world, this._msg, this._gameData);
+    this._msg = new XtMessenger();
+    this._world.init();
     this.init();
+    this._botManager = this.getBotManager();
   }
 
   private getContext(client: ClientSocket): WorldContext {
@@ -120,8 +138,6 @@ export class WorldServer implements MessageHandler {
       db: this._db,
       prst: this._persister,
       off: this._off,
-      npc: NpcManager.isActiveDate(this._gameData.getDate()) ? this._npc : undefined,
-
       client,
 
       ...(penguin === undefined ? {} : {
@@ -150,10 +166,17 @@ export class WorldServer implements MessageHandler {
     const context = this.getContext(client);
     await this._xtHandler.disconnect(context);
   }
+
+  public async connect() {}
+
+  public get mods() {
+    return this._mods;
+  }
 }
 
-export const setupWorldServer = async (settings: SettingsManager, db: PenguinRepository, gameData: GameData): Promise<EffectService<WorldServer>> => {
-  const world = new WorldServer(settings, gameData, db);
-  await setupSocketServer('world', WORLD_PORT, world);
-  return world;
+export const setupWorldServer = async (settings: SettingsManager, db: PenguinRepository, gameData: GameData): Promise<EffectService<[WorldServer, World]>> => {
+  const world = new World(gameData);
+  const server = new WorldServer(settings, gameData, db, world);
+  await setupSocketServer('world', WORLD_PORT, server);
+  return [server, world];
 }

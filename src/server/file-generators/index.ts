@@ -4,6 +4,7 @@ import { GameData } from "@server/timelines/game-data";
 import { getChunkingMapJson } from "./chunking_map.json";
 import getDependenciesJson from "./dependencies.json";
 import { getEnvironmentDataXml } from "./environment_data.xml";
+import { getEpfJson } from "./epf.json";
 import { getGamesJson } from "./games.json";
 import { getGameStrings } from "./game_strings.json";
 import { getGeneralJson } from "./general.json";
@@ -24,10 +25,12 @@ import { getStampsJson } from "./stamps.json";
 import { getStartscreenXML } from "./startscreen.xml";
 import { getVersionTxt } from "./version.txt";
 import { getWorldAchievementsXml } from "./worldachievements.xml";
+import { ModManager } from "@server/mods";
 
-export type FileGenerator = (d: GameData, s: SettingsManager) => Buffer | string;
+export type FileGenerator = (d: GameData, s: SettingsManager, m: ModManager) => Buffer | string;
 
 const GET_GENERATORS: Record<string, FileGenerator> = {
+  'en/web_service/epf.json': getEpfJson,
   'en/web_service/stamps.json': getStampsJson,
   'play/en/web_service/game_configs/stamps.json': getStampsJson,
   'play/en/web_service/game_configs/chunking_map.json': getChunkingMapJson,

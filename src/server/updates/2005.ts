@@ -30,6 +30,32 @@ export const UPDATES_2005: Update[] = [
       'agent': 'archives:ArtworkRoomsAgent10.swf', // placeholder, not accessable
       attic: 'archives:ArtworkRoomsAttic12.swf'
     },
+    newRoomTransitions: [
+      { from: 'town', to: 'dance', pos: [340, 200], spawn: [150, 280] },
+      { from: 'town', to: 'coffee', pos: [275, 225], spawn: [350, 225] },
+      { from: 'town', to: 'shop', pos: [500, 230], spawn: [518, 260] },
+      { from: 'town', to: 'rink', pos: [705, 290], spawn: [180, 260] },
+      { from: 'town', to: 'dock', pos: [100, 300], spawn: [600, 200] },
+      { from: 'dance', to: 'town', pos: [110, 270], spawn: [340, 260] },
+      { from: 'dance', to: 'lounge', pos: [680, 355], spawn: [600, 380] },
+      { from: 'coffee', to: 'town', pos: [375, 196], spawn: [290, 260] },
+      { from: 'coffee', to: 'book', pos: [640, 395], spawn: [600, 290] },
+      { from: 'book', to: 'coffee', pos: [605, 229], spawn: [560, 400] },
+      { from: 'lounge', to: 'dance', pos: [718, 327], spawn: [600, 396] },
+      { from: 'shop', to: 'town', pos: [540, 233], spawn: [466, 280] }
+    ],
+    availableRooms: [
+      'coffee',
+      'book',
+      'dance',
+      'lounge',
+      'shop',
+      'dock',
+      'village',
+      'rink',
+      'dojo',
+      'town'
+    ],
     clothingCatalog: {
       file: 'archives:Catalog1_06.swf',
       newItems: [
@@ -205,6 +231,13 @@ export const UPDATES_2005: Update[] = [
       town: 'archives:ArtworkRoomsTown10.swf',
       rink: 'archives:ArtworkRoomsRink10.swf'
     },
+    removedRoomTransitions: [
+      { from: 'town', to: 'rink' }
+    ],
+    newRoomTransitions: [
+      { from: 'town', to: 'forts', pos: [705, 290], spawn: [180, 260] },
+    ],
+    availableRooms: ['forts'],
     map: 'archives:ArtworkMapsIsland3.swf'
   },
   {
@@ -227,13 +260,18 @@ export const UPDATES_2005: Update[] = [
           town: 2
         }
       }
-    }
+    },
+    testingItems: [413]
   },
   {
     date: '2005-09-22',
     end: ['party'],
     websiteFolder: '2005-10-26',
     indexHtml: '2005-10-26'
+  },
+  {
+    date: '2005-10-04',
+    availableRooms: ['agent']
   },
   {
     date: '2005-10-20',
@@ -246,7 +284,37 @@ export const UPDATES_2005: Update[] = [
   {
     date: '2005-10-24',
     iglooVersion: 3,
-    clothingCatalog: 'archives:Clothing_0510.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0510.swf',
+      newItems: [
+        106,
+        301,
+        244,
+        412,
+        252,
+        500,
+        501,
+        502,
+        503,
+        504,
+        505,
+        506,
+        507,
+        508,
+        509,
+        510,
+        511,
+        512,
+        513,
+        514,
+        515,
+        516,
+        517,
+        518,
+        519
+      ],
+      removedItems: []
+    },
     furnitureCatalog: 'archives:Furniture_0510.swf',
     newspaper: 'irregular',
     fileChanges: {
@@ -283,7 +351,32 @@ export const UPDATES_2005: Update[] = [
   },
   {
     date: '2005-11-01',
-    clothingCatalog: 'archives:Clothing_0511.swf',
+    memberItems: {
+      1: false,
+      2: false,
+      3: false,
+      4: false,
+      5: false,
+      6: false,
+      7: false,
+      8: false,
+      9: false,
+      10: false,
+      11: false,
+      12: false
+    },
+    clothingCatalog: {
+      file: 'archives:Clothing_0511.swf',
+      newItems: [
+        484,
+        172,
+        410,
+        222
+      ],
+      removedItems: [
+        244
+      ]
+    },
     end: ['party'],
     rooms: {
       // mancala was added at some random point I dont know
@@ -296,8 +389,9 @@ export const UPDATES_2005: Update[] = [
     roomComment: 'A new shop opens at the ski area',
     rooms: {
       sport: 'mammoth:artwork/rooms/sport11.swf',
-      village: 'approximation:village_no_lodge.swf'
-    }
+      village: 'approximation:village_sport.swf'
+    },
+    availableRooms: ['sport']
   },
   {
     date: '2005-11-08',
@@ -326,6 +420,15 @@ export const UPDATES_2005: Update[] = [
     newspaper: 'irregular'
   },
   {
+    date: '2005-11-18',
+    roomComment: 'Penguins can now access the mountain at the ski area',
+    rooms: {
+      village: 'approximation:village_no_lodge.swf',
+      mtn: 'fix:Mtn1.swf'
+    },
+    availableRooms: ['mtn']
+  },
+  {
     date: '2005-11-21',
     newspaper: 'irregular'
   },
@@ -341,7 +444,21 @@ export const UPDATES_2005: Update[] = [
   },
   {
     date: '2005-12-01',
-    clothingCatalog: 'archives:Clothing_0512.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0512.swf',
+      newItems: [
+        453,
+        233,
+        234,
+        235,
+        417
+      ],
+      removedItems: [
+        219,
+        212,
+        403
+      ]
+    },
     newspaper: 'period-start',
 
     // an unknown update which removed the ability to click on the couch
@@ -351,7 +468,17 @@ export const UPDATES_2005: Update[] = [
   },
   {
     date: '2005-12-05',
-    end: ['party']
+    end: ['party'],
+    testingItems: [
+      402,
+      418
+    ]
+  },
+  {
+    date: '2005-12-08',
+    testingItems: [
+      107
+    ]
   },
   {
     date: '2005-12-14',
@@ -367,6 +494,7 @@ export const UPDATES_2005: Update[] = [
       village: 'archives:ArtworkRoomsVillage11.swf',
       lodge: 'archives:ArtworkRoomsLodge10.swf'
     },
+    availableRooms: ['lodge'],
     temp: {
       party: {
         partyName: 'Christmas Party',
@@ -377,7 +505,7 @@ export const UPDATES_2005: Update[] = [
           'rink': 'fix:CP05Rink.swf',
           'shop': 'fix:CP05Shop.swf',
           'town': 'fix:CP05Town.swf',
-          'village': 'fix:CP05Village.swf'
+          'village': 'approximation:christmas_05/village.swf'
         },
         music: {
           'town': 200,

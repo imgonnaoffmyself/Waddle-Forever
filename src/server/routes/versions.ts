@@ -19,7 +19,6 @@ export function addDays(version: Version, days: number): Version {
   return dateToVersion(date);
 }
 
-/** Returns undefined if an invalid version, otherwise an array [year, month, day] */
 export function processVersion(version: string): [number, number, number] {
   const dateMatch = getDateMatch(version);
   if (dateMatch === null) {
@@ -120,4 +119,15 @@ export function inInterval(version: Version, start: Version, end: Version, param
     return true
   }
   return false
+}
+export function versionToEpoch(version: Version): number {
+  const [year, month, number] = processVersion(version);
+  return (new Date(year, month - 1, number)).getTime();
+}
+
+export function getDaysDelta(start: Version, end: Version): number {
+  const date1 = versionToEpoch(start);
+  const date2 = versionToEpoch(end);
+
+  return Math.round((date2 - date1) / 1000 / 60 / 60 / 24);
 }

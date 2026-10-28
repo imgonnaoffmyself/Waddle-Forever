@@ -3,7 +3,55 @@ import { Update } from ".";
 export const UPDATES_2009: Update[] = [
   {
     date: '2009-01-02',
-    clothingCatalog: 'archives:January09Style.swf',
+    clothingCatalog: {
+      file: 'archives:January09Style.swf',
+      newItems: [
+        234,
+        236,
+        262,
+        401,
+        449,
+        651,
+        657,
+        658,
+        672,
+        937,
+        938,
+        1007,
+        1008,
+        1021,
+        1027,
+        1028,
+        1029,
+        1030,
+        4047,
+        4048,
+        4049,
+        4050,
+        5014,
+        5015,
+        9013,
+        9014
+      ],
+      removedItems: [
+        101,
+        106,
+        281,
+        424,
+        928,
+        973,
+        2003,
+        4000,
+        4045,
+        6002,
+        6003,
+        6004,
+        6005,
+        6006,
+        9000,
+        9004
+      ]
+    },
     roomComment: 'The Big Wigs Catalog is merged with the Penguin Style',
     rooms: {
       shop: 'archives:RoomsShop.swf'
@@ -169,7 +217,39 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-01-30',
-    sportCatalog: 'archives:SASJan2009.swf'
+    sportCatalog: {
+      file: 'archives:SASJan2009.swf',
+      items: [
+        701,
+        702,
+        703,
+        711,
+        712,
+        321,
+        993,
+        220,
+        277,
+        278,
+        361,
+        461,
+        919,
+        4040,
+        6011,
+        6013,
+        256,
+        353,
+        372,
+        958,
+        1036,
+        1037,
+        4053,
+        4054,
+        4055,
+        4056,
+        5018,
+        5019
+      ]
+    }
   },
   {
     date: '2009-02-03',
@@ -182,7 +262,65 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-02-06',
-    clothingCatalog: 'archives:CatFeb2009.swf'
+    clothingCatalog: {
+      file: 'archives:CatFeb2009.swf',
+      newItems: [
+        206,
+        221,
+        223,
+        224,
+        377,
+        378,
+        405,
+        406,
+        535,
+        652,
+        662,
+        671,
+        781,
+        904,
+        908,
+        925,
+        1038,
+        1039,
+        3012,
+        3013,
+        4057,
+        4058,
+        4059,
+        4060,
+        4061,
+        4062,
+        4063,
+        9016
+      ],
+      removedItems: [
+        111,
+        219,
+        262,
+        284,
+        312,
+        314,
+        370,
+        447,
+        935,
+        939,
+        940,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        3004,
+        4007,
+        4008,
+        4009,
+        4010,
+        4042,
+        5002,
+        9008
+      ]
+    }
   },
   {
     date: '2009-02-13',
@@ -537,11 +675,68 @@ export const UPDATES_2009: Update[] = [
     date: '2009-03-06',
     end: ['event'],
     miscComments: ['White Puffles are available to adopt'],
+    fileChanges: {
+      'play/v2/interface/interface.swf': 'archives:ClientInterface-March2009.swf'
+    },
     rooms: {
       pet: 'archives:RoomsPet_4.swf'
     },
     puffleCatalog: 'archives:Mar2009Adopt.swf',
-    clothingCatalog: 'archives:Mar2009.swf',
+    clothingCatalog: {
+      file: 'archives:Mar2009.swf',
+      newItems: [
+        174,
+        181,
+        214,
+        260,
+        291,
+        294,
+        324,
+        358,
+        359,
+        423,
+        654,
+        903,
+        922,
+        1040,
+        1041,
+        1042,
+        1043,
+        3015,
+        4011,
+        4065,
+        4066,
+        4067,
+        4068,
+        4069,
+        6015,
+        6016,
+        9017,
+        9018
+      ],
+      removedItems: [
+        172,
+        175,
+        213,
+        243,
+        249,
+        365,
+        419,
+        467,
+        657,
+        658,
+        933,
+        936,
+        978,
+        1026,
+        4024,
+        4041,
+        4046,
+        4063,
+        5010,
+        9011
+      ]
+    },
     temp: {
       const: {
         rooms: {
@@ -634,7 +829,11 @@ export const UPDATES_2009: Update[] = [
           stage: 40
         },
         globalChanges: {
-          'content/shorts/penguinsTime.swf': 'archives:ContentShortspenguinsTime.swf'
+          'content/shorts/penguinsTime.swf': 'archives:ContentShortspenguinsTime.swf',
+          'content/shorts/squidzoid.swf': 'archives:ContentShortssquidzoid.swf',
+          'content/shorts/fairyFables.swf': 'archives:ContentShortsfairyFables.swf',
+          'content/shorts/goldenPuffle.swf': 'archives:ContentShortsgoldenPuffle.swf',
+          'content/shorts/ruby.swf': 'archives:ContentShortsruby.swf'
         },
         playScript: [
           { note: "HOST" },
@@ -707,7 +906,8 @@ export const UPDATES_2009: Update[] = [
     date: '2009-03-24',
     miscComments: ['The membership badge now features levels'],
     fileChanges: {
-      'play/v2/interface/interface.swf': 'archives:ClientInterface-April2009.swf'
+      'play/v2/interface/interface.swf': 'archives:ClientInterface-April2009.swf',
+      'play/v2/engine/engine.swf': 'recreation:engine_apr2009.swf'
     }
   },
   {
@@ -752,8 +952,37 @@ export const UPDATES_2009: Update[] = [
       ],
       removed: []
     },
-    martialArtworks: 'archives:MAMar2009.swf',
-    sportCatalog: 'archives:SASMar2009.swf'
+    martialArtworks: {
+      file: 'archives:MAMar2009.swf',
+      newItems: [4075],
+      removedItems: []
+    },
+    sportCatalog: {
+      file: 'archives:SASMar2009.swf',
+      items: [
+        993,
+        372,
+        958,
+        1037,
+        4055,
+        4056,
+        349,
+        405,
+        435,
+        436,
+        717,
+        791,
+        792,
+        965,
+        1045,
+        1046,
+        1047,
+        4070,
+        4071,
+        4072,
+        6017
+      ]
+    }
   },
   {
     date: '2009-04-01',
@@ -823,7 +1052,66 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-04-03',
-    clothingCatalog: 'archives:PSApr2009.swf',
+    clothingCatalog: {
+      file: 'archives:PSApr2009.swf',
+      newItems: [
+        113,
+        114,
+        203,
+        204,
+        210,
+        235,
+        275,
+        341,
+        373,
+        376,
+        417,
+        437,
+        660,
+        780,
+        782,
+        926,
+        980,
+        981,
+        1048,
+        1049,
+        1050,
+        1051,
+        3018,
+        3019,
+        4076,
+        4077,
+        5027,
+        9022
+      ],
+      removedItems: [
+        179,
+        226,
+        234,
+        236,
+        380,
+        401,
+        420,
+        449,
+        484,
+        937,
+        938,
+        1020,
+        1021,
+        1027,
+        1030,
+        4011,
+        4023,
+        4043,
+        4044,
+        4049,
+        4050,
+        5011,
+        5014,
+        9013,
+        9014
+      ]
+    },
     miscComments: ['The collectible pin icon in the newspaper changes'],
     localChanges: {
       'news/20090402/20090402.swf': {
@@ -833,7 +1121,8 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-04-06',
-    end: ['party3']
+    end: ['party3'],
+    availableRooms: ['boxdimension']
   },
   {
     date: '2009-04-10',
@@ -888,17 +1177,67 @@ export const UPDATES_2009: Update[] = [
       mtn: 'archives:RoomsMtn-January2010.swf'
     },
     gameUpgrades: {
-      newItems: [
-        5021,
-        5047,
-        5046
-      ],
+      newItems: [5021],
       removed: []
     }
   },
   {
     date: '2009-05-01',
-    clothingCatalog: 'archives:May2009.swf',
+    clothingCatalog: {
+      file: 'archives:May2009.swf',
+      newItems: [
+        477,
+        667,
+        668,
+        669,
+        673,
+        718,
+        762,
+        793,
+        794,
+        796,
+        798,
+        1053,
+        1054,
+        1055,
+        3020,
+        4079,
+        4080,
+        4081,
+        4082,
+        4083,
+        4084,
+        6019
+      ],
+      removedItems: [
+        206,
+        260,
+        275,
+        291,
+        324,
+        377,
+        378,
+        437,
+        652,
+        671,
+        672,
+        781,
+        904,
+        908,
+        925,
+        1028,
+        1029,
+        4047,
+        4048,
+        4057,
+        4059,
+        4061,
+        4062,
+        5015,
+        5027,
+        9016,
+      ]
+    },
     temp: {
       const: {
         rooms: {
@@ -1083,6 +1422,20 @@ export const UPDATES_2009: Update[] = [
   {
     date: '2009-05-28',
     roomComment: 'The dojo rooms are slightly revamped',
+    fileChanges: {
+      'play/v2/content/global/content/ninjaprogress.swf': 'approximation:ninjaprogress_set2.swf',
+      'play/v2/games/sensei/SenseiWidget.swf': 'fix:GamesSenseiSenseiWidget-June2009.swf',
+      'play/v2/games/sensei/lang/en/locale.swf': 'slegacy:media/play/v2/games/sensei/lang/en/locale.swf'
+    },
+    localChanges: {
+      'close_ups/ninjabelts.swf': {
+        en: 'archives:PlayV2ContentEnClose_upsNinjabelts-pre2011.swf'
+      },
+      'instructions/card_jitsu.swf': {
+        en: 'archives:ENInstructionsCardJitsu-pre2011.swf'
+      }
+    },
+    cardSets: [2],
     rooms: {
       dojo: 'archives:RoomsDojo.swf',
       dojohide: 'recreation:dojohide_2009.swf',
@@ -1091,6 +1444,30 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-05-29',
+    sportCatalog: {
+      items: [
+        993,
+        372,
+        4091,
+        727,
+        775,
+        778,
+        4088,
+        139,
+        4087,
+        382,
+        2003,
+        308,
+        239,
+        362,
+        4089,
+        313,
+        4090,
+        297,
+        975,
+        918
+      ]
+    },
     iglooList: [
       { display: 'Flipper Stomper', id: 244, pos: [3, 1] },
       { display: 'Coconut', id: 215, pos: [6, 1] },
@@ -1120,6 +1497,65 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-06-05',
+    clothingCatalog: {
+      newItems: [
+        1059,
+        4094,
+        108,
+        4093,
+        1060,
+        4092,
+        375,
+        1061,
+        4095,
+        671,
+        117,
+        4097,
+        831,
+        5033,
+        656,
+        4096,
+        363,
+        1022,
+        830,
+        1058,
+        5032,
+        3022,
+        6021,
+        403,
+        770,
+        9031,
+        9032,
+        969,
+        982
+      ],
+      removedItems: [
+        798,
+        1039,
+        3013,
+        4060,
+        662,
+        4058,
+        3012,
+        651,
+        405,
+        1038,
+        406,
+        221,
+        224,
+        222,
+        223,
+        174,
+        1040,
+        3015,
+        4065,
+        6015,
+        9017,
+        9018,
+        922,
+        903
+      ]
+    },
     temp: {
       const: {
         rooms: {
@@ -1215,11 +1651,14 @@ export const UPDATES_2009: Update[] = [
     dayOfFun: 'start',
 
     // day in which composite paths are no longer used
-    dateReference: 'composite-paths',
+    flags: {
+      compositePaths: false
+    },
     fileChanges: {
       'play/v2/client/load.swf': 'fix:ClientLoad2009-06-26.swf',
       'play/v2/client/shell.swf': 'archives:ClientShell_June_2009.swf',
-      'play/v2/client/interface.swf': 'archives:ClientInterface-June2009.swf'
+      'play/v2/client/interface.swf': 'archives:ClientInterface-June2009.swf',
+      'play/v2/client/engine.swf': 'archives:ClientEngine2009-06-15.swf'
     },
     indexHtml: 'classic-cpip-2',
     iglooList: [
@@ -1242,6 +1681,72 @@ export const UPDATES_2009: Update[] = [
     }
   },
   {
+    date: '2009-07-03',
+    clothingCatalog: {
+      newItems: [
+        1064,
+        4099,
+        728,
+        6004,
+        651,
+        4100,
+        233,
+        1067,
+        4103,
+        433,
+        843,
+        234,
+        6022,
+        1066,
+        125,
+        4102,
+        1063,
+        118,
+        4098,
+        732,
+        1065,
+        4101,
+        214,
+        846,
+        9033,
+        9034,
+        9035,
+        937
+      ],
+      removedItems: [
+        403,
+        770,
+        423,
+        214,
+        294,
+        358,
+        1042,
+        4067,
+        6016,
+        654,
+        181,
+        4066,
+        1043,
+        4069,
+        1041,
+        4068,
+        359,
+        1049,
+        4076,
+        1048,
+        4077,
+        9022,
+        926,
+        981,
+        980
+      ]
+    },
+    martialArtworks: {
+      newItems: [5040],
+      removedItems: []
+    }
+  },
+  {
     date: '2009-07-10',
     temp: {
       const: {
@@ -1250,10 +1755,10 @@ export const UPDATES_2009: Update[] = [
           coffee: 'archives:RoomsCoffee-MusicJam2010Pre.swf',
           cove: 'archives:RoomsCove-MusicJam2010Pre.swf',
           dock: 'archives:RoomsDock-MusicJam2010Pre.swf',
-          forest: 'archives:RoomsForest-MusicJam2010Pre.swf',
-          berg: 'archives:RoomsBerg-MusicJam2010Pre.swf',
+          forest: 'archives:RoomsForest-MusicJam2009Const.swf',
+          berg: 'archives:RoomsBerg-MusicJam2009Const.swf',
           light: 'archives:RoomsLight-MusicJam2010Pre.swf',
-          village: 'archives:RoomsVillage-MusicJam2010Pre.swf',
+          village: 'archives:RoomsVillage-MusicJam2009Const.swf',
           forts: 'archives:RoomsForts-MusicJam2010Pre.swf',
           rink: 'archives:RoomsRink-MusicJam2009Const.swf'
         }
@@ -1295,7 +1800,8 @@ export const UPDATES_2009: Update[] = [
           village: 'archives:RoomsVillage-MusicJam2009.swf',
           forts: 'archives:RoomsForts-MusicJam2009.swf',
           rink: 'archives:RoomsRink-MusicJam2009.swf',
-          town: 'archives:RoomsTown-MusicJam2009.swf'
+          town: 'archives:RoomsTown-MusicJam2009.swf',
+          mine: 'archives:RoomsMine-MusicJam2008.swf'
         },
         music: {
           dance: 242,
@@ -1306,7 +1812,8 @@ export const UPDATES_2009: Update[] = [
           plaza: 271,
           town: 271,
           party3: 271,
-          coffee: 0
+          coffee: 0,
+          mine: 247
         },
         localChanges: {
           'catalogues/merch.swf': {
@@ -1319,6 +1826,11 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-07-24',
+    // this is a guesstimate - these cards were added sometime between between july 24 and 30
+    cardSets: [3],
+    fileChanges: {
+      'play/v2/content/global/content/ninjaprogress.swf': 'archives:NinjaProgressJuly2009.swf'
+    },
     temp: {
       party: {
         update: 'The Dock changes',
@@ -1344,14 +1856,70 @@ export const UPDATES_2009: Update[] = [
   {
     date: '2009-08-05',
     // in this shell, the penguin string changes
-    dateReference: 'string-verify',
+    flags: {
+      newShell2009: true
+    },
     fileChanges: {
       'play/v2/client/shell.swf': 'archives:ClientShell2009-08-05.swf'
     }
   },
   {
     date: '2009-08-07',
-    clothingCatalog: 'archives:August09Style.swf',
+    clothingCatalog: {
+      file: 'archives:August09Style.swf',
+      newItems: [
+        15,
+        184,
+        251,
+        263,
+        357,
+        424,
+        536,
+        657,
+        670,
+        784,
+        976,
+        985,
+        994,
+        1072,
+        1073,
+        1074,
+        2010,
+        2011,
+        3025,
+        3026,
+        3027,
+        4106,
+        4107,
+        4108,
+        4109,
+        5042,
+        5043,
+        9037,
+        9038
+      ],
+      removedItems: [
+        113,
+        114,
+        203,
+        204,
+        210,
+        235,
+        341,
+        373,
+        376,
+        417,
+        660,
+        780,
+        782,
+        846,
+        937,
+        1050,
+        1051,
+        3018,
+        3019
+      ]
+    },
     temp: {
       const: {
         rooms: {
@@ -1407,16 +1975,16 @@ export const UPDATES_2009: Update[] = [
           town: 277,
           party: 278,
           party2: 278
+        },
+        memberRooms: {
+          party: true
         }
-      }
+      },
     }
   },
   {
-    date: '2009-08-20',
-    end: ['party']
-  },
-  {
     date: '2009-08-21',
+    end: ['party'],
     stagePlay: {
       name: 'Underwater Adventure',
       costumeTrunk: 'archives:May2011UnderwaterAdventureCostume.swf',
@@ -1474,11 +2042,98 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-08-28',
-    sportCatalog: 'archives:SportAug09.swf'
+    sportCatalog: {
+      file: 'archives:SportAug09.swf',
+      items: [
+        297,
+        254,
+        255,
+        462,
+        463,
+        658,
+        671,
+        720,
+        721,
+        722,
+        726,
+        974,
+        998,
+        1078,
+        1079,
+        3002,
+        4115,
+        4116,
+        9040
+      ]
+    },
+    miscComments: ['The startscreens are updated'],
+    temp: {
+      party: {
+        startscreens: ['archives:LoginThe_fair2009.swf']
+      }
+    }
   },
   {
     date: '2009-09-04',
-    clothingCatalog: 'archives:September09Style.swf',
+    clothingCatalog: {
+      file: 'archives:September09Style.swf',
+      newItems: [
+        214,
+        237,
+        299,
+        360,
+        465,
+        677,
+        908,
+        966,
+        1007,
+        1084,
+        1085,
+        3030,
+        3031,
+        4007,
+        4117,
+        4118,
+        5045,
+        6024,
+        9000,
+        9043
+      ],
+      removedItems: [
+        263,
+        424,
+        477,
+        667,
+        668,
+        669,
+        673,
+        718,
+        762,
+        793,
+        794,
+        796,
+        969,
+        982,
+        1053,
+        1054,
+        1055,
+        1058,
+        3020,
+        3022,
+        4079,
+        4080,
+        4081,
+        4082,
+        4083,
+        4084,
+        5032,
+        5033,
+        6019,
+        6021,
+        9031,
+        9032
+      ]
+    },
     migrator: 'recreation:pirate_catalog/09_09.swf',
     temp: {
       party: {
@@ -1538,6 +2193,9 @@ export const UPDATES_2009: Update[] = [
         fairCpip: {
           iconFileId: 'archives:Ticket_icon-TheFair2009.swf',
           infoFile: 'archives:Tickets-TheFair2009.swf'
+        },
+        memberRooms: {
+          party2: true
         }
       }
     }
@@ -1688,12 +2346,6 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-09-21',
-    iglooList: [
-      { display: 'Campfire Song', id: 220, pos: [2, 1] },
-      { display: 'Extra Anchovies', id: 270, pos: [7, 1] },
-      { display: 'All the Fun of The Fair', id: 221, pos: [2, 2] },
-      { display: 'Spicy Salsa', id: 229, pos: [6, 2] }
-    ],
     temp: {
       party2: {
         update: 'The volcano becomes active',
@@ -1705,6 +2357,12 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-09-25',
+    iglooList: [
+      { display: 'Campfire Song', id: 220, pos: [2, 1] },
+      { display: 'Extra Anchovies', id: 270, pos: [7, 1] },
+      { display: 'All the Fun of The Fair', id: 221, pos: [2, 2] },
+      { display: 'Spicy Salsa', id: 229, pos: [6, 2] }
+    ],
     temp: {
       party2: {
         rooms: {
@@ -1733,7 +2391,58 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-10-02',
-    clothingCatalog: 'archives:Oct2009.swf',
+    clothingCatalog: {
+      file: 'archives:Oct2009.swf',
+      newItems: [
+        106,
+        244,
+        303,
+        332,
+        718,
+        971,
+        1013,
+        1015,
+        1092,
+        1093,
+        1094,
+        3034,
+        4016,
+        4018,
+        4127,
+        4128,
+        4129,
+        6029,
+        9004,
+        9006,
+        9044
+      ],
+      removedItems: [
+        108,
+        117,
+        299,
+        363,
+        375,
+        465,
+        656,
+        671,
+        830,
+        831,
+        994,
+        1022,
+        1059,
+        1060,
+        1061,
+        4092,
+        4093,
+        4094,
+        4095,
+        4096,
+        4097,
+        9033,
+        9034,
+        9035
+      ]
+    },
     miscComments: ['The volcano becomes active'],
     temp: {
       event: {
@@ -1975,6 +2684,13 @@ export const UPDATES_2009: Update[] = [
     }
   },
   {
+    date: '2009-11-02',
+    martialArtworks: {
+      newItems: [4132],
+      removedItems: []
+    }
+  },
+  {
     date: '2009-11-05',
     constructionComment: 'Construction for Amulets begins in the Dojo Courtyard',
     temp: {
@@ -1987,11 +2703,75 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-11-06',
-    clothingCatalog: 'archives:November09Style.swf'
+    clothingCatalog: {
+      file: 'archives:November09Style.swf',
+      newItems: [
+        169,
+        229,
+        232,
+        342,
+        365,
+        380,
+        419,
+        483,
+        932,
+        940,
+        1008,
+        1099,
+        1100,
+        3035,
+        4133,
+        4134,
+        5010,
+        5011,
+        9008,
+        9046
+      ],
+      removedItems: [
+        118,
+        125,
+        233,
+        234,
+        244,
+        433,
+        651,
+        718,
+        728,
+        732,
+        843,
+        976,
+        985,
+        1013,
+        1015,
+        1063,
+        1064,
+        1065,
+        1066,
+        1067,
+        1093,
+        4016,
+        4018,
+        4098,
+        4099,
+        4100,
+        4101,
+        4102,
+        4103,
+        4128,
+        6004,
+        6022,
+        9037,
+        9038
+      ]
+    }
   },
   {
     date: '2009-11-13',
-    martialArtworks: 'archives:November09Ninja2.swf',
+    martialArtworks: {
+      file: 'archives:November09Ninja2.swf',
+      newItems: [3032],
+      removedItems: []
+    },
     constructionComment: 'Construction for the Fire Dojo begins',
     temp: {
       event: {
@@ -2086,6 +2866,7 @@ export const UPDATES_2009: Update[] = [
 
       dojofire: 'slegacy:media/play/v2/content/global/rooms/dojofire.swf'
     },
+    availableRooms: ['dojofire'],
     end: ['fire-construction']
   },
   {
@@ -2116,6 +2897,7 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-11-23',
+    dateReference: 'fire-release',
     temp: {
       party: {
         update: 'Card-Jitsu Fire is now available',
@@ -2124,7 +2906,15 @@ export const UPDATES_2009: Update[] = [
           dojofire: 'archives:RoomsDojofire-FireCelebrate.swf'
         }
       }
-    }
+    },
+    fileChanges: {
+      'play/v2/client/shell.swf': 'archives:ClientShell2009-12-06.swf',
+      'play/v2/content/global/content/ninjaprogress.swf': 'archives:NinjaProgressNov2009.swf',
+      // the font changes on this day, and also
+      // adds newer power card effects
+      'play/v2/games/card/card.swf': 'slegacy:media/play/v2/games/card/card.swf'
+    },
+    cardSets: [4]
   },
   {
     date: '2009-11-27',
@@ -2180,7 +2970,39 @@ export const UPDATES_2009: Update[] = [
       rink: 'archives:RoomsRink.swf',
       agent: 'archives:RoomsAgent.swf'
     },
-    sportCatalog: 'archives:SportNov2009.swf',
+    sportCatalog: {
+      file: 'archives:SportNov2009.swf',
+      items: [
+        998,
+        220,
+        277,
+        278,
+        461,
+        464,
+        785,
+        919,
+        936,
+        1036,
+        1042,
+        1067,
+        1103,
+        4040,
+        4053,
+        4054,
+        4139,
+        4140,
+        4143,
+        4144,
+        5018,
+        5048,
+        6011,
+        6013
+      ]
+    },
+    gameUpgrades: {
+      newItems: [5046, 5047],
+      removed: []
+    },
     map: 'archives:Map2008-2011Rink.swf'
   },
   {
@@ -2189,13 +3011,76 @@ export const UPDATES_2009: Update[] = [
   },
   {
     date: '2009-12-04',
-    clothingCatalog: 'archives:December09Style.swf'
+    clothingCatalog: {
+      file: 'archives:December09Style.swf',
+      newItems: [
+        180,
+        234,
+        284,
+        289,
+        340,
+        370,
+        424,
+        447,
+        482,
+        933,
+        1091,
+        1105,
+        1106,
+        1110,
+        2014,
+        3033,
+        3038,
+        4045,
+        4123,
+        4145,
+        4146,
+        4147,
+        4149,
+        5014,
+        6031,
+        9048,
+        9049
+      ],
+      removedItems: [
+        184,
+        214,
+        251,
+        342,
+        357,
+        657,
+        670,
+        784,
+        908,
+        966,
+        1072,
+        1073,
+        1074,
+        2010,
+        2011,
+        3025,
+        3026,
+        3027,
+        4106,
+        4107,
+        4108,
+        4109,
+        5042,
+        5043,
+        9000,
+        9043
+      ]
+    }
   },
   {
     date: '2009-12-11',
     furnitureCatalog: 'archives:December09Furniture.swf',
     iglooCatalog: 'archives:December2009Igloos.swf',
     migrator: 'archives:December2009Pirate.swf',
+    postcardgiftItems: {
+      newItems: [1119],
+      removed: []
+    },
     temp: {
       const: {
         rooms: {
@@ -2313,6 +3198,10 @@ export const UPDATES_2009: Update[] = [
   {
     date: '2009-12-29',
     migrator: false,
-    end: ['party']
+    end: ['party'],
+    postcardgiftItems: {
+      newItems: [],
+      removed: [1119]
+    }
   }
 ];

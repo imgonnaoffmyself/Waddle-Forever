@@ -1,10 +1,9 @@
-import { RoomOccupant } from "./world-room";
-import { RoomState, WorldPenguin } from "./world-penguin";
+import { WorldPenguin } from "./world-penguin";
 
 export abstract class WorldTable {
-  private seats: Array<RoomOccupant | null> = [null, null];
+  private seats: Array<WorldPenguin | null> = [null, null];
   private joined: Array<boolean> = [false, false];
-  private spectators = new Set<RoomOccupant>();
+  private spectators = new Set<WorldPenguin>();
   private _blockPayout = new Set<WorldPenguin>();
   static TABLE_SPECTATOR_SEAT = 99;
   private started = false;
@@ -17,6 +16,7 @@ export abstract class WorldTable {
 
   static MANCALA_TABLE_IDS = new Set([100, 101, 102, 103, 104]);
   static FIND_FOUR_TABLE_IDS = new Set([200, 201, 202, 203, 204, 205, 206, 207]);
+  static TREASURE_HUNT_TABLE_IDS = new Set([300, 301, 302, 303, 304, 305, 306, 307]);
 
   public getCount() {
     return this.seats.filter(p => p !== null).length;
@@ -26,7 +26,7 @@ export abstract class WorldTable {
     return this.id;
   }
 
-  getSeatIndex(penguin: RoomOccupant): number | undefined {
+  getSeatIndex(penguin: WorldPenguin): number | undefined {
     if (this.spectators.has(penguin)) {
       return WorldTable.TABLE_SPECTATOR_SEAT;
     }
@@ -35,7 +35,7 @@ export abstract class WorldTable {
     return seatIndex === -1 ? undefined : seatIndex;
   }
 
-  assignSeatIndex(penguin: RoomOccupant): number {
+  assignSeatIndex(penguin: WorldPenguin): number {
     const existingSeat = this.getSeatIndex(penguin);
     if (existingSeat !== undefined) {
       return existingSeat;
@@ -58,7 +58,7 @@ export abstract class WorldTable {
     this.started = false;
     this.ended = false;
     this.turn = 0;
-    this.spectators = new Set<RoomOccupant>();
+    this.spectators = new Set<WorldPenguin>();
   }
 
   public getSeats() {
@@ -71,18 +71,18 @@ export abstract class WorldTable {
     this.joined = [false, false];
   }
 
-  public hasPlayer(penguin: RoomOccupant) {
+  public hasPlayer(penguin: WorldPenguin) {
     return this.getSeatIndex(penguin) !== undefined;
   }
 
-  public removePlayer(penguin: RoomOccupant) {
+  public removePlayer(penguin: WorldPenguin) {
     const seat = this.getSeatIndex(penguin);
     if (seat !== undefined) {
       this.seats[seat] = null;
     }
   }
 
-  public removeSpectator(penguin: RoomOccupant) {
+  public removeSpectator(penguin: WorldPenguin) {
     return this.spectators.delete(penguin);
   }
 
@@ -91,9 +91,7 @@ export abstract class WorldTable {
   }
 
   public blockSpectators(): void {
-    this.spectators.forEach(s => {
-      if (s instanceof WorldPenguin) this._blockPayout.add(s);
-    });
+    this.spectators.forEach(s => this._blockPayout.add(s));
   }
 
   public getNames(): string[] {
@@ -104,14 +102,10 @@ export abstract class WorldTable {
     this.joined[seat] = true;
   }
 
-  public get penguins(): RoomOccupant[] {
-    return [...this.seats.filter((value): value is RoomOccupant => {
+  public get penguins(): WorldPenguin[] {
+    return [...this.seats.filter((value): value is WorldPenguin => {
       return value !== null;
     }), ...this.spectators]
-  }
-
-  public get realPlayers(): WorldPenguin[] {
-    return this.penguins.filter((p): p is WorldPenguin => p instanceof WorldPenguin);
   }
 
   public hasStarted() {
@@ -155,7 +149,7 @@ export abstract class WorldTable {
 
   protected awardCoins(scores: [number, number]) {
     this.seats.forEach((player, index) => {
-      if (player !== null && (index == 0 || index == 1) && player instanceof WorldPenguin) {
+      if (player !== null && (index == 0 || index == 1)) {
         const score = scores[index];
         if (score > 0) {
           player.currency.add(score);

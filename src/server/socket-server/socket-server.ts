@@ -5,6 +5,7 @@ import { EffectService } from '@common/utils';
 
 export interface MessageHandler {
   handle: (client: ClientSocket, message: string) => void;
+  connect: (client: ClientSocket) => Promise<void>;
   disconnect: (client: ClientSocket) => Promise<void>;
 }
 
@@ -33,17 +34,21 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
       const cs: ClientSocket = {
         write: async (message: string) => {
           return new Promise<void>((resolve, reject) => {
-            ws.send(Buffer.from(message + '\0', 'utf8'), { binary: true }, (err) => {
-              if (err !== undefined) {
+            ws.send(Buffer.from(message, 'utf8'), { binary: true }, (err) => {
+              if (err) {
                 reject(err);
+                return;
               }
               resolve();
             });
           })
         },
-
-        end: (d) => ws.close(undefined, d)
+        end: (d) => {
+          ws.close(undefined, d);
+        }
       }
+
+      handler.connect(cs);
 
       ws.on('message', (data) => {
         const str = data.toString();
@@ -55,11 +60,9 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
       ws.on('close', () => {
         handler.disconnect(cs).then(() => {
           cs.end()
-          console.log('A client has disconnected (WebSocket)');
+          console.log(`A client has disconnected from ${name} (WebSocket)`);
         });
       });
-
-      ws.emit('message', req);
 
       ws.on('error', console.error);
     });
@@ -69,9 +72,24 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
         const dataStr = buffer.toString()
 
         if (dataStr.startsWith('GET')) {
-          // This is a websocket connection
-          wsServer.handleUpgrade({ headers: parseHeaders(dataStr), method: 'GET' } as any, socket, buffer, (ws) => {
-            wsServer.emit('connection', ws, dataStr);
+          const headerEnd = dataStr.indexOf('\r\n\r\n');
+          if (headerEnd === -1) {
+            socket.destroy();
+            return;
+          }
+
+          const requestText = dataStr.slice(0, headerEnd + 4);
+          const head = Buffer.from(dataStr.slice(headerEnd + 4), 'binary');
+
+          // This is a websocket connection.
+          // Only the bytes after the HTTP upgrade headers belong in the ws "head" buffer.
+          wsServer.handleUpgrade({
+            headers: parseHeaders(requestText),
+            method: 'GET',
+            socket,
+            url: '/',
+          } as any, socket, head, (ws) => {
+            wsServer.emit('connection', ws, { headers: parseHeaders(requestText), method: 'GET' } as any);
           });
         } else {
           socket.setEncoding('utf8')
@@ -80,7 +98,7 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
           const cs: ClientSocket = {
             write: async (message: string) => {
               return new Promise<void>((resolve, reject) => {
-                socket.write(message + '\0', (err) => {
+                socket.write(message, (err) => {
                   if (err) {
                     reject(err);
                   }
@@ -97,15 +115,22 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
             }
           }
 
-          socket.on('data', (data: Buffer) => {
-            const dataStr = data.toString().split('\0')[0];
-            handler.handle(cs, dataStr);
+          handler.connect(cs);
+
+          socket.on('data', (data: string | Buffer) => {
+            const packets = data.toString().split('\0');
+
+            for (const packet of packets) {
+              if (packet.length > 0) {
+                handler.handle(cs, packet);
+              }
+            }
           });
 
           socket.on('close', () => {
             handler.disconnect(cs).then(() => {
               cs.end();
-              console.log('A client has disconnected');
+              console.log(`A client has disconnected from ${name}`);
             });
           });
 

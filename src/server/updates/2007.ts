@@ -18,7 +18,38 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-01-05',
-    clothingCatalog: 'archives:Clothing_0701.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0701.swf',
+      newItems: [
+        175,
+        225,
+        237,
+        238,
+        286,
+        287,
+        411,
+        449,
+        450,
+        936,
+        937,
+        938
+      ],
+      removedItems: [
+        202,
+        206,
+        254,
+        255,
+        275,
+        284,
+        329,
+        370,
+        415,
+        447,
+        927,
+        928,
+        934
+      ]
+    }
   },
   {
     date: '2007-01-15',
@@ -70,7 +101,39 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-02-02',
-    clothingCatalog: 'archives:Clothing_0702.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0702.swf',
+      newItems: [
+        102,
+        116,
+        184,
+        248,
+        334,
+        338,
+        357,
+        422,
+        423,
+        460,
+        901,
+        939,
+        940,
+        941
+      ],
+      removedItems: [
+        131,
+        172,
+        201,
+        307,
+        323,
+        351,
+        462,
+        463,
+        903,
+        905,
+        931,
+        933
+      ]
+    },
     miscComments: ['Rockhopper is seen from the telescope'],
     temp: {
       'rockhopper-approach': {
@@ -193,7 +256,37 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-03-02',
-    clothingCatalog: 'archives:Clothing_0703.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0703.swf',
+      newItems: [
+        103,
+        117,
+        166,
+        167,
+        226,
+        235,
+        259,
+        291,
+        373,
+        492,
+        902,
+        942,
+        943,
+        944
+      ],
+      removedItems: [
+        174,
+        256,
+        277,
+        278,
+        353,
+        433
+      ]
+    }
+  },
+  {
+    date: '2007-03-09',
+    exploreItems: [339]
   },
   {
     date: '2007-03-16',
@@ -224,6 +317,7 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-03-26',
+    missionItems: [805, 806],
     miscComments: ['The third secret agent mission is released'],
     fileChanges: {
       'artwork/tools/missions.swf': 'recreation:forms_missions/m3.swf'
@@ -262,7 +356,47 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-04-06',
-    clothingCatalog: 'archives:Clothing_0704.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0704.swf',
+      newItems: [
+        180,
+        257,
+        261,
+        293,
+        302,
+        340,
+        341,
+        343,
+        363,
+        408,
+        494,
+        495,
+        533,
+        534,
+        946,
+        947,
+        948
+      ],
+      removedItems: [
+        136,
+        220,
+        243,
+        279,
+        280,
+        281,
+        366,
+        460,
+        461,
+        464,
+        901,
+        908,
+        919,
+        924,
+        925,
+        930,
+        936
+      ]
+    }
   },
   {
     date: '2007-04-13',
@@ -279,6 +413,9 @@ export const UPDATES_2007: Update[] = [
   {
     date: '2007-04-27',
     migrator: true,
+    flags: {
+      holdAvailable: true
+    },
     temp: {
       party: {
         partyName: 'Pirate Party',
@@ -319,7 +456,37 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-05-04',
-    clothingCatalog: 'archives:Clothing_0705.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0705.swf',
+      newItems: [
+        205,
+        260,
+        267,
+        269,
+        272,
+        294,
+        358,
+        409,
+        437,
+        481,
+        949,
+        950,
+        951
+      ],
+      removedItems: [
+        101,
+        116,
+        175,
+        259,
+        291,
+        361,
+        403,
+        448,
+        935,
+        941,
+        944
+      ]
+    },
     migrator: false
   },
   {
@@ -351,7 +518,8 @@ export const UPDATES_2007: Update[] = [
     rooms: {
       plaza: 'archives:ArtworkRoomsPlaza45.swf',
       forest: 'archives:RoomsForest-CoveOpeningPartyPre_1.swf'
-    }
+    },
+    availableRooms: ['forest']
   },
   {
     date: '2007-05-25',
@@ -374,6 +542,7 @@ export const UPDATES_2007: Update[] = [
       village: 'recreation:village_precpip_tour.swf',
       cove: 'recreation:cove_hut_const.swf'
     },
+    availableRooms: ['cove'],
     map: 'archives:ArtworkMaps15.swf',
     end: ['party']
   },
@@ -388,7 +557,38 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-06-01',
-    clothingCatalog: 'archives:Clothing_0706.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0706.swf',
+      newItems: [
+        211,
+        212,
+        239,
+        271,
+        297,
+        298,
+        308,
+        362,
+        375,
+        457,
+        952,
+        953,
+        954,
+        955
+      ],
+      removedItems: [
+        218,
+        221,
+        224,
+        248,
+        286,
+        287,
+        449,
+        923,
+        939,
+        940,
+        942
+      ]
+    },
     roomComment: 'The whistles are removed from the Forest',
     rooms: {
       forest: 'slippers07:media/artwork/rooms/forest.swf'
@@ -492,7 +692,42 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-07-06',
-    clothingCatalog: 'archives:Clothing_0707.swf'
+    clothingCatalog: {
+      file: 'archives:Clothing_0707.swf',
+      newItems: [
+        137,
+        299,
+        323,
+        376,
+        377,
+        378,
+        401,
+        454,
+        465,
+        912,
+        956,
+        957,
+        958
+      ],
+      removedItems: [
+        179,
+        283,
+        365,
+        412,
+        419,
+        445,
+        450,
+        451,
+        483,
+        929,
+        932,
+        938,
+        943
+      ]
+    },
+    memberItems: {
+      429: false
+    }
   },
   {
     date: '2007-07-13',
@@ -535,10 +770,46 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-08-02',
-    clothingCatalog: 'archives:August2007PenguinStyle.swf'
+    clothingCatalog: {
+      file: 'archives:August2007PenguinStyle.swf',
+      newItems: [
+        209,
+        233,
+        265,
+        313,
+        347,
+        361,
+        372,
+        439,
+        446,
+        936,
+        961,
+        962,
+        963,
+        964
+      ],
+      removedItems: [
+        102,
+        166,
+        167,
+        184,
+        253,
+        257,
+        302,
+        341,
+        409,
+        411,
+        902,
+        937,
+        946,
+        950,
+        957
+      ]
+    }
   },
   {
     date: '2007-08-07',
+    missionItems: [808, 809],
     miscComments: ['The fourth secret agent mission is released'],
     fileChanges: {
       'artwork/tools/missions.swf': 'archives:ArtworkToolsMissions4.swf'
@@ -586,29 +857,58 @@ export const UPDATES_2007: Update[] = [
     },
     sportCatalog: {
       file: 'archives:Sport_0709.swf',
-      newItems: [
-        349,
-        461,
+       items: [
         220,
-        406,
-        405,
         254,
         255,
+        349,
+        405,
+        406,
+        461,
         701,
         702,
         703,
-        711,
-        712,
-        919,
         921,
         965
-      ],
-      removedItems: []
+      ]
     }
   },
   {
     date: '2007-09-07',
-    clothingCatalog: 'archives:September07Style.swf'
+    clothingCatalog: {
+      file: 'archives:September07Style.swf',
+      newItems: [
+        111,
+        118,
+        203,
+        204,
+        210,
+        296,
+        312,
+        314,
+        359,
+        360,
+        966,
+        967,
+        968,
+        969
+      ],
+      removedItems: [
+        103,
+        237,
+        238,
+        293,
+        294,
+        343,
+        435,
+        436,
+        495,
+        912,
+        936,
+        947,
+        948
+      ]
+    }
   },
   {
     date: '2007-09-13',
@@ -687,7 +987,41 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-10-05',
-    clothingCatalog: 'archives:PenguinStyleOct2007.swf'
+    clothingCatalog: {
+      file: 'archives:PenguinStyleOct2007.swf',
+      newItems: [
+        227,
+        228,
+        244,
+        246,
+        247,
+        305,
+        309,
+        310,
+        332,
+        354,
+        472,
+        474,
+        487,
+        971,
+        972,
+        973
+      ],
+      removedItems: [
+        212,
+        225,
+        226,
+        361,
+        363,
+        408,
+        426,
+        437,
+        494,
+        949,
+        956,
+        958
+      ]
+    }
   },
   {
     date: '2007-10-12',
@@ -786,8 +1120,86 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-11-02',
-    clothingCatalog: 'archives:PenguinStyleNov2007.swf',
-    sportCatalog: 'archives:Sport_0711.swf'
+    clothingCatalog: {
+      file: 'archives:PenguinStyleNov2007.swf',
+      newItems: [
+        169,
+        213,
+        229,
+        232,
+        241,
+        249,
+        379,
+        415,
+        438,
+        467,
+        483,
+        484,
+        927,
+        932,
+        975,
+        976
+      ],
+      removedItems: [
+        180,
+        211,
+        227,
+        228,
+        235,
+        244,
+        246,
+        247,
+        267,
+        272,
+        297,
+        298,
+        309,
+        310,
+        332,
+        340,
+        354,
+        401,
+        422,
+        472,
+        474,
+        487,
+        492,
+        951,
+        953,
+        954,
+        955
+      ]
+    },
+    sportCatalog: {
+      file: 'archives:Sport_0711.swf',
+      items: [
+        220,
+        254,
+        255,
+        349,
+        405,
+        406,
+        461,
+        701,
+        702,
+        703,
+        711,
+        712,
+        919,
+        965,
+        453,
+        462,
+        463,
+        720,
+        721,
+        722,
+        974
+      ]
+    }
+  },
+  {
+    date: '2007-11-05',
+    missionItems: [810, 811]
   },
   {
     date: '2007-11-08',
@@ -910,6 +1322,7 @@ export const UPDATES_2007: Update[] = [
       // because of chat 604, sport shop with snow and sports
       shop: 'archives:ArtworkRoomsShop46.swf'
     },
+    availableRooms: ['stage'],
     map: 'archives:Map2007Plaza.swf'
   },
   {
@@ -961,7 +1374,43 @@ export const UPDATES_2007: Update[] = [
   },
   {
     date: '2007-12-07',
-    clothingCatalog: 'archives:Clothing_0712.swf',
+    clothingCatalog: {
+      file: 'archives:Clothing_0712.swf',
+      newItems: [
+        242,
+        243,
+        284,
+        289,
+        290,
+        370,
+        419,
+        447,
+        448,
+        482,
+        485,
+        933,
+        935,
+        978
+      ],
+      removedItems: [
+        205,
+        239,
+        269,
+        271,
+        308,
+        362,
+        375,
+        376,
+        457,
+        952,
+        961,
+        962,
+        964,
+        971,
+        972,
+        973
+      ]
+    },
     miscComments: ['The logo in the startscreen is updated'],
     fileChanges: {
       'interface.swf': 'recreation:old_interface/skull_heart_removed.swf'

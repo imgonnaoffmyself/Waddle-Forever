@@ -2,7 +2,7 @@ import http from 'http';
 import https from 'https';
 import path from 'path';
 import fs from 'fs';
-import { WEBSITE } from './website';
+import { WEBSITE } from './constants';
 import { exec } from 'child_process';
 import { IpcRenderer } from 'electron';
 
@@ -151,7 +151,7 @@ export async function runCommand(command: string): Promise<void> {
 
 /** Function for logging more silent errors in production */
 export const logError = (message: string, error: any): void => {
-  const logDir = path.join(process.cwd(), 'logs');
+  const logDir = process.platform == 'darwin' ? path.join(__dirname, '..', '..', 'logs') : path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir);
   }
@@ -166,6 +166,23 @@ export const DEFAULT_DIRECTORY = path.join(MEDIA_DIRECTORY, 'default');
 /** Gets a random integer between minimum and max, both included */
 export function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+export function clamp(value: number, min: number, max: number) {
+  return Math.max(Math.min(value, max), min);
+}
+
+export function randomLogNormal(mu: number, sigma: number) {
+  // this is called "Box-muller" transformation
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const standardNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+
+  
+  const normalValue = standardNormal * sigma + mu;
+  const logNormalValue = Math.exp(normalValue);
+
+  return logNormalValue;
 }
 
 /** Gets random element from an array */
@@ -189,30 +206,37 @@ export function chooseN<T>(array: T[], n: number): T[] {
   return chosen;
 }
 
+export function shuffle<T>(array: T[]) {
+  let currentIndex = array.length;
+
+  while (currentIndex !== 0) {
+    const randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
 export function isPositiveInteger(n: number): boolean {
   return n > 0 && !isNaN(n) && Number.isInteger(n);
 }
 
-/**
- * Find in an array that is sorted, the first index that corresponds to a value which is the last one that is "smaller"
- * than the value being compared.
- * 
- * For example, with numbers, if you had [1, 3, 5, 8], and you search for the value "4", it would return index 1 since 4 >= 3, 4 < 5.
- * @param value Value to compare
- * @param array Array that is sorted to some capacity
- * @param isGreaterOrEqual Function that evaluates if the value is greater or equal to the given index of the array
- * @returns Index found, or -1 if the value given is "smaller" than everything in the array
- */
-export function findIndexLeftOf<T, K>(value: T, array: K[], isGreaterOrEqual: (value: T, array: K[], index: number) => boolean) {
-  let index = -1;
-  // TODO binary searching instead of this
-  for (let i = 0; i < array.length; i++) {
-    if (!isGreaterOrEqual(value, array, i)) {
-      break;
+
+export function findFirstIndexEqualOrGreater<T, K>(value: T, array: K[], isGreaterOrEqual: (l: K, r: T) => boolean) {
+  let left = 0;
+  let right = array.length;
+
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+
+    if (isGreaterOrEqual(array[mid], value)) {
+      right = mid;
+    } else {
+      left = mid + 1;
     }
-    index = i;
-  } 
-  return index;
+  }
+
+  return left;
 }
 
 /**
@@ -244,6 +268,25 @@ export function iterateEntries<Key extends string, Value>(obj: Partial<Record<Ke
     const [key, value] = pair;
     callback(key as Key, value as Value);
   });
+}
+
+export function shuffleArray<T>(arr: T[]) {
+  const newArr = [...arr];
+  shuffle(newArr);
+  return newArr;
+}
+
+export function isDisjoint<T>(arr1: readonly T[], arr2: readonly T[]): boolean {
+  const set1 = new Set(arr1);
+  const set2 = new Set(arr2);
+  const intersection = new Set();
+  set1.forEach(value => {
+    if (set2.has(value)) {
+      intersection.add(value);
+    }
+  });
+
+  return intersection.size === 0;
 }
 
 /** 2-Dimensional vector */
@@ -284,6 +327,10 @@ export class EventListener {
     this.listeners.push(callback);
   }
 
+  public removeListener(callback: () => void) {
+    this.listeners = this.listeners.filter(c => c !== callback);
+  }
+
   public fire(): void {
     this.listeners.forEach(callback => callback());
   }
@@ -313,6 +360,24 @@ export async function writeFile(filePath: string, content: string | Uint8Array<A
 
 export function toForwardSlash(s: string): string {
   return s.replaceAll('\\', '/')
+}
+
+/**
+ * If a string does not equate to NaN when turned into a number,
+ * then it returs the number, otherwise returns the original string.
+*/
+export function tryToNumber(s: string) {
+  const num = Number(s);
+  return isNaN(num) ? s : num
+}
+
+// https://stackoverflow.com/questions/23164474/how-unique-and-random-are-javascript-generated-uuids
+// we need this since the 'crypto' module isn't available for some reason
+export function randomUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
 }
 
 export const doubleFilter = <T>(predicate: (e: T) => boolean, arr: T[]): [T[], T[]] => {

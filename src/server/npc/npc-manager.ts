@@ -12,7 +12,7 @@
 
 import { isGreaterOrEqual, isLower } from '@server/routes/versions';
 import { GameData } from '@server/timelines/game-data';
-import { PenguinMessenger } from '@server/socket-server/messenger';
+import { XtMessenger as PenguinMessenger } from '@server/socket-server/xt-messenger';
 import { RINK_PUCK_START, World } from '@server/socket-server/world/world';
 import { WorldRoom } from '@server/socket-server/world/world-room';
 import { WorldPenguin } from '@server/socket-server/world/world-penguin';
@@ -387,8 +387,8 @@ export class NpcManager {
 
     // Remove all NPCs from their rooms — broadcast rp to real players
     for (const [npc, room] of this.npcRooms) {
-      room.removeOccupant(npc);
-      this.msg.send(room.realPlayers, 'rp', npc.id);
+      room.removePenguin(npc as any);
+      this.msg.send(room.players, 'rp', npc.id);
     }
 
     this.npcRooms.clear();
@@ -405,11 +405,11 @@ export class NpcManager {
     const room = this.world.getRoom(roomId);
     const [x, y] = spawnPosForRoom(roomId);
 
-    room.addOccupant(npc, x, y);
+    room.addPenguin(npc as any, x, y);
     this.npcRooms.set(npc, room);
 
     // Broadcast new NPC to real players already in the room
-    this.msg.send(room.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.msg.send(room.players, 'ap', getPenguinString(this.data, npc as any, { x, y, frame: 1 }));
     this.scheduleNightClubDance(npc, room);
 
     this.scheduleDwell(npc);
@@ -431,8 +431,8 @@ export class NpcManager {
     if (currentRoom === undefined) return;
 
     // Remove from current room
-    currentRoom.removeOccupant(npc);
-    this.msg.send(currentRoom.realPlayers, 'rp', npc.id);
+    currentRoom.removePenguin(npc as any);
+    this.msg.send(currentRoom.players, 'rp', npc.id);
 
     // Pick a new room (avoid same room if possible)
     const roomPool = getRoomPool(this.data.getDate());
@@ -441,11 +441,11 @@ export class NpcManager {
     const newRoom = this.world.getRoom(newRoomId);
     const [x, y] = spawnPosForRoom(newRoomId);
 
-    newRoom.addOccupant(npc, x, y);
+    newRoom.addPenguin(npc as any, x, y);
     this.npcRooms.set(npc, newRoom);
 
     // Broadcast arrival to players in new room
-    this.msg.send(newRoom.realPlayers, 'ap', getPenguinString(this.data, npc, { x, y, frame: 1 }));
+    this.msg.send(newRoom.players, 'ap', getPenguinString(this.data, npc as any, { x, y, frame: 1 }));
     this.scheduleNightClubDance(npc, newRoom);
 
     this.scheduleDwell(npc);
@@ -466,7 +466,7 @@ export class NpcManager {
 
     const room = this.npcRooms.get(npc);
     const currentDate = this.data.getDate();
-    if (room !== undefined && room.realPlayers.length > 0) {
+    if (room !== undefined && room.players.length > 0) {
       if (room.id === SNOW_FORTS_ROOM_ID && currentDate === '2005-09-12') {
         const roll = Math.random();
         const hasOtherNpcs = this.getNpcsInRoom(room).some(other => other !== npc);
@@ -502,7 +502,7 @@ export class NpcManager {
             if (!this.active || this.npcRooms.get(npc) !== room) return;
 
             // Verify the asshole actually walked to the puck before hitting it
-            const currentNPCState = room.playerStates.find(([occ]) => occ === npc);
+            const currentNPCState = room.playerStates.find(([occ]) => occ.id === npc.id);
             if (!currentNPCState) return;
 
             const npcX = currentNPCState[1].x;
@@ -568,7 +568,7 @@ export class NpcManager {
     if (!this.active) return;
 
     const room = this.npcRooms.get(npc);
-    if (room === undefined || room.realPlayers.length === 0) {
+    if (room === undefined || room.players.length === 0) {
       // Nobody in room — still reschedule, just skip dialogue
       this.scheduleIdle(npc);
       return;
@@ -847,7 +847,7 @@ export class NpcManager {
 
     for (const npc of shuffledNpcs) {
       if (respondents >= (isSeptemberSnowForts ? 4 : 2)) break;
-      const state = room.playerStates.find(([occ]) => occ === npc);
+      const state = room.playerStates.find(([occ]) => occ.id === npc.id);
       if (!state) continue;
 
       const npcX = state[1].x;
@@ -915,7 +915,7 @@ export class NpcManager {
   }
 
   private dispatchAction(npc: NpcPenguin, room: WorldRoom, action: NpcAction): void {
-    const targets = room.realPlayers;
+    const targets = room.players;
 
     switch (action.type) {
       case 'chat':
@@ -937,7 +937,7 @@ export class NpcManager {
         if (targets.length > 0) {
           this.msg.send(targets, 'sp', npc.id, action.x, action.y);
         }
-        room.updateOccupantPosition(npc, action.x, action.y);
+        room.updatePosition(npc as any, action.x, action.y);
         this.scheduleNightClubDance(npc, room, NIGHT_CLUB_POST_MOVE_DANCE_DELAY_MS);
         break;
       }
@@ -949,7 +949,7 @@ export class NpcManager {
         if (targets.length > 0) {
           this.msg.send(targets, 'sf', npc.id, frame);
         }
-        room.updateOccupantFrame(npc, frame);
+        room.updateFrame(npc as any, frame);
         break;
       }
       case 'snowball': {
@@ -958,7 +958,7 @@ export class NpcManager {
         let targetY = action.y ?? 0;
 
         if (action.target === 'random-player') {
-          const players = room.realPlayers;
+          const players = room.players;
           if (players.length > 0) {
             const player = randFrom(players);
             const state = room.getState(player);
@@ -969,7 +969,7 @@ export class NpcManager {
           const npcs = this.getNpcsInRoom(room).filter(n => n.id !== npc.id);
           if (npcs.length > 0) {
             const randomNpc = randFrom(npcs);
-            const state = room.playerStates.find(([occ]) => occ === randomNpc);
+            const state = room.playerStates.find(([occ]) => occ.id === randomNpc.id);
             if (state) {
               targetX = state[1].x;
               targetY = state[1].y;
@@ -999,7 +999,7 @@ export class NpcManager {
         const table = room.getTable(action.tableId);
         
         const before = table.getCount();
-        const seatId = table.getSeatIndex(npc) ?? table.assignSeatIndex(npc);
+        const seatId = table.getSeatIndex(npc as any) ?? table.assignSeatIndex(npc as any);
         console.log(`[NPC join_table] NPC "${npc.name}" joining table ${action.tableId}: before=${before}, seatId=${seatId}, joined=${JSON.stringify((table as any).joined)}, started=${table.hasStarted()}`);
         
         // Ensure table resets if it was empty
@@ -1011,20 +1011,20 @@ export class NpcManager {
         if (seatId !== 99) {
           const count = table.getCount();
           if (count !== before) {
-            this.msg.send(room.realPlayers, 'ut', table.getId(), table.getCount());
+            this.msg.send(room.players, 'ut', table.getId(), table.getCount());
           }
           
           // The table is now joined by the NPC.
           // Simulate the `jz` flow: mark joined and notify real players.
           table.setJoined(seatId);
-          this.msg.send(table.realPlayers, 'uz', seatId, npc.name);
-          console.log(`[NPC join_table] After setJoined: joined=${JSON.stringify((table as any).joined)}, everyoneJoined=${table.hasEveryoneJoined()}, realPlayers=${table.realPlayers.map(p => p.name).join(', ') || 'none'}`);
+          this.msg.send(table.penguins, 'uz', seatId, npc.name);
+          console.log(`[NPC join_table] After setJoined: joined=${JSON.stringify((table as any).joined)}, everyoneJoined=${table.hasEveryoneJoined()}, realPlayers=${table.penguins.map(p => p.name).join(', ') || 'none'}`);
 
           // If both sides are now joined, start the game.
           if (!table.hasStarted() && table.hasEveryoneJoined()) {
             console.log(`[NPC join_table] Starting game on table ${action.tableId}, turn=${table.getTurn()}`);
             table.setStarted();
-            this.msg.send(table.realPlayers, 'sz', table.getTurn());
+            this.msg.send(table.penguins, 'sz', table.getTurn());
 
             // NPC seat 0 goes first — fire their move
             if (table.getTurn() === seatId) {
@@ -1056,7 +1056,7 @@ export class NpcManager {
     const freeNpcs = this.getNpcsInRoom(room).filter(npc => {
       return !mancalaIds.some(id => {
         const t = room.getTable(id);
-        const idx = t.getSeatIndex(npc);
+        const idx = t.getSeatIndex(npc as any);
         return idx !== undefined && idx !== WorldTable.TABLE_SPECTATOR_SEAT;
       });
     });
@@ -1185,7 +1185,7 @@ export class NpcManager {
     const table = room.getTable(tableId);
     if (!table || table.hasEnded()) return;
 
-    const seatId = table.getSeatIndex(npc);
+    const seatId = table.getSeatIndex(npc as any);
     if (seatId === undefined || seatId === 99) return;
 
     const boardStateStr = table.serializeBoard();
@@ -1240,12 +1240,12 @@ export class NpcManager {
       console.log(`[NPC zm] NPC "${npc.name}" (${npc.mancalaSkill}) played cup ${chosenCup} on table ${tableId}: endState=${JSON.stringify(endState)}, zmArgs=${JSON.stringify(zmArgs)}, newTurn=${table.getTurn()}`);
 
       if (zmArgs !== null) {
-        this.msg.send(table.realPlayers, 'zm', ...zmArgs);
+        this.msg.send(table.penguins, 'zm', ...zmArgs);
       }
 
       if (endState !== null) {
         console.log(`[NPC zo] Game over on table ${tableId} after NPC move. Sending zo.`);
-        this.msg.send(table.realPlayers, 'zo', ...endState);
+        this.msg.send(table.penguins, 'zo', ...endState);
         this.msg.send(room.players, 'ut', table.getId(), table.getCount());
 
         // Determine winner: compare mancala cup scores
@@ -1254,7 +1254,7 @@ export class NpcManager {
         const oppScore = seatId === 0 ? finalBoard[13] : finalBoard[6];
         const npcWon = npcScore > oppScore;
 
-        this.fireMancalaEndReaction(npc, room, npcWon, table.realPlayers);
+        this.fireMancalaEndReaction(npc, room, npcWon, table.penguins);
         table.resetRound();
         return;
       }
@@ -1296,9 +1296,9 @@ export class NpcManager {
           intermediate: ["good game!", "nice match!", "gg"],
           expert:       ["gg", "good game", "as expected ;)"],
         };
-        this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(winLines[npc.mancalaSkill]));
+        this.msg.send(room.players, 'sm', String(npc.id), randFrom(winLines[npc.mancalaSkill]));
         // emote: happy = 1
-        setTimeout(() => this.msg.send(room.realPlayers, 'se', npc.id, 1), 800);
+        setTimeout(() => this.msg.send(room.players, 'se', npc.id, 1), 800);
       } else {
         const loseLines: Record<MancalaSkill, string[]> = {
           clueless:     ["oh well lol", "i never know what im doing anyway", "good job!!"],
@@ -1306,7 +1306,7 @@ export class NpcManager {
           intermediate: ["good game, well played", "gg", "nicely done"],
           expert:       ["impressive", "gg, i underestimated you", "well played"],
         };
-        this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(loseLines[npc.mancalaSkill]));
+        this.msg.send(room.players, 'sm', String(npc.id), randFrom(loseLines[npc.mancalaSkill]));
 
         // Grumpy/excitable NPCs may throw a snowball at the winner on loss
         const throwsSnowball =
@@ -1319,7 +1319,7 @@ export class NpcManager {
             const target = randFrom(players);
             const state = room.playerStates.find(([occ]) => occ === target);
             if (state) {
-              this.msg.send(room.realPlayers, 'sb', npc.id, state[1].x, state[1].y);
+              this.msg.send(room.players, 'sb', npc.id, state[1].x, state[1].y);
             }
           }, randInt(1200, 2500));
         }
@@ -1341,7 +1341,7 @@ export class NpcManager {
     // Slight delay so the player leaving animation happens first
     setTimeout(() => {
       if (this.npcRooms.get(npc) !== room) return;
-      this.msg.send(room.realPlayers, 'sm', String(npc.id), randFrom(abortLines[npc.mancalaSkill]));
+      this.msg.send(room.players, 'sm', String(npc.id), randFrom(abortLines[npc.mancalaSkill]));
     }, 1000);
   }
 

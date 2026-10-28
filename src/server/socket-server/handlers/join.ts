@@ -2,10 +2,10 @@ import { PenguinRepository } from '@server/database/database';
 import { isGameRoom, Room } from '@server/game-logic/rooms';
 import { World } from '@server/socket-server/world/world';
 import { WorldPenguin } from '@server/socket-server/world/world-penguin';
-import { RoomOccupant, WorldRoom } from '@server/socket-server/world/world-room';
+import { WorldRoom } from '@server/socket-server/world/world-room';
 import { GameData } from '@server/timelines/game-data';
-import { PenguinMessenger } from '../../socket-server/messenger';
-import { getClientPuffleIds } from './puffle';
+import { XtMessenger } from '../xt-messenger';
+import { getClientPuffleIds, getPuffleWalkArguments } from './puffle';
 import { getFurnitureString, getIglooFromId } from './igloo';
 import { WorldTable } from '@server/socket-server/world/world-table';
 import { getOfflinePenguinCrumb } from '@server/http/php-server';
@@ -17,6 +17,9 @@ import { choose } from '@common/utils';
 import { SPY_DRILLS_DATA } from '@server/game-logic/spy-drills';
 import { PenguinHandler, PenguinGuard, RoomHandler, WorldContext } from './handlers';
 import { handleLeaveFire } from './fire';
+import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
+import { handleLeaveWaddle } from './room'
+import { handleQuitCard } from './card';
 
 
 function unequipPuffle(p: WorldPenguin): void {
@@ -49,7 +52,7 @@ export async function formatBuddyEntry(id: number, world: World, db: PenguinRepo
   return online ? `${id}|${name}|1` : `${id}|${name}`;
 }
 
-function sendGetOnlineBuddies(msg: PenguinMessenger, p: WorldPenguin, world: World) {
+function sendGetOnlineBuddies(msg: XtMessenger, p: WorldPenguin, world: World) {
   const onlineIds = p.buddy.buddies.filter(id => world.getById(id) !== undefined).map(i => String(i));
   msg.send(p, 'go', ...onlineIds);
 }
@@ -62,7 +65,7 @@ const handleSendBuddyOnline: PenguinHandler<[]> = ({ world, msg, penguin }) => {
   msg.send(getOnlineBuddies(world, penguin), 'bon', penguin.id);
 }
 
-export function getPenguinString(data: GameData, p: RoomOccupant, state: { x: number; y: number; frame: number; }): string {
+export function getPenguinString(data: GameData, p: WorldPenguin, state: { x: number; y: number; frame: number; }): string {
   const approvedFlag = data.isNewShell2009() ? [1] : [];
 
   return [
@@ -97,14 +100,32 @@ export function getPenguinString(data: GameData, p: RoomOccupant, state: { x: nu
 
 const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) => {
   const { penguin, msg, data, world } = ctx;
+  const previousPlayers = r.players;
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });
   // Send jr to the joining player — includes ALL occupants (real + NPCs)
   msg.send(penguin, 'jr', r.id, ...r.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
-  // Broadcast new player arrival to real players already in the room (not NPCs)
-  msg.send(r.players, 'ap', getPenguinString(data, penguin, { x, y, frame: 1 }));
-  // Let NPCs react to the new player
-  ctx.npc?.onPlayerJoin(r, penguin);
+  if (!data.isSpOnJr() || x !== 0 || y !== 0) {
+    msg.send(r.players, 'ap', getPenguinString(data, penguin, { x, y, frame: 1 }));
+  }
+
+  // modern versions don't have the puffle information on penguin so the packet is resent
+  if (!data.puffleHandItems()) {
+    const replayWalkingPuffle = (player: WorldPenguin, recipients: WorldPenguin | WorldPenguin[]) => {
+      const walkingPuffleId = player.puffle.walking;
+      if (walkingPuffleId === null) {
+        return;
+      }
+  
+      const args = getPuffleWalkArguments(data, player, walkingPuffleId, 1);
+      if (args !== undefined) {
+        msg.send(recipients, 'pw', ...args);
+      }
+    };
+  
+    previousPlayers.forEach((player) => replayWalkingPuffle(player, penguin));
+    replayWalkingPuffle(penguin, previousPlayers);
+  }
 }
 
 export function filterItems(data: GameData, items: number[]): number[] {
@@ -116,7 +137,7 @@ export function filterItems(data: GameData, items: number[]): number[] {
   return items;
 }
 
-function sendCoinsForChange(data: GameData, msg: PenguinMessenger, penguin: WorldPenguin) {
+function sendCoinsForChange(data: GameData, msg: XtMessenger, penguin: WorldPenguin) {
   const donations = data.getCoinsForChangeDonations();
   if (donations !== null) {
     // placeholder donation values
@@ -124,7 +145,7 @@ function sendCoinsForChange(data: GameData, msg: PenguinMessenger, penguin: Worl
   }
 }
 
-export function sendLPMessage(penguin: WorldPenguin, data: GameData, msg: PenguinMessenger) {
+export function sendLPMessage(penguin: WorldPenguin, data: GameData, msg: XtMessenger) {
   msg.send(
     penguin,
     'lp',
@@ -220,6 +241,7 @@ export const handleJoinServer: PenguinHandler<[]> = async (ctx) => {
 
 export const leaveRoom: RoomHandler<[]> = async (ctx) => {
   const { room, penguin, msg, data } = ctx;
+  handleLeaveWaddle(ctx);
   room.removePenguin(penguin);
   await msg.send(room.players, 'rp', penguin.id, ...room.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
 }
@@ -267,8 +289,10 @@ export const handleAddItem: PenguinHandler<[number]> = (ctx, item) => {
   }
   
   const info = data.getItem(item);
-  penguin.inventory.add(item);
-  msg.send(penguin, 'ai', item, penguin.currency.discount(info.cost));
+  if (info !== null) {
+    penguin.inventory.add(item);
+    msg.send(penguin, 'ai', item, penguin.currency.discount(info.cost));
+  }
   prst(penguin);
 }
 
@@ -295,19 +319,18 @@ export const handleJoinPlayerOld: PenguinHandler<[number, number]> = async (ctx,
 export const handleJoinPlayerCpip: PenguinHandler<[number]> = (ctx, fakeId) => {
   const { world } = ctx;
   // for some reason the ID given is the player + 1000
-  // in WF igloo room IDs are playerID + 2000
-  const iglooId = fakeId + 1000;
+  const iglooId = fakeId - 1000 + IGLOO_ROOM_BASE;
   const igloo = world.getRoom(iglooId);
-  enterRoom(ctx, igloo, 0, 0);
+  joinRoom(ctx, igloo.id, 0, 0);
 }
 
 export const handleJoinPlayerModern: PenguinHandler<[number, string]> = (ctx, playerId, roomType) => {
   const { msg, penguin, data, world } = ctx;
   // 1000 = backyard
-  const roomId = roomType === 'igloo' ? playerId + 2000 : 1000;
+  const roomId = roomType === 'igloo' ? playerId + IGLOO_ROOM_BASE : 1000;
   msg.send(penguin, 'jp', roomId, roomId, roomType);
   // TODO: backyard should only be player itself?
-  enterRoom(ctx, world.getRoom(roomId), 0, 0);
+  joinRoom(ctx, roomId, 0, 0);
 }
 
 export const isPreBackyardGuard: PenguinGuard = (ctx) => !isBackyardGuard(ctx);
@@ -491,9 +514,6 @@ export const handleDisconnect = async (ctx: WorldContext) => {
     if ('room' in ctx) {
       const table = ctx.room.getPenguinTable(penguin);
 
-      // Let NPCs react before the player is removed
-      ctx.npc?.onPlayerLeave(ctx.room, penguin);
-
       await leaveRoom(ctx);
 
       if (table !== null) {
@@ -501,7 +521,7 @@ export const handleDisconnect = async (ctx: WorldContext) => {
         if (index !== undefined && index !== WorldTable.TABLE_SPECTATOR_SEAT) {
           table.removePlayer(penguin);
           if (table.hasStarted()) {
-            await msg.send(table.realPlayers, 'cz', penguin.name);
+            await msg.send(table.penguins, 'cz', penguin.name);
             table.resetRound();
           } else {
             if (table.getCount() === 0) {
@@ -514,6 +534,12 @@ export const handleDisconnect = async (ctx: WorldContext) => {
 
     } else if ('fire' in ctx) {
       await handleLeaveFire(ctx);
+    } else if ('game' in ctx) {
+      ctx.game.matchMaker?.removePlayer(penguin);
+    } else if ('sled' in ctx) {
+      ctx.sled.removePlayer(penguin);
+    } else if ('card' in ctx) {
+      handleQuitCard(ctx);
     }
 
     world.disconnect(penguin);
@@ -583,7 +609,7 @@ export const handleGetMissionStamps: PenguinHandler<[]> = (ctx) => {
   
   const awards = penguin.inventory.items.filter(id => {
     const info = data.getItem(id);
-    return info.type === ItemType.Award;
+    return info?.type === ItemType.Award;
   });
 
   msg.send(penguin, 'qpa', penguin.id, awards.join('|'));
@@ -638,13 +664,29 @@ export const handleSetStampEarned: PenguinHandler<[number]> = ({ penguin, prst }
 }
 
 export const handleGetEpfStatus: PenguinHandler<[]> = ({ penguin, msg }) => {
-  msg.send(penguin, 'epfga', penguin.inventory.has(8009) ? 1 : 0);
+  msg.send(penguin, 'epfga', penguin.psa.isAgent ? 1 : 0);
 }
 
-export const handleGetFieldOps: PenguinHandler<[]> = ({ penguin, msg }) => {
-  // sends an integer boolean, FALSE if there is an active field ops
-  // that wasn't done
-  msg.send(penguin, 'epfgf', 0);
+export const handleGetFieldOps: PenguinHandler<[]> = ({ penguin, msg, data }) => {
+  // 0 - field op has not been accepted
+  // 1 - field op is in progress
+  // 2 - field op complete
+  const status = data.fieldOp() < 1 || penguin.epf.hasCompletedFieldOp(data.fieldOp()) ? 2
+    : penguin.epf.hasReadFieldOp(data.fieldOp()) ? 1
+    : 0;
+  msg.send(penguin, 'epfgf', status);
+}
+
+export const handleSetFieldOps: PenguinHandler<[number]> = ({ penguin, msg, data, prst }, status) => {
+  if (status === 1) {
+    penguin.epf.readFieldOp(data.fieldOp());
+    prst(penguin);
+  } else if (status === 2) {
+    penguin.epf.addMedals(1);
+    penguin.epf.completeFieldOp(data.fieldOp());
+    prst(penguin);
+  }
+  msg.send(penguin, 'epfsf', status);
 }
 
 export const handleGetEpfMedals: PenguinHandler<[]> = ({ msg, penguin }) => {
@@ -653,7 +695,7 @@ export const handleGetEpfMedals: PenguinHandler<[]> = ({ msg, penguin }) => {
 
 export const handleAddEpfItem: PenguinHandler<[number]> = ({ data, penguin, msg, prst }, itemId) => {
   const item = data.getItem(itemId);
-  if (!item.isEPF) {
+  if (item === null || !item.isEPF) {
     throw new Error(`Item ${itemId} is marked as not being from EPF, but is being bought through it`);
   }
 
@@ -665,6 +707,7 @@ export const handleAddEpfItem: PenguinHandler<[number]> = ({ data, penguin, msg,
 
 export const handleBecomeAgent: PenguinHandler<[]> = ({ prst, msg, penguin }) => {
   msg.send(penguin, 'epfsa', 1);
+  penguin.psa.setAgent();
   prst(penguin);
 }
 

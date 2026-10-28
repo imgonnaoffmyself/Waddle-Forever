@@ -86,6 +86,35 @@ export type CatalogItems = {
   announce?: false;
 }
 
+export type UniqueCatalogItems = {
+  file?: FileRef;
+  items: number[];
+};
+
+const flags = [
+  'preCpip',
+  'as3',
+  'vanillaEngine',
+  'stamps',
+  'compositePaths',
+  'newShell2009',
+  'school',
+  'mall',
+  'vr',
+  'as3Startscreen',
+  'iglooMusicReleased',
+  'ownedIgloos',
+  /* Signals that the SP packet is sent to set the default position upon entering a room (used in more modern versions) */
+  'isSpOnJr',
+  'puffleHandItems',
+  'nestAvailable',
+  'holdAvailable',
+  'quartersAvailable',
+  'memberElementalGames'
+] as const;
+
+export type GameFlag = typeof flags[number];
+
 export type CPUpdate = {
   map?: FileRef;
   /** Pin period indicator */
@@ -93,15 +122,15 @@ export type CPUpdate = {
   /** If the base SWF for a room that has a pin is updated with the pin in it */
   pinRoomUpdate?: FileRef;
 
-  /** If a new catalog was released this day: its file */
-  clothingCatalog?: FileRef | CatalogItems;
+  /** Information on a clothing catalog that was released this day */
+  clothingCatalog?: CatalogItems;
   /** If a new catalog was released this day: its file */
   furnitureCatalog?: FileRef;
   /** If a new catalog was released this day: its file */
   iglooCatalog?: FileRef;
   /** If a new catalog was released this day: its file */
   postcardCatalog?: FileRef;
-  sportCatalog?: FileRef | CatalogItems;
+  sportCatalog?: UniqueCatalogItems;
   hairCatalog?: FileRef;
   petFurniture?: FileRef;
   puffleCatalog?: FileRef;
@@ -110,6 +139,13 @@ export type CPUpdate = {
   /** List of items added to the elite gear catalog */
   eliteGearItems?: number[];
   gameUpgrades?: { newItems: number[]; removed: number[] };
+  newspaperItems?: { newItems: number[]; removed: number[] };
+  postcardgiftItems?: { newItems: number[]; removed: number[] };
+
+  testingItems?: number[];
+  exploreItems?: number[];
+  nintendoItems?: number[];
+  missionItems?: number[];
 
   stampUpdates?: StampUpdates
 
@@ -119,6 +155,9 @@ export type CPUpdate = {
   gameRelease?: string;
   /** File of all room changes */
   rooms?: RoomChanges;
+
+  /** List of all rooms that opened in this day */
+  availableRooms?: RoomName[];
 
   /** All room music IDs */
   music?: Partial<Record<RoomName, number>>;
@@ -136,6 +175,9 @@ export type CPUpdate = {
    * 'fan': The fan issue is released
    */
   newspaper?: 'irregular' | 'period-start' | 'period-end' | 'fan';
+
+  /** Available Card-Jitsu card sets */
+  cardSets?: number[];
 
   /** New version of the igloo swf */
   iglooVersion?: number;
@@ -167,6 +209,7 @@ export type CPUpdate = {
   freeBrownPuffle?: boolean;
 
   dateReference?: DateReference;
+  flags?: Partial<Record<GameFlag, boolean>>;
 
   indexHtml?: FileRef;
   websiteFolder?: string;
@@ -202,9 +245,12 @@ export type CPUpdate = {
   } | IglooList | ListSongPatch[];
 
   prices?: Partial<Record<number, number>>;
+  memberItems?: Partial<Record<number, boolean>>;
   furniturePrices?: Partial<Record<number, number>>;
   mapNote?: string;
   newWaddleRooms?: WaddleRoomInfo[];
+
+  fieldOp?: number;
 
   coinsForChange?: true;
   bakery?: true;
@@ -233,6 +279,12 @@ export type CPUpdate = {
   removeClientFiles?: number[];
 
   dayOfFun?: 'start' | 'end';
+
+  newRoomTransitions?: Array<{
+    from: RoomName,
+    to: RoomName, pos: [number, number], spawn: [number, number]
+  }>;
+  removedRoomTransitions?: Array<{ from: RoomName, to: RoomName }>;
 } & ({
   partyName: string;
   decorated?: false;
@@ -267,24 +319,23 @@ export type Event = 'party' |
   'box-plants' |
   'rockhopper-plants';
 
-export type DateReference = 'cpip' |
-  'as3' |
-  'vanilla-engine' |
-  'as3-startscreen' |
-  'igloo-music' |
-  'stamps-release' |
-  'placeholder-2016' |
-  'vr-room' |
-  'old-rink' |
-  'string-verify' |
-  'composite-paths' |
-  'igloo-catalog-name' |
-  'adopt-catalog-name' |
-  'pet-furniture-rename1' |
-  'pet-furniture-rename2' |
-  'furniture-catalog-name' |
-  'mall' |
-  'owned-igloos';
+export const dateRefs = [
+  'igloo-catalog-name',
+  'adopt-catalog-name',
+  'pet-furniture-rename1',
+  'pet-furniture-rename2',
+  'furniture-catalog-name',
+  'card-jitsu-release',
+  'fire-release',
+  'water-release',
+  'snow-release',
+  'missions-unavailable',
+  'missions-return',
+  'nintendo-shutdown',
+  'ibitz-release'
+] as const;
+
+export type DateReference = typeof dateRefs[number];
 
 export type Update = {
   date: Version;
@@ -584,7 +635,9 @@ export function consumeUpdates(updates: Update[]): Array<GameUpdate> {
   return consumed.sort((a, b) => {
     // lower dates come first
     // but if on the same day, then permanent updates first
-    // if same date, only equal if both are permanent or both are temporary
+    // if both are temporary on the same day, the one with the longer window comes first
+    // (this is currently happening because of pins, ideally the pin system will be reworked)
+    // if both are permanent on same day, this is equal (shouldnt ever happen)
     
     if (a.date === b.date) {
       if (a.end === undefined) {
@@ -594,6 +647,10 @@ export function consumeUpdates(updates: Update[]): Array<GameUpdate> {
         return -1;
       } else if (b.end === undefined) {
         return 1;
+      } else if (isLower(a.end, b.date)) {
+        return 1;
+      } else if (isLower(b.date, a.end)) {
+        return -1;
       }
     } else if (isLower(a.date, b.date)) {
       return -1

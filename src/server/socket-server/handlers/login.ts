@@ -1,9 +1,9 @@
-import { PenguinMessenger } from "../../socket-server/messenger";
+import { XtMessenger } from "../xt-messenger";
 import { ClientSocket } from "@server/socket-server/socket-server";
-import { getDefaultIgloo, PenguinJson } from "@server/database/database";
+import { getDefaultPenguin } from "@server/database/database";
 import { isLower } from "@server/routes/versions";
 import { logdebug } from "@server/logger";
-import { OfflinePenguin, WorldPenguin } from "@server/socket-server/world/world-penguin";
+import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import serverList, { getServerPopulation } from "@server/servers";
 import { LoginContext } from "@server/socket-server/xml-handler";
 
@@ -13,79 +13,7 @@ function getStartingCoins(version: string): number {
   return isLower(version, STARTING_COINS_CHANGE_DATE) ? 100 : 500;
 }
 
-function capitalizeName(name: string): string {
-  return name.split(' ').map((name => {
-    return name.slice(0, 1).toUpperCase() + name.slice(1).toLowerCase();
-  })).join(' ');
-}
-
-export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version: string): PenguinJson {
-  return {
-    name: capitalizeName(name),
-    mascot: 0,
-
-    is_member: member,
-    is_agent: false,
-
-    color: color,
-    head: 0,
-    face: 0,
-    neck: 0,
-    body: 0,
-    hand: 0,
-    feet: 0,
-    background: 0,
-    pin: 0,
-    inventory: [color],
-
-    coins: getStartingCoins(version),
-    registration_date: Date.now(),
-
-    minutes_played: 0,
-    virtualRegistrationTimestamp: virtualTimestamp,
-
-    stamps: [],
-    stampbook: {
-      color: 1,
-      highlight: 1,
-      pattern: 0,
-      icon: 1,
-      stamps: [],
-      recent_stamps: []
-    },
-    puffleSeq: 0,
-    puffles: [],
-    backyard: [],
-    puffleItems: {},
-    hasDug: false,
-    treasureFinds: [],
-    rainbow: {
-      adoptability: false,
-      currentTask: 0,
-      coinsCollected: []
-    },
-    igloo: 1,
-    igloos: [getDefaultIgloo(1)],
-    furniture: {},
-    iglooFloorings: [],
-    iglooTypes: [1],
-    iglooLocations: [1],
-    iglooSeq: 1,
-    mail: [],
-    mailSeq: 0,
-    ownedMedals: 0,
-    careerMedals: 0,
-    nuggets: 0,
-    cards: {},
-    cardProgress: 0,
-    isNinja: false,
-    senseiAttempts: 0,
-    cardWins: 0,
-    battleOfDoom: false
-  }
-}
-
-export function sendError(msg: PenguinMessenger, p: WorldPenguin | ClientSocket | Array<WorldPenguin | ClientSocket>, error: number) {
+export function sendError(msg: XtMessenger, p: WorldPenguin | ClientSocket | Array<WorldPenguin | ClientSocket>, error: number) {
   msg.send(p, 'e', error);
 }
 
@@ -140,13 +68,13 @@ export const login: LoginHandler = async (ctx, message: string) => {
           1 /* blue */,
           settings.settings.always_member,
           settings.getVirtualDate(0).getTime(),
-          settings.settings.version,
+          settings.settings.version
         );
         await db.create(json);
       }
     }
 
-    const idTest = modernLogin ? Number(nickname) : await db.fromName(nickname);
+    const idTest = modernLogin ? Number(nickname.split('|')[0]) : await db.fromName(nickname);
     if (idTest === null) {
       throw new Error(`Could not find penguin with name: ${nickname}`);
     }
@@ -157,21 +85,33 @@ export const login: LoginHandler = async (ctx, message: string) => {
       if (offline === undefined) {
         throw new Error('Couldn\'t find penguin');
       }
-      const p = new WorldPenguin(id, offline.getJSON(), settings);
+      const p = new WorldPenguin(id, offline.getJSON(), settings, data);
       ctx.off.removePenguin(offline.id);
       ctx.world.addPenguin(p);
       msg.linkClient(client, p);
+      console.log(`${p.name} is logging in (world)`);
+    } else {
+      console.log(`${nickname} is logging in`);
     }
-    console.log(`${nickname} is logging in`);
     /*
     TODO
     buddies
     how will server size be handled after NPCs?
     */
     // information regarding how many populations are in each server
-    msg.send(client, 'l', id, id, '', serverList.map((server) => {
-      const population = server.name === 'Blizzard' ? 5 : getServerPopulation()
-      return `${server.id},${population}`;
-    }).join('|'));
+    msg.send(
+      client,
+      'l',
+      data.isVanillaEngine() ? [
+        // id, swid, username, login key
+        id, id, nickname, id
+      ].join('|') : id,
+      id,
+      '',
+      serverList.map((server) => {
+        const population = server.name === 'Blizzard' ? 5 : getServerPopulation()
+        return `${server.id},${population}`;
+      }).join('|')
+    );
   }
 }

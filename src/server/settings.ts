@@ -2,8 +2,7 @@ import fs from 'fs';
 import { SETTINGS_PATH } from '../common/paths';
 import { isLower, isVersionValid, processVersion, Version } from './routes/versions';
 import { HTTP_PORT } from '../common/constants';
-import { LOGIN_DELTA, WORLD_DELTA } from './servers';
-import { ModManager } from './mods';
+import { LOGIN_DELTA, SNOW_DELTA, WORLD_DELTA } from './servers';
 import { EventListener } from '@common/utils';
 
 const COIN_MULTIPLIER_CHANGE_DATE = '2005-11-16';
@@ -41,8 +40,6 @@ type PartialSettings = Partial<Settings>
 export class SettingsManager {
   settings: Settings;
 
-  public mods: ModManager;
-
   /** IP used by the server */
   targetIP: string;
 
@@ -66,14 +63,12 @@ export class SettingsManager {
       settingsJson = JSON.parse(fs.readFileSync(SETTINGS_PATH, { encoding: 'utf-8' }));
     }
 
-    this.mods = new ModManager();
     const version = this.readVersion(settingsJson);
     const storedMultiplier = settingsJson['coin_multiplier'];
     const coinMultiplier =
       typeof storedMultiplier === 'number' && storedMultiplier !== 2
         ? storedMultiplier
         : defaultCoinMultiplier(version);
-
     this.settings = {
       fps30: this.readBoolean(settingsJson, 'fps30', false),
       thin_ice_igt: this.readBoolean(settingsJson, 'thin_ice_igt', false),
@@ -166,6 +161,10 @@ export class SettingsManager {
 
   get worldPort() {
     return this.targetPort + WORLD_DELTA;
+  }
+
+  get snowPort() {
+    return this.targetPort + SNOW_DELTA;
   }
 
   getVirtualDate(offset: number): Date {
