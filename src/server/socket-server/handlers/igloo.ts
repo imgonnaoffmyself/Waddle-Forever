@@ -140,16 +140,18 @@ export const handleAddFlooring: PenguinHandler<[number]> = (ctx, flooring) => {
 };
 
 export function processFurniture(furnitureItems: string[]): IglooFurniture {
-  return furnitureItems.map((furnitureString) => {
-    const [furniture, x, y, rotation, frame] = furnitureString.split('|').map((str) => Number(str))
-    return {
-      id: furniture,
-      x,
-      y,
-      rotation,
-      frame
-    }
-  })
+  return furnitureItems
+    .filter((furnitureString) => furnitureString !== '' && furnitureString.includes('|'))
+    .map((furnitureString) => {
+      const [furniture, x, y, rotation, frame] = furnitureString.split('|').map((str) => Number(str));
+      return {
+        id: furniture,
+        x,
+        y,
+        rotation,
+        frame
+      };
+    });
 }
 
 const addFullHouseStamp: PenguinHandler<[]> = (ctx) => {

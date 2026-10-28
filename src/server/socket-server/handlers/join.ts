@@ -314,8 +314,11 @@ export const handleJoinPlayerOld: PenguinHandler<[number, number]> = async (ctx,
     args.push(igloo.music);
   }
 
-  // client misteriously removes the first element of the furniture
-  msg.send(penguin, 'jp', ...args, ',' + getFurnitureString(igloo.furniture));
+  // When furniture is present, prefix with a leading comma because early clients
+  // split on comma and shift the first element (fix = map.shift()).
+  // If igloo has no furniture, send an empty string so no ghost item is parsed.
+  const furnitureStr = igloo.furniture.length > 0 ? ',' + getFurnitureString(igloo.furniture) : '';
+  msg.send(penguin, 'jp', ...args, furnitureStr);
   const roomId = 2000 + ownerId;
   joinRoom(ctx, roomId, 0, 0);
 }
