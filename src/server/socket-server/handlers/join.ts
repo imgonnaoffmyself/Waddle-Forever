@@ -99,7 +99,8 @@ export function getPenguinString(data: GameData, p: WorldPenguin, state: { x: nu
 }
 
 const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) => {
-  const { penguin, msg, data, world } = ctx;
+  const { penguin, msg, data, world, bot } = ctx;
+  bot?.prepareIglooVisit(r, penguin);
   const previousPlayers = r.players;
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });
@@ -126,6 +127,8 @@ const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) =>
     previousPlayers.forEach((player) => replayWalkingPuffle(player, penguin));
     replayWalkingPuffle(penguin, previousPlayers);
   }
+
+  bot?.onPlayerEnterRoom(r, penguin);
 }
 
 export function filterItems(data: GameData, items: number[]): number[] {

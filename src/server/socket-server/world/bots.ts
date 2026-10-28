@@ -15,12 +15,13 @@ import { FindFourTable } from './find-four';
 import { MancalaTable } from './mancala';
 import { XtMessenger } from '../xt-messenger';
 import { joinWaddle } from '../handlers/room';
+import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
 import path from 'path';
 import { generateBots, generateRandomBot } from './bot-generation';
 
-const BOT_ID_BASE = 9_000_000;
+export const BOT_ID_BASE = 9_000_000;
 
-const isBot = (p: WorldPenguin): boolean => p.id >= BOT_ID_BASE;
+export const isBot = (p: WorldPenguin | number): boolean => (typeof p === 'number' ? p : p.id) >= BOT_ID_BASE;
 
 
 // TODO -> Similar to item trackign system, a furniture and igloo type/music tracking system
@@ -119,6 +120,60 @@ export class BotManager {
     } else if (this._settings.population > 0) {
       this.setPopulation(0, false);
     }
+  }
+
+  /**
+   * Called right before a human player enters a room.
+   * If it's a bot's igloo, gives a chance for the bot to be home when the player arrives.
+   */
+  public prepareIglooVisit(room: WorldRoom, visitor: WorldPenguin): void {
+    if (isBot(visitor)) return;
+    if (room.id < IGLOO_ROOM_BASE) return;
+
+    const ownerId = room.id - IGLOO_ROOM_BASE;
+    if (ownerId === visitor.id) return;
+
+    const bot = this._bots.get(ownerId);
+    if (!bot) return;
+
+    const currentRoom = this._world.getPenguinRoom(bot.penguin);
+    if (currentRoom?.id === room.id) {
+      return; // Already home!
+    }
+
+    // Small-to-medium chance (~45%) that the bot is at home when you visit
+    if (Math.random() < 0.45) {
+      const [botX, botY] = choose([
+        [380, 280], [310, 310], [450, 300], [260, 270], [490, 310], [370, 350]
+      ]);
+
+      if (currentRoom !== undefined) {
+        currentRoom.removePenguin(bot.penguin);
+      }
+      room.addPenguin(bot.penguin, botX, botY);
+      this._world.enterState(bot.penguin, { room });
+      bot.markHome();
+    }
+  }
+
+  /**
+   * Called right after a human player enters a room.
+   * If they entered a bot's igloo and the owner is present, trigger the unannounced arrival reaction.
+   */
+  public onPlayerEnterRoom(room: WorldRoom, visitor: WorldPenguin): void {
+    if (isBot(visitor)) return;
+    if (room.id < IGLOO_ROOM_BASE) return;
+
+    const ownerId = room.id - IGLOO_ROOM_BASE;
+    if (ownerId === visitor.id) return;
+
+    const bot = this._bots.get(ownerId);
+    if (!bot) return;
+
+    const currentRoom = this._world.getPenguinRoom(bot.penguin);
+    if (currentRoom?.id !== room.id) return;
+
+    bot.reactToIglooVisitor(visitor, room);
   }
 
   public setOff() {
@@ -405,6 +460,16 @@ export class BotManager {
     this.syncPopulation();
     if (this._settings.playGames) {
       this.tickGames();
+    }
+
+    // Keep a few bot igloos open on the map for players to discover and visit
+    const openBotPenguins = this._world.getOpenIglooPlayers().filter(p => isBot(p));
+    if (openBotPenguins.length < this._settings.openIgloos && this._bots.size > 0) {
+      const candidates = [...this._bots.values()].filter(b => !openBotPenguins.some(p => p.id === b.penguin.id));
+      if (candidates.length > 0) {
+        const toOpen = choose(candidates);
+        this._world.openIgloo(toOpen.penguin);
+      }
     }
 
     for (const bot of this._bots.values()) {

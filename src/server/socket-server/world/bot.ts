@@ -94,6 +94,64 @@ const CHAT_LINES = [
   'glad you made it to the beta :D', 'so cool!!', 'nice moves!'
 ];
 
+export const IGLOO_PISSED_LINES = [
+  "who the hell are you?! get out!",
+  "did you ever hear of knocking?! fuck off!",
+  "get out of my house right now!!",
+  "who invited you?! leave!",
+  "excuse me?! door's behind you, get lost!",
+  "what the fuck are you doing in my igloo?!",
+  "trespasser!! OUT!",
+  "did you really just walk into my house unannounced?!",
+  "i'm calling the EPF. GET OUT.",
+  "fuck off creep!!",
+  "do you mind?! this is a PRIVATE igloo!",
+  "seriously?! get the fuck out!",
+  "i didn't invite you! bye!",
+  "SECURITY! GET OUT OF MY HOUSE!"
+];
+
+export const IGLOO_DECOR_LINES = [
+  "omg a guest!! what do you think of my setup?!",
+  "hey! be honest, does this couch match the carpet?",
+  "welcome!! i just spent all my coins on this furniture, how does it look?",
+  "hey!! look around, what do you think of the vibes?",
+  "you like the decor? took me hours to place this just right!",
+  "welcome to my house! rate it 1 to 10 please!!",
+  "i'm thinking of getting a fireplace next, thoughts?",
+  "check out my stereo! pretty sweet right?",
+  "does this room feel cozy or too crowded? be honest!",
+  "glad someone came by! how do you like the layout?",
+  "took me forever to save up for this flooring, look!",
+  "hey!! do you think i should move the stereo over there?"
+];
+
+export const IGLOO_PLEASED_LINES = [
+  "oh hey!! welcome to my igloo :)",
+  "feel free to make yourself at home!",
+  "welcome!! grab a seat, I was just chilling",
+  "hey! nice to see you! want some hot cocoa?",
+  "welcome in! pizza is in the fridge :D",
+  "hi!! wow a visitor! welcome to my crib",
+  "hey buddy! pull up a bean bag :)",
+  "oh hi there! good to see a friendly face!",
+  "make yourself comfortable, glad you stopped by!",
+  "hey friend!! perfect timing, I just put on some music"
+];
+
+export const IGLOO_STARTLED_LINES = [
+  "AHH! who are you?!",
+  "woah!! how did you get in here?!",
+  "wait what... who gave you my address?!",
+  "omg you scared the feathers off me!!",
+  "did you just... walk right through my front door?!",
+  "uhhh... hello? can i help you?? lol",
+  "wait I was just changing clothes omg look away!!",
+  "uhhh.. ignore the mess, I wasn't expecting company",
+  "i literally just vacuumed please take your shoes off",
+  "omg my heart... knock next time please!!"
+];
+
 interface BotBrain {
   handle(name: string, args: string[]): void;
   dispose(): void;
@@ -1077,6 +1135,112 @@ export class Bot implements ClientSocket {
 
   public isOnCooldown(id: BehaviorId, now: number): boolean {
     return this._cooldowns[id] > now;
+  }
+
+  public markHome(): void {
+    // Keep bot in their igloo for at least 60 seconds
+    this._lenghts[BehaviorId.HostIgloo] = Date.now() + 60_000;
+  }
+
+  public reactToIglooVisitor(visitor: WorldPenguin, room: WorldRoom): void {
+    const delayMs = randomInt(1000, 1800);
+
+    setTimeout(() => {
+      const currentBotRoom = this._world.getPenguinRoom(this._penguin);
+      const currentVisitorRoom = this._world.getPenguinRoom(visitor);
+      if (currentBotRoom?.id !== room.id || currentVisitorRoom?.id !== room.id) {
+        return;
+      }
+
+      const visitorState = room.getState(visitor);
+
+      // Archetype selection based on bot attributes
+      let archetype: 'pissed' | 'excited_decor' | 'pleased' | 'startled';
+      const roll = Math.random();
+
+      if (this._attributes.snowballFan > 0.55 && this._attributes.followability < 0.45) {
+        archetype = roll < 0.7 ? 'pissed' : 'startled';
+      } else if (this._attributes.iglooFan > 0.5) {
+        archetype = roll < 0.65 ? 'excited_decor' : (roll < 0.85 ? 'pleased' : 'pissed');
+      } else if (this._attributes.waveFan > 0.4 || this._attributes.chatFan > 0.5) {
+        archetype = roll < 0.6 ? 'pleased' : (roll < 0.8 ? 'excited_decor' : 'startled');
+      } else {
+        if (roll < 0.28) archetype = 'pissed';
+        else if (roll < 0.56) archetype = 'excited_decor';
+        else if (roll < 0.82) archetype = 'pleased';
+        else archetype = 'startled';
+      }
+
+      switch (archetype) {
+        case 'pissed': {
+          const line = choose(IGLOO_PISSED_LINES);
+          this.doEmote(choose([4, 8])); // mad frown or angry
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.sendMessage(line);
+            }
+          }, 400);
+
+          // Throw a snowball right at the intruder!
+          setTimeout(() => {
+            if (
+              this._world.getPenguinRoom(this._penguin)?.id === room.id &&
+              this._world.getPenguinRoom(visitor)?.id === room.id
+            ) {
+              this.throwSnowball(visitorState.x, visitorState.y);
+            }
+          }, 1400);
+          break;
+        }
+
+        case 'excited_decor': {
+          const line = choose(IGLOO_DECOR_LINES);
+          this.doEmote(choose([1, 9])); // smile or cheer
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.sendMessage(line);
+            }
+          }, 400);
+
+          // Show off with a dance
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.doDance();
+            }
+          }, 1500);
+          break;
+        }
+
+        case 'pleased': {
+          const line = choose(IGLOO_PLEASED_LINES);
+          this.doEmote(choose([1, 5, 11])); // smile, heart, coffee
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.sendMessage(line);
+            }
+          }, 400);
+
+          // Wave to the visitor
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.doFrame(25); // wave
+            }
+          }, 1300);
+          break;
+        }
+
+        case 'startled': {
+          const line = choose(IGLOO_STARTLED_LINES);
+          this.doEmote(choose([7, 10])); // surprise/gasp or sweat
+          setTimeout(() => {
+            if (this._world.getPenguinRoom(this._penguin)?.id === room.id) {
+              this.sendMessage(line);
+            }
+          }, 400);
+          break;
+        }
+      }
+    }, delayMs);
   }
 
   public end() {};
