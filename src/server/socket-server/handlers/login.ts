@@ -6,6 +6,8 @@ import { logdebug } from "@server/logger";
 import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import serverList, { getServerPopulation } from "@server/servers";
 import { LoginContext } from "@server/socket-server/xml-handler";
+import { hashPassword, verifyPassword } from "@server/auth/password";
+import { getBanStatus } from "@server/moderation/filter";
 
 const STARTING_COINS_CHANGE_DATE = '2008-07-15';
 
@@ -50,6 +52,9 @@ export const login: LoginHandler = async (ctx, message: string) => {
     logdebug('No nickname provided during Login, terminating.');
   } else {
     const nickname = data.isPreCpip() ? nicknameMatch[1].replace(/_/g, ' ') : nicknameMatch[1];
+    const passwordMatch = message.match(/<pword><!\[CDATA\[(.*)\]\]><\/pword>/);
+    const password = passwordMatch ? passwordMatch[1] : '';
+
     // in the LOGIN world of modern clients, nickname -> ID
     // everywhere else, nickname -> name
 
@@ -57,20 +62,44 @@ export const login: LoginHandler = async (ctx, message: string) => {
     const modernLogin = ('world' in ctx && data.isVanillaEngine());
     if (!modernLogin) {
       if (!await db.exists(nickname)) {
-        // todo: error 101 is incorrect password
         if (settings.settings.no_create_via_login) {
           sendError(msg, client, 100);
-          return
+          return;
         }
 
+        const passwordHash = password ? await hashPassword(password) : undefined;
         const json = getDefaultPenguin(
           nickname,
           1 /* blue */,
           settings.settings.always_member,
           settings.getVirtualDate(0).getTime(),
-          settings.settings.version
+          settings.settings.version,
+          passwordHash
         );
         await db.create(json);
+      } else {
+        const idLookup = await db.fromName(nickname);
+        if (idLookup !== null) {
+          const [existId, existJson] = idLookup;
+          if (!existJson.password_hash) {
+            if (password) {
+              existJson.password_hash = await hashPassword(password);
+              await db.update(existId, existJson);
+            }
+          } else {
+            const valid = await verifyPassword(password, existJson.password_hash);
+            if (!valid) {
+              sendError(msg, client, 101);
+              return;
+            }
+          }
+
+          const banStatus = getBanStatus(existJson);
+          if (banStatus.banned) {
+            msg.send(client, 'e', 600, banStatus.remainingHours);
+            return;
+          }
+        }
       }
     }
 
@@ -85,7 +114,14 @@ export const login: LoginHandler = async (ctx, message: string) => {
       if (offline === undefined) {
         throw new Error('Couldn\'t find penguin');
       }
-      const p = new WorldPenguin(id, offline.getJSON(), settings, data);
+      const offlineJson = offline.getJSON();
+      const banStatus = getBanStatus(offlineJson);
+      if (banStatus.banned) {
+        msg.send(client, 'e', 600, banStatus.remainingHours);
+        client.end();
+        return;
+      }
+      const p = new WorldPenguin(id, offlineJson, settings, data);
       ctx.off.removePenguin(offline.id);
       ctx.world.addPenguin(p);
       msg.linkClient(client, p);

@@ -8,6 +8,8 @@ import { WorldRoom } from "@server/socket-server/world/world-room";
 import { WaddleRoom } from "@server/socket-server/world/waddle-room";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
+import { checkProfanity } from "@server/moderation/filter";
+import { getCommandsHandler } from "@server/commands/commands";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg, data }, x, y) => {
   const state = room.getState(penguin);
@@ -86,7 +88,53 @@ export const handleSendJoke: RoomHandler<[string]> = ({ room, msg, penguin }, jo
   msg.send(room.players, 'sj', penguin.id, joke);
 }
 
-export const handleSendMessage: RoomHandler<[string, string]> = ({ room, msg, penguin, data, bot }, _penguinIdParam, message) => {
+export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _penguinIdParam, message) => {
+  const { room, msg, penguin, data, prst, client, world, db, settings, off, bot } = ctx;
+
+  // In-game command execution via chat prefix '!'
+  if (message.startsWith('!')) {
+    const commandText = message.slice(1).trim();
+    const commandMatch = commandText.match(/(\w+)(.*)/);
+    if (commandMatch !== null) {
+      const name = commandMatch[1];
+      const argString = commandMatch[2].trim();
+      const args = argString === '' ? [] : argString.split(/\s+/);
+      const commandsHandler = getCommandsHandler();
+      const res = commandsHandler.run({
+        world,
+        penguin,
+        prst,
+        msg,
+        data,
+        db,
+        settings,
+        off,
+        client,
+        room,
+        bot: bot!
+      }, name, args);
+      msg.send(penguin, 'sm', 0, res || `Command '${name}' ran successfully`);
+      return;
+    }
+  }
+
+  if (!isBot(penguin)) {
+    const profanity = checkProfanity(message);
+    if (profanity.isSwear) {
+      const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+      penguin.moderation.ban(banExpiry, `Inappropriate language (24h autoban): "${profanity.matchedWord ?? message}"`);
+      prst(penguin, true);
+
+      if (data.isPreCpip()) {
+        await msg.send(penguin, 'e', 5, profanity.matchedWord ?? message);
+      } else {
+        await msg.send(penguin, 'e', 600, 24);
+      }
+      client.end();
+      return;
+    }
+  }
+
   if (message.trim().toLowerCase() === "dead internet theory") {
     penguin.deadInternet = !penguin.deadInternet;
     if (penguin.deadInternet) {

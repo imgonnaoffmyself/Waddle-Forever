@@ -63,12 +63,22 @@ export type Mail = {
 };
 
 export interface PenguinJson {
-// PROFILE
-  name: string
-  mascot: number
+// AUTHENTICATION & SECURITY
+  password_hash?: string
+  account_created?: number
+  virtual_registration_date?: string
+
+// MODERATION
+  banned_until?: number | null
+  ban_reason?: string
 
 // MEMBERSHIP
   is_member: boolean
+  membership_expires?: number | null
+
+// PROFILE
+  name: string
+  mascot: number
 
 // PSA
   is_agent: boolean
@@ -196,12 +206,21 @@ function getStartingCoins(version?: string): number {
   return isLower(version, STARTING_COINS_CHANGE_DATE) ? 100 : 500;
 }
 
-export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string): PenguinJson {
+export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string, passwordHash?: string): PenguinJson {
+  const vDate = new Date(virtualTimestamp);
+  const vDateStr = `${vDate.getUTCFullYear()}-${String(vDate.getUTCMonth() + 1).padStart(2, '0')}-${String(vDate.getUTCDate()).padStart(2, '0')}`;
+
   return {
     name: capitalizeName(name),
     mascot: 0,
 
+    password_hash: passwordHash,
+    account_created: Date.now(),
+    virtual_registration_date: vDateStr,
+
     is_member: member,
+    membership_expires: null,
+    banned_until: null,
     is_agent: false,
 
     color: color,
@@ -619,6 +638,10 @@ export class PenguinRepository {
     queued.then(cleanUp, cleanUp);
 
     return queued;
+  }
+
+  public update(id: number, data: PenguinJson): Promise<void> {
+    return this.write(id, data);
   }
 
   public async fromName(name: string): Promise<[number, PenguinJson] | null> {

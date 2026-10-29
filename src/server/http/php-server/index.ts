@@ -7,6 +7,9 @@ import { getDateString, randomUUID } from '@common/utils';
 import { getDefaultPenguin, PenguinJson, PenguinRepository } from '@server/database/database';
 import { filterItems } from '@server/socket-server/handlers/join';
 import { GameData } from '@server/timelines/game-data';
+import { hashPassword, verifyPassword } from '@server/auth/password';
+import { evaluateMembership } from '@server/auth/membership';
+import { getBanStatus } from '@server/moderation/filter';
 
 interface Ctx {
   settings: SettingsManager;
@@ -22,7 +25,8 @@ type PostCallback = (body: any, ctx: Ctx) => Promise<string | Record<string, unk
 
 type GetCallback = (body: any, ctx: Ctx) => string;
 
-export function getOfflinePenguinCrumb(id: number, penguin: PenguinJson): string {
+export function getOfflinePenguinCrumb(id: number, penguin: PenguinJson, isMemberOverride?: boolean): string {
+  const isMember = isMemberOverride ?? penguin.is_member;
   return [
     id,
     penguin.name,
@@ -38,7 +42,7 @@ export function getOfflinePenguinCrumb(id: number, penguin: PenguinJson): string
     0, // unecessary data: room state
     0,
     0,
-    penguin.is_member ? 1 : 0,
+    isMember ? 1 : 0,
   ].join('|');
 }
 
@@ -101,12 +105,15 @@ const POST_LISTENERS: Record<string, PostCallback> = {
         if (sessionInfo.username.length < 1) {
           return '';
         }
+        const createPass = body.password ?? body.pass ?? '';
+        const createPassHash = createPass ? await hashPassword(createPass) : undefined;
         await db.create(getDefaultPenguin(
           sessionInfo.username,
           sessionInfo.color,
           settings.settings.always_member,
           settings.getVirtualDate(0).getTime(),
           settings.settings.version,
+          createPassHash
         ));
         res += 'success=1';
         break;
@@ -120,12 +127,16 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       return 'e=700';
     }
 
+    const joinPass = body.Password ?? body.password ?? body.Pass ?? body.pass ?? '';
+    const joinPassHash = joinPass ? await hashPassword(joinPass) : undefined;
+
     await db.create(getDefaultPenguin(
       name,
       Number(body.Colour),
       settings.settings.always_member,
       settings.getVirtualDate(0).getTime(),
       settings.settings.version,
+      joinPassHash
     ));
 
     return 'e=0';
@@ -150,8 +161,9 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     return `e=0&crumb=${crumb}`;
   },
   // Logging in
-  '/php/login.php': async (body, { settings, db, data}) => {
+  '/php/login.php': async (body, { settings, db, data }) => {
     const { Username } = body;
+    const loginPass = body.Password ?? body.password ?? body.Pass ?? body.pass ?? '';
 
     let penguin = await db.fromName(Username);
 
@@ -160,18 +172,49 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     }
 
     if (penguin === null) {
+      const loginPassHash = loginPass ? await hashPassword(loginPass) : undefined;
       const json = getDefaultPenguin(
         Username,
         1 /* blue as default */,
         settings.settings.always_member,
         settings.getVirtualDate(0).getTime(),
         settings.settings.version,
+        loginPassHash
       ); 
       penguin = [await db.create(json), json];
+    } else {
+      const [id, penguinData] = penguin;
+      // Handle legacy account with no password yet
+      if (!penguinData.password_hash) {
+        if (loginPass) {
+          penguinData.password_hash = await hashPassword(loginPass);
+          await db.update(id, penguinData);
+        }
+      } else {
+        const valid = await verifyPassword(loginPass, penguinData.password_hash);
+        if (!valid) {
+          return 'e=101';
+        }
+      }
     }
 
-    const virtualDate = settings.getVirtualDate(43);
     const [id, penguinData] = penguin;
+
+    // Check ban status
+    const banStatus = getBanStatus(penguinData);
+    if (banStatus.banned) {
+      return `e=600&b=${banStatus.remainingHours}`;
+    }
+
+    // Evaluate membership
+    const memEval = evaluateMembership(
+      penguinData,
+      data.getDate(),
+      Date.now(),
+      settings.settings.always_member
+    );
+
+    const virtualDate = settings.getVirtualDate(43);
     
     const buddies = (await Promise.all((penguinData.buddies ?? []).map(id => new Promise<[number, string] | null>((res) => {
       db.get(id).then(p => {
@@ -193,16 +236,16 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     })))).filter((p): p is [number, string] => p !== null);
 
     const params: Record<string, number | string> = {
-      crumb: getOfflinePenguinCrumb(id, penguinData),
+      crumb: getOfflinePenguinCrumb(id, penguinData, memEval.isMember),
       k1: 'a',
       c: penguinData.coins,
       s: penguinData.safeChat ? 1 : 0,
       // jd uses non virtual date, there simulating age delta it with real time
       jd: getDateString(Date.now() - (settings.getVirtualDate(0).getTime() - penguinData.virtualRegistrationTimestamp)),
-      ed: '10000-1-1', // EXPIRACY DATE TODO what is it for?
-      h: '', // TODO what is?
-      w: '100|0', // TODO what is?
-      m: '', // TODO what is
+      ed: memEval.expiryDateString,
+      h: '',
+      w: '100|0',
+      m: memEval.isMember ? 1 : 0,
       bl: buddies.map(([id, name]) => `${id}|${name}`).join(','),
       nl: ignored.map(([id, name]) => `${id}|${name}`).join(','),
       il: filterItems(data, penguinData.inventory).join('|'), // item list

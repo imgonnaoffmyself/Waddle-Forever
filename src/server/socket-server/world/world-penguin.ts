@@ -5,6 +5,7 @@ import { CardJitsuFireProgress, CardJitsuProgress, CardJitsuSnowProgress } from 
 import { processVersion } from "@server/routes/versions";
 import settingsManager, { SettingsManager } from "@server/settings";
 import { GameData } from "@server/timelines/game-data";
+import { evaluateMembership } from "@server/auth/membership";
 
 export const equipProp = [
   'color',
@@ -73,18 +74,73 @@ class Profile {
 }
 
 class Membership {
-  private _member: boolean;
+  private _manualOverride: boolean | null = null;
+  private _membershipExpires: number | null;
 
-  constructor(data: PenguinJson) {
-    this._member = data.is_member;
+  constructor(
+    private _data: PenguinJson,
+    private _gameData: GameData,
+    private _settings: SettingsManager
+  ) {
+    this._membershipExpires = _data.membership_expires ?? null;
   }
 
   public swap() {
-    this._member = !this._member;
+    this._manualOverride = !this.isMember;
   }
 
-  get isMember() {
-    return this._member;
+  public get membershipExpires() {
+    return this._membershipExpires;
+  }
+
+  public setMembershipExpires(expiresMs: number | null) {
+    this._membershipExpires = expiresMs;
+    this._manualOverride = null;
+  }
+
+  public get isMember(): boolean {
+    if (this._manualOverride !== null) {
+      return this._manualOverride;
+    }
+    const evalResult = evaluateMembership(
+      this._data,
+      this._gameData.getDate(),
+      Date.now(),
+      this._settings.settings.always_member
+    );
+    return evalResult.isMember;
+  }
+}
+
+class Moderation {
+  private _bannedUntil: number | null;
+  private _banReason?: string;
+
+  constructor(data: PenguinJson) {
+    this._bannedUntil = data.banned_until ?? null;
+    this._banReason = data.ban_reason;
+  }
+
+  public get bannedUntil() {
+    return this._bannedUntil;
+  }
+
+  public get banReason() {
+    return this._banReason;
+  }
+
+  public ban(untilMs: number, reason: string) {
+    this._bannedUntil = untilMs;
+    this._banReason = reason;
+  }
+
+  public unban() {
+    this._bannedUntil = null;
+    this._banReason = undefined;
+  }
+
+  public isBanned(now: number = Date.now()): boolean {
+    return this._bannedUntil !== null && this._bannedUntil > now;
   }
 }
 
@@ -1039,6 +1095,10 @@ export class WorldPenguin implements UserPenguin {
   private _medieval2012: Medieval2012Status;
   private _preference: UserPreference;
   private _avatar = new Avatar();
+  private _moderation: Moderation;
+  private _passwordHash?: string;
+  private _accountCreated?: number;
+  private _virtualRegistrationDate?: string;
   public deadInternet: boolean = false;
 
   constructor(
@@ -1048,7 +1108,11 @@ export class WorldPenguin implements UserPenguin {
     data: GameData
   ) {
     this._profile = new Profile(id, json);
-    this._membership = new Membership(json);
+    this._membership = new Membership(json, data, settings);
+    this._moderation = new Moderation(json);
+    this._passwordHash = json.password_hash;
+    this._accountCreated = json.account_created ?? json.registration_date;
+    this._virtualRegistrationDate = json.virtual_registration_date;
     this._psa = new PSA(json);
     this._inventory = new Inventory(json);
     this._currency = new Currency(json);
@@ -1166,12 +1230,40 @@ export class WorldPenguin implements UserPenguin {
     return this._dig;
   }
 
+  public get moderation() {
+    return this._moderation;
+  }
+
+  public get passwordHash() {
+    return this._passwordHash;
+  }
+
+  public setPasswordHash(hash: string) {
+    this._passwordHash = hash;
+  }
+
+  public get accountCreated() {
+    return this._accountCreated;
+  }
+
+  public get virtualRegistrationDate() {
+    return this._virtualRegistrationDate;
+  }
+
   public getJSON(): PenguinJson {
     return {
       name: this._profile.name,
       mascot: this._profile.mascot,
 
+      password_hash: this._passwordHash,
+      account_created: this._accountCreated,
+      virtual_registration_date: this._virtualRegistrationDate,
+
+      banned_until: this._moderation.bannedUntil,
+      ban_reason: this._moderation.banReason,
+
       is_member: this._membership.isMember,
+      membership_expires: this._membership.membershipExpires,
 
       is_agent: this._psa.isAgent,
 

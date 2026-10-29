@@ -6,6 +6,7 @@ import { CARDS } from "@server/game-logic/cards";
 import { PenguinContext, RoomContext } from "@server/socket-server/handlers/handlers";
 import { BotManager } from "@server/socket-server/world/bots";
 import { clamp } from "@common/utils";
+import { calculateMembershipDurationMs, MIN_MEMBERSHIP_COINS } from "@server/auth/membership";
 
 type CommandContext = (PenguinContext | RoomContext) & {
   bot: BotManager
@@ -245,6 +246,75 @@ const handleAddCard: CommandHandler<[number, number]> = ({ penguin, prst }, card
   prst(penguin);
   return `Added ${amount} of card ID ${card}`;
 }
+
+const handleBuyMembership: CommandHandler<[number]> = ({ msg, penguin, prst }, coins) => {
+  if (coins < MIN_MEMBERSHIP_COINS) {
+    return `Minimum amount to buy membership is ${MIN_MEMBERSHIP_COINS} coins.`;
+  }
+  if (penguin.currency.coins < coins) {
+    return `You need ${coins} coins, but only have ${penguin.currency.coins} coins.`;
+  }
+
+  const addedMs = calculateMembershipDurationMs(coins);
+  const now = Date.now();
+  const currentExpiry = penguin.membership.membershipExpires;
+  const baseTime = (currentExpiry !== null && currentExpiry > now) ? currentExpiry : now;
+  const newExpiry = baseTime + addedMs;
+
+  penguin.currency.discount(coins);
+  penguin.membership.setMembershipExpires(newExpiry);
+  prst(penguin, true);
+
+  msg.send(penguin, 'ai', -1, penguin.currency.coins);
+
+  const days = (addedMs / (1000 * 60 * 60 * 24)).toFixed(1);
+  const expDate = new Date(newExpiry).toISOString().split('T')[0];
+  return `Purchased ${days} days of membership for ${coins} coins! Expiry: ${expDate}`;
+};
+
+const handleBanPlayer: CommandHandler<[string, number, string]> = ({ db, world, msg, prst }, targetName, hours, reason) => {
+  const banHours = hours > 0 ? hours : 24;
+  const banExpiry = Date.now() + banHours * 60 * 60 * 1000;
+  const banReason = reason || `Banned by moderator for ${banHours} hours`;
+
+  db.fromName(targetName).then(targetPair => {
+    if (!targetPair) return;
+    const [targetId, targetJson] = targetPair;
+    targetJson.banned_until = banExpiry;
+    targetJson.ban_reason = banReason;
+    db.update(targetId, targetJson);
+  });
+
+  const onlineTarget = world.players.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  if (onlineTarget) {
+    onlineTarget.moderation.ban(banExpiry, banReason);
+    prst(onlineTarget, true);
+    msg.send(onlineTarget, 'e', 600, banHours);
+    try {
+      msg.getClient(onlineTarget).end();
+    } catch {}
+  }
+
+  return `Banned '${targetName}' for ${banHours} hours.`;
+};
+
+const handleUnbanPlayer: CommandHandler<[string]> = ({ db, world, prst }, targetName) => {
+  db.fromName(targetName).then(targetPair => {
+    if (!targetPair) return;
+    const [targetId, targetJson] = targetPair;
+    targetJson.banned_until = null;
+    targetJson.ban_reason = undefined;
+    db.update(targetId, targetJson);
+  });
+
+  const onlineTarget = world.players.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  if (onlineTarget) {
+    onlineTarget.moderation.unban();
+    prst(onlineTarget, true);
+  }
+
+  return `Unbanned '${targetName}'.`;
+};
 
 const handleSafechat: CommandHandler<[]> = ({ penguin, prst }) => {
   penguin.preference.setSafeChat(!penguin.preference.isSafeChat);
@@ -513,6 +583,42 @@ const generators: CommandsGenerator = [
       argNames: ['id/all'],
       description: "Resets the progress of the given Field-Op #, allowing you to replay that Field-Op if it's already been completed. You can also do 'all' to reset progress for all Field-Ops.",
       examples: ['resetfieldop 21', 'resetfieldop all']
+    }
+  ],
+  [
+    'membership',
+    [c(['number'], handleBuyMembership)],
+    {
+      argNames: ['coins'],
+      description: "Buy membership time with coins (minimum 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
+      examples: ['membership 500', 'membership 2500', 'membership 8000', 'membership 50000']
+    }
+  ],
+  [
+    'buy',
+    [c(['number'], handleBuyMembership)],
+    {
+      argNames: ['coins'],
+      description: "Alias for membership command.",
+      examples: ['buy 500', 'buy 50000']
+    }
+  ],
+  [
+    'ban',
+    [c(['string', 'number', 'string'], handleBanPlayer), c(['string', 'number'], (ctx, name, hours) => handleBanPlayer(ctx, name, hours, '')), c(['string'], (ctx, name) => handleBanPlayer(ctx, name, 24, ''))],
+    {
+      argNames: ['player', 'hours', 'reason'],
+      description: "Bans a player account for a specified number of hours (default 24 hours).",
+      examples: ['ban Player1 24', 'ban Player1 48 swearing']
+    }
+  ],
+  [
+    'unban',
+    [c(['string'], handleUnbanPlayer)],
+    {
+      argNames: ['player'],
+      description: "Unbans a previously banned account.",
+      examples: ['unban Player1']
     }
   ]
 ];
