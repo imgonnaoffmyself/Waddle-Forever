@@ -55,12 +55,15 @@ export const login: LoginHandler = async (ctx, message: string) => {
     const passwordMatch = message.match(/<pword><!\[CDATA\[(.*)\]\]><\/pword>/);
     const password = passwordMatch ? passwordMatch[1] : '';
 
-    // in the LOGIN world of modern clients, nickname -> ID
-    // everywhere else, nickname -> name
+    // Authentication occurs on the dedicated LoginServer, or directly on WorldServer
+    // in early pre-CPIP clients (chatVersion < 339) that connect directly to world with raw credentials.
+    // In all other clients (which authenticate beforehand via login.php or LoginServer),
+    // the password field sent to WorldServer is a session key / token, not the raw password.
+    const isAuthServer = !('world' in ctx);
+    const isDirectWorldLogin = 'world' in ctx && data.isPreCpip() && (data.getChatVersion() === undefined || data.getChatVersion() < 339);
+    const shouldAuthenticate = isAuthServer || isDirectWorldLogin;
 
-    // account creation only happens when given name, not when given ID
-    const modernLogin = ('world' in ctx && data.isVanillaEngine());
-    if (!modernLogin) {
+    if (shouldAuthenticate) {
       if (!await db.exists(nickname)) {
         if (settings.settings.no_create_via_login) {
           sendError(msg, client, 100);
@@ -103,9 +106,11 @@ export const login: LoginHandler = async (ctx, message: string) => {
       }
     }
 
+    const modernLogin = ('world' in ctx && data.isVanillaEngine());
     const idTest = modernLogin ? Number(nickname.split('|')[0]) : await db.fromName(nickname);
     if (idTest === null) {
-      throw new Error(`Could not find penguin with name: ${nickname}`);
+      sendError(msg, client, 100);
+      return;
     }
     const id = typeof idTest === 'number' ? idTest : idTest[0];
 
