@@ -255,7 +255,7 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       ed: memEval.expiryDateString,
       h: '',
       w: '100|0',
-      m: memEval.isMember ? 1 : 0,
+      m: '', // Alert / message list (empty when no alerts; non-empty string triggers client alert modal)
       bl: buddies.map(([id, name]) => `${id}|${name}`).join(','),
       nl: ignored.map(([id, name]) => `${id}|${name}`).join(','),
       il: filterItems(data, penguinData.inventory).join('|'), // item list
