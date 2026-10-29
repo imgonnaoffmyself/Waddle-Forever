@@ -36,7 +36,7 @@ function getServerCrumbs(ip: string, loginPort: number, worldPort: number, moder
   } else {
     // login server: ip is array and even and odd ports
     code.push(
-      ...applyJsonToObject("login_server", { ip: [ip, ip], even_port: loginPort, odd_port: worldPort })
+      ...applyJsonToObject("login_server", { ip: [ip, ip], even_port: loginPort, odd_port: loginPort })
     )
   }
 

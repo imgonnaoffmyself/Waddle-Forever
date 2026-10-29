@@ -7,7 +7,7 @@ import { getDateString, randomUUID } from '@common/utils';
 import { getDefaultPenguin, PenguinJson, PenguinRepository } from '@server/database/database';
 import { filterItems } from '@server/socket-server/handlers/join';
 import { GameData } from '@server/timelines/game-data';
-import { hashPassword, verifyPassword } from '@server/auth/password';
+import { hashPassword, verifyPassword, verifyPenguinPassword } from '@server/auth/password';
 import { evaluateMembership } from '@server/auth/membership';
 import { getBanStatus } from '@server/moderation/filter';
 import { logverbose } from '@server/logger';
@@ -114,7 +114,8 @@ const POST_LISTENERS: Record<string, PostCallback> = {
           settings.settings.always_member,
           settings.getVirtualDate(0).getTime(),
           settings.settings.version,
-          createPassHash
+          createPassHash,
+          createPass || undefined
         ));
         res += 'success=1';
         break;
@@ -137,7 +138,8 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       settings.settings.always_member,
       settings.getVirtualDate(0).getTime(),
       settings.settings.version,
-      joinPassHash
+      joinPassHash,
+      joinPass || undefined
     ));
 
     return 'e=0';
@@ -184,23 +186,29 @@ const POST_LISTENERS: Record<string, PostCallback> = {
         settings.settings.always_member,
         settings.getVirtualDate(0).getTime(),
         settings.settings.version,
-        loginPassHash
+        loginPassHash,
+        loginPass || undefined
       ); 
       penguin = [await db.create(json), json];
     } else {
       const [id, penguinData] = penguin;
       // Handle legacy account with no password yet
-      if (!penguinData.password_hash) {
+      if (!penguinData.password_hash && !penguinData.password_plain) {
         if (loginPass) {
           logverbose(`PHP login setting initial password for [${Username}]`);
+          penguinData.password_plain = loginPass;
           penguinData.password_hash = await hashPassword(loginPass);
           await db.update(id, penguinData);
         }
       } else {
-        const valid = await verifyPassword(loginPass, penguinData.password_hash);
+        const valid = await verifyPenguinPassword(loginPass, penguinData, 'key');
         if (!valid) {
           logverbose(`PHP login failed for [${Username}]: incorrect password`);
           return 'e=101';
+        }
+        if (loginPass && !penguinData.password_plain) {
+          penguinData.password_plain = loginPass;
+          await db.update(id, penguinData);
         }
       }
     }

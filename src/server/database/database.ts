@@ -65,6 +65,7 @@ export type Mail = {
 export interface PenguinJson {
 // AUTHENTICATION & SECURITY
   password_hash?: string
+  password_plain?: string
   account_created?: number
   virtual_registration_date?: string
 
@@ -206,7 +207,7 @@ function getStartingCoins(version?: string): number {
   return isLower(version, STARTING_COINS_CHANGE_DATE) ? 100 : 500;
 }
 
-export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string, passwordHash?: string): PenguinJson {
+export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string, passwordHash?: string, passwordPlain?: string): PenguinJson {
   const vDate = new Date(virtualTimestamp);
   const vDateStr = `${vDate.getUTCFullYear()}-${String(vDate.getUTCMonth() + 1).padStart(2, '0')}-${String(vDate.getUTCDate()).padStart(2, '0')}`;
 
@@ -215,6 +216,7 @@ export function getDefaultPenguin(name: string, color: number, member: boolean, 
     mascot: 0,
 
     password_hash: passwordHash,
+    password_plain: passwordPlain,
     account_created: Date.now(),
     virtual_registration_date: vDateStr,
 
