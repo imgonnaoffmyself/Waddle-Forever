@@ -18,6 +18,7 @@ import {
   DEV_NPC_TRAITS,
   DEV_NPC_NAME_SET,
   getRoomPool,
+  getRoomWeightMap,
   pickFromPool,
   SPAWN_ZONES,
   SNOW_FORTS_ROOM_ID,
@@ -650,15 +651,20 @@ const BEHAVIORS: Behavior[] = [
     cooldown({ rng, attrs }) {
       return eagerness(attrs.roomDistraction, rng.random() * 120 + 30);
     },
-    success({ rng, room }) {
+    success({ rng, room, bot }) {
       if (room.hasRealPlayers) {
-        return rng.random() < 0.2;
+        return rng.random() < 0.15;
       }
       const botCount = room.players.filter(p => isBot(p)).length;
-      if (botCount > 4) {
-        return rng.random() < 0.7;
+      const weightMap = getRoomWeightMap(bot.data.getDate());
+      const baseWeight = Math.max(1, weightMap.get(room.id) ?? 1);
+
+      // In hot zones (weight >= 3), allow larger crowds before encouraging leaving
+      const crowdLimit = baseWeight >= 3 ? Math.round(baseWeight * 2.5) : 3;
+      if (botCount > crowdLimit) {
+        return rng.random() < 0.6;
       }
-      return rng.random() < 0.3;
+      return rng.random() < 0.25;
     },
     async start({ bot }) {
       await bot.enter(bot.chooseRoom());
@@ -1198,11 +1204,34 @@ export class Bot implements ClientSocket {
       return 100;
     }
 
-    // Weight each room inversely to its current penguin count so penguins spread out evenly across every room
+    const currentDate = this._data.getDate();
+    const weightMap = getRoomWeightMap(currentDate);
+
+    // Sum total base weights across available rooms to compute target share per room
+    let totalBaseWeight = 0;
+    for (const rId of validRoomIds) {
+      totalBaseWeight += Math.max(1, weightMap.get(rId) ?? 1);
+    }
+
+    const totalBots = this._world.players.filter(p => isBot(p)).length || validRoomIds.length * 3;
+
+    // Weight each room based on its hotspot base weight and how much room it has relative to its target share
     const weights = validRoomIds.map(roomId => {
       const room = this._world.getRoom(roomId);
-      const count = room.players.length;
-      return Math.max(1, Math.round(12 / (1 + count)));
+      const currentCount = room.players.length;
+      const baseWeight = Math.max(1, weightMap.get(roomId) ?? 1);
+      const targetShare = Math.max(1, (baseWeight / totalBaseWeight) * totalBots);
+
+      let weightMultiplier: number;
+      if (currentCount === 0) {
+        weightMultiplier = 2.0;
+      } else if (currentCount < targetShare) {
+        weightMultiplier = 1.0 + (targetShare - currentCount) / targetShare;
+      } else {
+        weightMultiplier = Math.max(0.1, targetShare / (currentCount + 1));
+      }
+
+      return baseWeight * weightMultiplier;
     });
 
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);

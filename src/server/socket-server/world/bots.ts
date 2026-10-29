@@ -20,7 +20,7 @@ import path from 'path';
 import { generateBots, generateRandomBot } from './bot-generation';
 import { DialogueStep, DialoguePool } from '@server/npc/npc-types';
 import { PERSONALITY_DIALOGUE } from '@server/npc/npc-dialogue';
-import { pickFromPool, SNOW_FORTS_ROOM_ID } from '@server/npc/npc-manager';
+import { getRoomWeightMap, pickFromPool, SNOW_FORTS_ROOM_ID } from '@server/npc/npc-manager';
 import { isRareItem } from '@server/npc/npc-clothing';
 import { isGreaterOrEqual } from '@server/routes/versions';
 import { BOT_ID_BASE, isBot } from './world-penguin';
@@ -165,6 +165,39 @@ export class BotManager {
   }
 
   /**
+   * Calculates the target, minimum suitable, and maximum suitable bot count for a room
+   * based on its hotspot weight on the current timeline date.
+   */
+  public getRoomTargetBots(roomId: number): { target: number; minSuitable: number; maxSuitable: number } {
+    const availableRooms = this._data.getAvailableRooms();
+    const validRoomIds = availableRooms
+      .map(name => ROOMS[name]?.id)
+      .filter((id): id is number => id !== undefined && id < IGLOO_ROOM_BASE);
+
+    if (validRoomIds.length === 0 || this._bots.size === 0) {
+      return { target: 0, minSuitable: 0, maxSuitable: 0 };
+    }
+
+    const currentDate = this._data.getDate();
+    const weightMap = getRoomWeightMap(currentDate);
+
+    let totalWeight = 0;
+    for (const rId of validRoomIds) {
+      totalWeight += Math.max(1, weightMap.get(rId) ?? 1);
+    }
+
+    const roomWeight = Math.max(1, weightMap.get(roomId) ?? 1);
+    const share = (roomWeight / totalWeight) * this._bots.size;
+    const target = Math.max(1, Math.round(share));
+    const tolerance = Math.max(1, Math.round(target * 0.35));
+    return {
+      target,
+      minSuitable: Math.max(1, target - tolerance),
+      maxSuitable: target + tolerance
+    };
+  }
+
+  /**
    * Called right before a human player enters a public room.
    * If the room has no other human players, checks if we currently have the suitable
    * number of bot penguins there, and if not, moves some penguins around.
@@ -183,13 +216,9 @@ export class BotManager {
     const currentBots = room.players.filter(p => isBot(p));
     const currentCount = currentBots.length;
 
-    // Calculate suitable number of bots for this room based on island population
-    const availableRooms = this._data.getAvailableRooms();
-    const roomCount = Math.max(1, availableRooms.length);
-    const avgBots = this._bots.size / roomCount;
-    const target = Math.max(2, Math.min(Math.round(avgBots), 5));
-    const minSuitable = Math.max(1, target - 1);
-    const maxSuitable = target + 1;
+    // Calculate suitable number of bots for this room based on hotspot weighting
+    const { target, minSuitable, maxSuitable } = this.getRoomTargetBots(room.id);
+    if (target === 0) return;
 
     // Check if we currently have the suitable number of bot penguins there
     if (currentCount >= minSuitable && currentCount <= maxSuitable) {
@@ -214,13 +243,15 @@ export class BotManager {
 
         const donorHumans = donorRoom.players.filter(p => !isBot(p) && !p.deadInternet);
         const donorBots = donorRoom.players.filter(p => isBot(p)).length;
+        const donorTargets = this.getRoomTargetBots(donorRoom.id);
+        const donorSurplus = donorBots - donorTargets.target;
 
-        // Prioritize rooms with no humans, and among those, rooms with the most bots
+        // Prioritize rooms with no humans, and among those, rooms with the most surplus bots
         let score = 0;
         if (donorHumans.length === 0) {
-          score = 1000 + donorBots;
-        } else if (donorBots > minSuitable) {
-          score = 100 + (donorBots - minSuitable);
+          score = 1000 + donorSurplus * 10 + donorBots;
+        } else if (donorBots > donorTargets.minSuitable) {
+          score = 100 + donorSurplus;
         } else {
           continue;
         }
@@ -248,20 +279,26 @@ export class BotManager {
         .filter((b): b is Bot => b !== undefined && !b.busy && !this.isPenguinSeated(room, b.penguin));
 
       const toMove = freeBotsInRoom.slice(0, excess);
+      const availableRooms = this._data.getAvailableRooms();
       const validDestinations = availableRooms
         .map(name => ROOMS[name]?.id)
         .filter((id): id is number => id !== undefined && id < IGLOO_ROOM_BASE && id !== room.id);
 
       for (const bot of toMove) {
-        // Move excess bot to an available room with no humans and the fewest bots
+        // Move excess bot to an available room with no humans and the largest deficit relative to target
         let bestDestId: number | undefined;
-        let lowestCount = Infinity;
+        let largestDeficit = -Infinity;
         for (const destId of validDestinations) {
           const destRoom = this._world.getRoom(destId);
           const hasHumans = destRoom.players.some(p => !isBot(p) && !p.deadInternet);
-          if (!hasHumans && destRoom.players.length < lowestCount) {
-            lowestCount = destRoom.players.length;
-            bestDestId = destId;
+          if (!hasHumans) {
+            const destTargets = this.getRoomTargetBots(destId);
+            const destBots = destRoom.players.filter(p => isBot(p)).length;
+            const deficit = destTargets.target - destBots;
+            if (deficit > largestDeficit) {
+              largestDeficit = deficit;
+              bestDestId = destId;
+            }
           }
         }
 

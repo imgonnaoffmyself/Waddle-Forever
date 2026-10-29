@@ -97,6 +97,19 @@ export const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
   { roomId: 100, weight: 1, gate: BETA_TEST_PARTY_GATE },
   { roomId: 130, weight: 1, gate: BETA_TEST_PARTY_GATE },
   { roomId: 120, weight: 1, gate: BETA_TEST_PARTY_GATE },
+
+  // Base weights for other prominent rooms when they open
+  { roomId: 220, weight: 2 }, // Ski Lodge
+  { roomId: 300, weight: 3, gate: { after: '2006-03-31' } }, // Plaza
+  { roomId: 330, weight: 3, gate: { after: '2006-03-31' } }, // Pizza Parlor
+  { roomId: 310, weight: 2, gate: { after: '2006-03-31' } }, // Pet Shop
+  { roomId: 400, weight: 2, gate: { after: '2006-06-02' } }, // Beach
+  { roomId: 410, weight: 2, gate: { after: '2006-06-02' } }, // Lighthouse
+  { roomId: 805, weight: 2, gate: { after: '2006-06-02' } }, // Iceberg
+  { roomId: 806, weight: 2, gate: { after: '2006-03-31' } }, // Cave
+  { roomId: 808, weight: 2, gate: { after: '2006-03-31' } }, // Mine
+  { roomId: 809, weight: 2, gate: { after: '2007-03-09' } }, // Forest
+  { roomId: 810, weight: 2, gate: { after: '2007-05-25' } }, // Cove
 ];
 
 /**
@@ -198,13 +211,19 @@ export function pointNearPuck(puck: [number, number]): [number, number] {
   ];
 }
 
-export function getRoomPool(currentDate: string): number[] {
+export function getRoomWeightMap(currentDate: string): Map<number, number> {
   const roomWeights = new Map<number, number>();
 
   for (const entry of ROOM_POOL_ENTRIES) {
     if (!gatePass(entry.gate, currentDate)) continue;
     roomWeights.set(entry.roomId, (roomWeights.get(entry.roomId) ?? 0) + entry.weight);
   }
+
+  return roomWeights;
+}
+
+export function getRoomPool(currentDate: string): number[] {
+  const roomWeights = getRoomWeightMap(currentDate);
 
   const pool: number[] = [];
   for (const [roomId, weight] of roomWeights) {
