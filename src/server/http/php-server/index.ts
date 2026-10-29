@@ -10,6 +10,7 @@ import { GameData } from '@server/timelines/game-data';
 import { hashPassword, verifyPassword } from '@server/auth/password';
 import { evaluateMembership } from '@server/auth/membership';
 import { getBanStatus } from '@server/moderation/filter';
+import { logverbose } from '@server/logger';
 
 interface Ctx {
   settings: SettingsManager;
@@ -165,13 +166,17 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     const { Username } = body;
     const loginPass = body.Password ?? body.password ?? body.Pass ?? body.pass ?? '';
 
+    logverbose(`PHP login attempt for [${Username}]`);
+
     let penguin = await db.fromName(Username);
 
     if (settings.settings.no_create_via_login && penguin === null) {
+      logverbose(`PHP login failed for [${Username}]: registration via login disabled`);
       return 'e=100';
     }
 
     if (penguin === null) {
+      logverbose(`PHP login creating new penguin [${Username}]`);
       const loginPassHash = loginPass ? await hashPassword(loginPass) : undefined;
       const json = getDefaultPenguin(
         Username,
@@ -187,12 +192,14 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       // Handle legacy account with no password yet
       if (!penguinData.password_hash) {
         if (loginPass) {
+          logverbose(`PHP login setting initial password for [${Username}]`);
           penguinData.password_hash = await hashPassword(loginPass);
           await db.update(id, penguinData);
         }
       } else {
         const valid = await verifyPassword(loginPass, penguinData.password_hash);
         if (!valid) {
+          logverbose(`PHP login failed for [${Username}]: incorrect password`);
           return 'e=101';
         }
       }
@@ -203,8 +210,11 @@ const POST_LISTENERS: Record<string, PostCallback> = {
     // Check ban status
     const banStatus = getBanStatus(penguinData);
     if (banStatus.banned) {
+      logverbose(`PHP login blocked for [${Username}]: banned`);
       return `e=600&b=${banStatus.remainingHours}`;
     }
+
+    logverbose(`PHP login success for [${Username}] (ID: ${id})`);
 
     // Evaluate membership
     const memEval = evaluateMembership(

@@ -55,13 +55,11 @@ export const login: LoginHandler = async (ctx, message: string) => {
     const passwordMatch = message.match(/<pword><!\[CDATA\[(.*)\]\]><\/pword>/);
     const password = passwordMatch ? passwordMatch[1] : '';
 
-    // Authentication occurs on the dedicated LoginServer, or directly on WorldServer
-    // in early pre-CPIP clients (chatVersion < 339) that connect directly to world with raw credentials.
-    // In all other clients (which authenticate beforehand via login.php or LoginServer),
-    // the password field sent to WorldServer is a session key / token, not the raw password.
-    const isAuthServer = !('world' in ctx);
-    const isDirectWorldLogin = 'world' in ctx && data.isPreCpip() && (data.getChatVersion() === undefined || data.getChatVersion() < 339);
-    const shouldAuthenticate = isAuthServer || isDirectWorldLogin;
+    // Authentication occurs on LoginServer (!('world' in ctx)).
+    // On WorldServer ('world' in ctx), the client has already authenticated beforehand
+    // (e.g. via /php/login.php or LoginServer) and sends a session key (k1 / loginKey),
+    // not their raw password.
+    const shouldAuthenticate = !('world' in ctx);
 
     if (shouldAuthenticate) {
       if (!await db.exists(nickname)) {
