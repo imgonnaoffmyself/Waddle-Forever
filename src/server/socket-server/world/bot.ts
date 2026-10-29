@@ -8,6 +8,7 @@ import { WorldTable } from "./world-table";
 import { FindFourTable } from "./find-four";
 import { MancalaTable } from "./mancala";
 import { CardJitsu, NinjaPlayer } from "./card";
+import { SledRace } from "./sled";
 import { getNameFromId, getRoomFromName, IGLOO_ROOM_BASE, ROOMS } from "@server/game-data/rooms";
 import { getItemAvailability, getItemTypeFromEquipProp, getReleasedItems } from "@server/timelines/items";
 import { getBlock, findPathBetweenBlockPoints, compactPath, findLeftmostMiddlemostPosition, getRandomPositionFromBlock } from "./bot-block";
@@ -491,6 +492,48 @@ class CardJitsuBrain implements BotBrain {
   dispose(): void {
     if (this._timeout !== null) {
       clearTimeout(this._timeout);
+    }
+    this._onEnd();
+  }
+}
+
+class SledBrain implements BotBrain {
+  private _interval: NodeJS.Timeout | null = null;
+  private _disposed = false;
+
+  constructor(
+    private _sled: SledRace,
+    private _seatId: number,
+    private _send: SendFunction,
+    private _onEnd: () => void
+  ) {
+    let tickCount = 0;
+    this._interval = setInterval(() => {
+      if (this._disposed) return;
+      tickCount++;
+      const progress = tickCount / 12;
+      const x = 380 + Math.sin(tickCount) * 100;
+      const y = Math.round(progress * 1000);
+      this._send('z', 'zm', this._seatId, Math.round(x), y, Date.now());
+
+      if (tickCount >= 12) {
+        this.dispose();
+      }
+    }, 1500);
+  }
+
+  handle(name: string, args: string[]): void {
+    if (name === 'zo' || name === 'lz') {
+      this.dispose();
+    }
+  }
+
+  dispose(): void {
+    if (this._disposed) return;
+    this._disposed = true;
+    if (this._interval !== null) {
+      clearInterval(this._interval);
+      this._interval = null;
     }
     this._onEnd();
   }
@@ -1128,6 +1171,18 @@ export class Bot implements ClientSocket {
       card,
       card.getNinja(this._penguin),
       card.getSeatId(this._penguin),
+      this._simulate,
+      () => {
+        this._brain = null;
+        this.exitGameMode();
+      }
+    );
+  }
+
+  public joinSled(sled: SledRace): void {
+    this._brain = new SledBrain(
+      sled,
+      sled.getSeatId(this._penguin),
       this._simulate,
       () => {
         this._brain = null;

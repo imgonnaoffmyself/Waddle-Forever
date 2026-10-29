@@ -101,6 +101,7 @@ export const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
   { roomId: 120, weight: 1, gate: BETA_TEST_PARTY_GATE },
 
   // Base weights for other prominent rooms when they open
+  { roomId: 230, weight: 3, gate: { after: '2005-10-20' } }, // Mountain (Sled Racing)
   { roomId: 220, weight: 2 }, // Ski Lodge
   { roomId: 300, weight: 3, gate: { after: '2006-03-31' } }, // Plaza
   { roomId: 330, weight: 3, gate: { after: '2006-03-31' } }, // Pizza Parlor

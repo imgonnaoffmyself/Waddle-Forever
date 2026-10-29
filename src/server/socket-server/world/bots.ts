@@ -88,6 +88,7 @@ const TIMELINE_POPULATIONS: Record<string, number> = {
   '2005-09-13': 50,
   '2005-09-21': 150, // Beta Test Party
   '2005-09-22': 50,
+  '2005-10-20': 50,
 };
 
 
@@ -808,6 +809,8 @@ export class BotManager {
       const ctx = this._world.getContext(bot.penguin);
       if ('card' in ctx) {
         bot.joinCard(ctx.card);
+      } else if ('sled' in ctx) {
+        bot.joinSled(ctx.sled);
       }
 
       // starting the game empties the waddle

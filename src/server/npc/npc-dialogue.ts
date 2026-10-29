@@ -230,6 +230,13 @@ const FRIENDLY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'nice little hideout up here' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'cozy spot!!' } }] },
     ],
+    230: [ // Mountain / Ski Hill
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'race you to the bottom! :)' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the view from up here is incredible!!' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'who wants to race on the 4 player track?' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'sled racing is so fast!' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'watch out for the ice patches on the way down lol' } }] },
+    ],
   },
 
   onPlayerChat: [
@@ -707,6 +714,10 @@ const SHY: PersonalityDialogue = {
     221: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'nice and quiet up here..' } }] },
     ],
+    230: [ // Mountain
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the mountain is so steep..' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'im gonna try sled racing..' } }] },
+    ],
   },
 
   onPlayerChat: [
@@ -1107,6 +1118,10 @@ const GRUMPY: PersonalityDialogue = {
     ],
     221: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'a hidden attic. with nothing in it.' } }] },
+    ],
+    230: [
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'who made this mountain so cold' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'get ready to lose the race' } }] },
     ],
   },
 
@@ -1603,6 +1618,11 @@ const EXCITABLE: PersonalityDialogue = {
     221: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'WOW A HIDDEN ATTIC THIS IS SO COOL' } }] },
     ],
+    230: [
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'WOOO SLED RACING IS HERE!!!' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'RACE ME RIGHT NOW LETS GOOOO!!' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'IM THE FASTEST SLEDDER ON CLUB PENGUIN!!' } }] },
+    ],
   },
 
   onPlayerChat: [
@@ -2062,6 +2082,10 @@ const CURIOUS: PersonalityDialogue = {
     ],
     221: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder what this attic was used for' } }] },
+    ],
+    230: [
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how steep is this sledding hill anyway?' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'which track has the fastest route to the bottom?' } }] },
     ],
   },
 

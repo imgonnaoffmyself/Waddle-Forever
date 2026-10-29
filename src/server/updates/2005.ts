@@ -279,7 +279,8 @@ export const UPDATES_2005: Update[] = [
     rooms: {
       village: 'approximation:village_release.swf',
       mtn: 'mammoth:artwork/rooms/mtn10.swf'
-    }
+    },
+    availableRooms: ['mtn']
   },
   {
     date: '2005-10-24',
