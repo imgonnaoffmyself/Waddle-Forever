@@ -9,7 +9,7 @@ import { FindFourTable } from "./find-four";
 import { MancalaTable } from "./mancala";
 import { CardJitsu, NinjaPlayer } from "./card";
 import { getNameFromId, getRoomFromName, IGLOO_ROOM_BASE, ROOMS } from "@server/game-data/rooms";
-import { getItemTypeFromEquipProp } from "@server/timelines/items";
+import { getItemAvailability, getItemTypeFromEquipProp, getReleasedItems } from "@server/timelines/items";
 import { getBlock, findPathBetweenBlockPoints, compactPath, findLeftmostMiddlemostPosition, getRandomPositionFromBlock } from "./bot-block";
 import { PersonalityTrait, DialogueStep, DialoguePool } from "@server/npc/npc-types";
 import { PERSONALITY_DIALOGUE } from "@server/npc/npc-dialogue";
@@ -29,34 +29,94 @@ import {
   RINK_PUCK_TOUCH_RADIUS
 } from "@server/npc/npc-manager";
 import { RINK_PUCK_START } from "./world";
-import { isGreaterOrEqual, isLower } from "@server/routes/versions";
+import { getDaysDelta, isGreaterOrEqual, isLower } from "@server/routes/versions";
 
-const CHANCE_NO_ITEM = 0.3;
-const CHANCE_AVAILABLE_ITEM = 0.2;
+const EMPTY_SLOT_WEIGHTS: Record<EquipProp, number> = {
+  color: 0,
+  head: 60,
+  face: 80,
+  neck: 100,
+  body: 50,
+  hand: 90,
+  feet: 90,
+  pin: 70,
+  background: 50
+};
 
 export function generateRandomOutfit(
   data: GameData,
-  inventory: number[]
+  inventory: number[],
+  isMember: boolean = true
 ): PenguinEquipped {
+  const currentDate = data.getDate();
   const allAvailable = data.getAvailableItems();
-  const available = inventory.filter(i => allAvailable.has(i));
+  const allReleased = new Set([...getReleasedItems(currentDate), ...inventory]);
   const items: Array<[EquipProp, number]> = [];
 
   equipProp.forEach(prop => {
-    const roll = Math.random();
-    let item: number;
-    if (prop !== 'color' && roll < CHANCE_NO_ITEM) {
-      item = 0;
-    } else {
-      const itemPool = ((roll < CHANCE_NO_ITEM + CHANCE_AVAILABLE_ITEM) ? available : inventory)
-        .filter(i => {
-          const info = data.getItem(i);
-          return info !== undefined && info.type === getItemTypeFromEquipProp(prop)
-        });
-      item = itemPool.length === 0 ? 0 : choose(itemPool);
+    if (prop === 'color') {
+      const colors = data.getStarterColors();
+      const color = colors.length > 0 ? choose(colors) : 1;
+      items.push([prop, color]);
+      return;
     }
 
-    items.push([prop, item]);
+    const targetType = getItemTypeFromEquipProp(prop);
+    const candidates: { id: number; weight: number }[] = [];
+
+    // Empty slot option
+    const emptyWeight = EMPTY_SLOT_WEIGHTS[prop] ?? 70;
+    candidates.push({ id: 0, weight: emptyWeight });
+
+    for (const itemId of allReleased) {
+      if (itemId === 0) continue;
+      const info = data.getItem(itemId);
+      if (!info || info.type !== targetType) continue;
+      if (!isMember && info.isMember) continue;
+
+      // Items that haven't been obtainable yet in the timeline at all can't be seen
+      const availability = getItemAvailability(itemId, currentDate);
+      if (!availability) {
+        continue;
+      }
+
+      // Most common items being the ones currently obtainable
+      if (allAvailable.has(itemId)) {
+        candidates.push({ id: itemId, weight: 100 });
+      } else {
+        // Items obtainable in the past have a lower chance decaying by how long ago they were available
+        const daysAgo = Math.max(0, getDaysDelta(availability.lastAvailableDate, currentDate));
+        const pastWeight = Math.max(1, Math.round(25 * Math.exp(-daysAgo / 180)));
+        candidates.push({ id: itemId, weight: pastWeight });
+      }
+    }
+
+    // Beta Party Hat boost on 2005-09-21
+    if (prop === 'head' && currentDate === '2005-09-21') {
+      const partyHatEntry = candidates.find(c => c.id === 413);
+      if (partyHatEntry) {
+        partyHatEntry.weight = 800;
+      } else {
+        candidates.push({ id: 413, weight: 800 });
+      }
+    }
+
+    // Weighted random selection
+    const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
+    let rand = Math.random() * totalWeight;
+    let chosenId = 0;
+    for (const c of candidates) {
+      rand -= c.weight;
+      if (rand <= 0) {
+        chosenId = c.id;
+        break;
+      }
+    }
+
+    if (chosenId !== 0 && !inventory.includes(chosenId)) {
+      inventory.push(chosenId);
+    }
+    items.push([prop, chosenId]);
   });
 
   return Object.fromEntries(items) as PenguinEquipped;
@@ -652,6 +712,9 @@ const BEHAVIORS: Behavior[] = [
       return eagerness(attrs.roomDistraction, rng.random() * 120 + 30);
     },
     success({ rng, room, bot }) {
+      if (bot.isHostingIgloo || bot.isPartyHomie) {
+        return false;
+      }
       if (room.hasRealPlayers) {
         return rng.random() < 0.15;
       }
@@ -883,6 +946,8 @@ export function getRandomPointInRoom(room: WorldRoom): [number, number] {
 }
 
 export class Bot implements ClientSocket {
+  public isHostingIgloo = false;
+  public isPartyHomie = false;
   private _brain: BotBrain | null = null;
   public get busy () {
     return this._brain !== null;
@@ -1192,6 +1257,23 @@ export class Bot implements ClientSocket {
   }
 
   public chooseRoom(): number {
+    // Small chance (~7%) to visit an open igloo where the owner is inside
+    if (Math.random() < 0.07) {
+      const openPlayers = this._world.getOpenIglooPlayers();
+      const eligibleIgloos: number[] = [];
+      for (const p of openPlayers) {
+        if (p.id === this.penguin.id) continue;
+        const currentRoom = this._world.getPenguinRoom(p);
+        const pIglooId = p.id + IGLOO_ROOM_BASE;
+        if (currentRoom && currentRoom.id === pIglooId) {
+          eligibleIgloos.push(pIglooId);
+        }
+      }
+      if (eligibleIgloos.length > 0) {
+        return choose(eligibleIgloos);
+      }
+    }
+
     const availableRooms = this._data.getAvailableRooms();
     const canGo = availableRooms.filter(r => {
       return this._penguin.membership.isMember || !this._data.isRoomMember(r);
@@ -1285,6 +1367,11 @@ export class Bot implements ClientSocket {
   public sendDynamicMessage(room: WorldRoom): void {
     if (!room.hasRealPlayers) return;
 
+    if (room.id >= IGLOO_ROOM_BASE) {
+      this.sendIglooMessage(room);
+      return;
+    }
+
     const dialogue = PERSONALITY_DIALOGUE[this.personalityTrait];
     if (!dialogue) {
       this.sendMessage(choose(CHAT_LINES));
@@ -1307,6 +1394,98 @@ export class Bot implements ClientSocket {
       this.executeSteps(entry.steps);
     } else {
       this.sendMessage(choose(CHAT_LINES));
+    }
+  }
+
+  public sendIglooMessage(room: WorldRoom): void {
+    const isOwner = (this.penguin.id + IGLOO_ROOM_BASE) === room.id;
+    const trait = this.personalityTrait;
+
+    const ownerLines: Record<PersonalityTrait, string[]> = {
+      friendly: [
+        'welcome to my igloo! :)',
+        'make yourself at home!',
+        'feel free to take a seat!',
+        'thanks for stopping by my crib!',
+        'do you like the music in here?'
+      ],
+      excitable: [
+        'WOOOO WELCOME TO THE PARTY!!',
+        'EVERYONE HIT THE DANCE FLOOR!!',
+        'turn up the stereo!!',
+        'who wants pizza?!',
+        'BEST IGLOO PARTY EVER!!'
+      ],
+      curious: [
+        'what do you think of my furniture arrangement?',
+        'i saved up so many coins for this igloo upgrade!',
+        'do you have any decorating tips?',
+        'what music track is your favorite for igloos?'
+      ],
+      grumpy: [
+        "don't mess up my furniture",
+        'wipe your flippers at the door',
+        'who left the door open?',
+        'turn that music down a notch...'
+      ],
+      shy: [
+        'hi... thanks for coming over...',
+        'i just got this new chair...',
+        'i hope you like the vibes in here...',
+        'make yourself comfy...'
+      ]
+    };
+
+    const guestLines: Record<PersonalityTrait, string[]> = {
+      friendly: [
+        'great igloo! loving the setup',
+        'this place is so cozy',
+        'turn up the music! ♫',
+        'who wants to play find four later?',
+        'love what you did with the furniture!'
+      ],
+      excitable: [
+        'THIS PARTY IS OFF THE HOOK!!',
+        'CHECK OUT MY MOVES!!',
+        "LET'S GOOOOO!!",
+        'THIS SONG IS MY JAM!!',
+        'who brought the snacks?!'
+      ],
+      curious: [
+        'where did you buy this couch?',
+        'how many coins was this?',
+        'i should get one of these for my igloo too',
+        'great color coordination in here!'
+      ],
+      grumpy: [
+        "it's pretty loud in here",
+        'not bad for an igloo i guess',
+        'who spilled punch on the carpet?',
+        'where are the snacks?'
+      ],
+      shy: [
+        'cool igloo...',
+        'nice music track...',
+        'i like the colors here...',
+        'very peaceful...'
+      ]
+    };
+
+    const pool = isOwner
+      ? (ownerLines[trait] ?? ownerLines.friendly)
+      : (guestLines[trait] ?? guestLines.friendly);
+
+    const message = choose(pool);
+    this.sendMessage(message);
+
+    // Occasional emote or animation
+    const roll = Math.random();
+    if (roll < 0.25) {
+      this.doDance();
+    } else if (roll < 0.5) {
+      this.doFrame(25); // wave
+    } else if (roll < 0.7) {
+      this.doEmote(choose([1, 5, 6, 10, 22, 25])); // smile, heart, music note, thumbs up, igloo, cake/pizza
     }
   }
 

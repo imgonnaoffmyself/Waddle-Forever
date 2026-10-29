@@ -96,6 +96,15 @@ export class BotManager {
   private _nextId = BOT_ID_BASE;
   private _timer: NodeJS.Timeout | null = null;
   private _settings: BotSettings = { ...DEFAULT_BOT_SETTINGS };
+  private _openBotSessions = new Map<number, {
+    hostBot: Bot;
+    openUntil: number;
+    homies: Bot[];
+  }>();
+
+  public getBot(id: number): Bot | undefined {
+    return this._bots.get(id);
+  }
   /** Bots sitting in a waddle or at a table, which must stop waddling about */
   /** Bots currently at home with an open igloo, and when they will head back out */
   private _on = false;
@@ -874,13 +883,75 @@ export class BotManager {
       this.tickGames();
     }
 
-    // Keep a few bot igloos open on the map for players to discover and visit
-    const openBotPenguins = this._world.getOpenIglooPlayers().filter(p => isBot(p));
-    if (openBotPenguins.length < this._settings.openIgloos && this._bots.size > 0) {
-      const candidates = [...this._bots.values()].filter(b => !openBotPenguins.some(p => p.id === b.penguin.id));
-      if (candidates.length > 0) {
-        const toOpen = choose(candidates);
+    // 1. Process active open igloo sessions
+    for (const [hostId, session] of this._openBotSessions) {
+      if (now >= session.openUntil) {
+        this._world.closeIgloo(session.hostBot.penguin);
+        session.hostBot.isHostingIgloo = false;
+        session.hostBot.enter(session.hostBot.chooseRoom());
+
+        for (const homie of session.homies) {
+          homie.isPartyHomie = false;
+          homie.enter(homie.chooseRoom());
+        }
+
+        this._openBotSessions.delete(hostId);
+      }
+    }
+
+    // 2. Open new bot igloos if below quota
+    const activeHostIds = new Set(this._openBotSessions.keys());
+    if (activeHostIds.size < this._settings.openIgloos && this._bots.size > 0) {
+      const candidates = [...this._bots.values()].filter(b =>
+        b.penguin.membership.isMember &&
+        !b.busy &&
+        !b.isHostingIgloo &&
+        !b.isPartyHomie &&
+        !activeHostIds.has(b.penguin.id)
+      );
+
+      // If no member bot candidates, ensure candidate has membership
+      const pool = candidates.length > 0 ? candidates : [...this._bots.values()].filter(b =>
+        !b.busy && !b.isHostingIgloo && !b.isPartyHomie && !activeHostIds.has(b.penguin.id)
+      );
+
+      if (pool.length > 0) {
+        const toOpen = choose(pool);
+        if (!toOpen.penguin.membership.isMember) {
+          toOpen.penguin.membership.swap();
+        }
+        const iglooRoomId = toOpen.penguin.id + IGLOO_ROOM_BASE;
+
+        toOpen.isHostingIgloo = true;
+        toOpen.enter(iglooRoomId);
         this._world.openIgloo(toOpen.penguin);
+
+        // Small chance (40%) for multiple bots inside one bot's igloo (partying/homies)
+        const homies: Bot[] = [];
+        if (Math.random() < 0.40) {
+          const homieCandidates = [...this._bots.values()].filter(b =>
+            b.penguin.id !== toOpen.penguin.id &&
+            !b.busy &&
+            !b.isHostingIgloo &&
+            !b.isPartyHomie &&
+            !activeHostIds.has(b.penguin.id) &&
+            !this._world.getPenguinRoom(b.penguin)?.hasRealPlayers
+          );
+          const homieCount = randomInt(1, Math.min(3, homieCandidates.length));
+          const selected = shuffleArray(homieCandidates).slice(0, homieCount);
+          for (const homie of selected) {
+            homie.isPartyHomie = true;
+            homie.enter(iglooRoomId);
+            homies.push(homie);
+          }
+        }
+
+        const sessionDuration = randomInt(120_000, 240_000); // 2 to 4 minutes
+        this._openBotSessions.set(toOpen.penguin.id, {
+          hostBot: toOpen,
+          openUntil: now + sessionDuration,
+          homies
+        });
       }
     }
 

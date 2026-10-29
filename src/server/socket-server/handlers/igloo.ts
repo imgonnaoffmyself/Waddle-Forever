@@ -5,6 +5,7 @@ import { FURNITURE } from "@server/game-logic/furniture";
 import { getFlooringCost, getIglooCost } from "@server/game-logic/iglooItems";
 import { getStamp } from "./puffle";
 import { PenguinHandler } from "./handlers";
+import { IGLOO_ROOM_BASE } from "@server/game-data/rooms";
 
 
 export async function getIglooFromId(world: World, db: PenguinRepository, ownerId: number): Promise<Igloo | undefined> {
@@ -220,13 +221,13 @@ export const handleCloseIgloo: PenguinHandler<[number]> = (ctx) => {
 export const handleGetOpenIgloos: PenguinHandler<[]> = (ctx) => {
   const { msg, penguin, world } = ctx;
 
-  // TODO need to figure out how to make this penguin "nickname" properly display
-  // on showHint, without modding. Seems to require an old shell
-  // (and for the newer shells, what is the proper map SWF to use?)
-  //TODO sendXtEmptyLast?
-  const openIglooPlayers = penguin.deadInternet
-    ? world.getOpenIglooPlayers().filter(p => !isBot(p))
-    : world.getOpenIglooPlayers();
+  // The public igloo list only shows members who are currently inside their igloo
+  const openIglooPlayers = world.getOpenIglooPlayers().filter(p => {
+    if (penguin.deadInternet && isBot(p)) return false;
+    const iglooRoomId = p.id + IGLOO_ROOM_BASE;
+    const currentRoom = world.getPenguinRoom(p);
+    return p.membership.isMember && currentRoom !== undefined && currentRoom.id === iglooRoomId;
+  });
   msg.send(penguin, 'gr', ...openIglooPlayers.map(p => `${p.id}|${p.name}`));
 }
 

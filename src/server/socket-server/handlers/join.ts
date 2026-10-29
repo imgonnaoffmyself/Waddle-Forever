@@ -20,6 +20,7 @@ import { handleLeaveFire } from './fire';
 import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
 import { handleLeaveWaddle } from './room'
 import { handleQuitCard } from './card';
+import { BotManager } from '@server/socket-server/world/bots';
 
 
 function unequipPuffle(p: WorldPenguin): void {
@@ -304,8 +305,57 @@ export const handleAddItem: PenguinHandler<[number]> = (ctx, item) => {
   prst(penguin);
 }
 
+async function canJoinIgloo(
+  world: World,
+  db: PenguinRepository,
+  visitor: WorldPenguin,
+  ownerId: number,
+  bot?: BotManager
+): Promise<boolean> {
+  if (visitor.id === ownerId) return true;
+  if (isBot(visitor)) return true;
+
+  // Friends can join their friends' igloos regardless of membership status or whether friend is inside
+  if (visitor.buddy.isBuddy(ownerId)) {
+    // If you visit a bot friend's igloo, there should be a chance they won't be inside
+    const ownerPenguin = world.getById(ownerId);
+    if (ownerPenguin && isBot(ownerPenguin)) {
+      const iglooRoomId = ownerId + IGLOO_ROOM_BASE;
+      const currentRoom = world.getPenguinRoom(ownerPenguin);
+      if (currentRoom && currentRoom.id === iglooRoomId && Math.random() < 0.40) {
+        const botObj = bot?.getBot(ownerId);
+        if (botObj) {
+          botObj.enter(botObj.chooseRoom());
+        }
+      }
+    }
+    return true;
+  }
+
+  // Randoms can't just walk into a non-member's igloo, or a member's igloo while they're not inside it,
+  // as the public igloo list only shows members inside their igloo.
+  const ownerPenguin = world.getById(ownerId);
+  const isOpenOnMap = world.getOpenIglooPlayers().some(p => p.id === ownerId);
+  if (!isOpenOnMap || !ownerPenguin) {
+    return false;
+  }
+
+  const ownerRoom = world.getPenguinRoom(ownerPenguin);
+  const isOwnerInside = ownerRoom !== undefined && ownerRoom.id === ownerId + IGLOO_ROOM_BASE;
+  const isMember = ownerPenguin.membership.isMember;
+
+  if (!isMember || !isOwnerInside) {
+    return false;
+  }
+
+  return true;
+}
+
 export const handleJoinPlayerOld: PenguinHandler<[number, number]> = async (ctx, ownerId, isMember) => {
-  const { world, db, data, msg, penguin } = ctx;
+  const { world, db, data, msg, penguin, bot } = ctx;
+  if (!await canJoinIgloo(world, db, penguin, ownerId, bot)) {
+    return;
+  }
   const igloo = await getIglooFromId(world, db, ownerId);
   if (igloo === undefined) {
     return;
@@ -327,16 +377,23 @@ export const handleJoinPlayerOld: PenguinHandler<[number, number]> = async (ctx,
   joinRoom(ctx, roomId, 0, 0);
 }
 
-export const handleJoinPlayerCpip: PenguinHandler<[number]> = (ctx, fakeId) => {
-  const { world } = ctx;
+export const handleJoinPlayerCpip: PenguinHandler<[number]> = async (ctx, fakeId) => {
+  const { world, db, penguin, bot } = ctx;
   // for some reason the ID given is the player + 1000
-  const iglooId = fakeId - 1000 + IGLOO_ROOM_BASE;
+  const ownerId = fakeId - 1000;
+  if (!await canJoinIgloo(world, db, penguin, ownerId, bot)) {
+    return;
+  }
+  const iglooId = ownerId + IGLOO_ROOM_BASE;
   const igloo = world.getRoom(iglooId);
   joinRoom(ctx, igloo.id, 0, 0);
 }
 
-export const handleJoinPlayerModern: PenguinHandler<[number, string]> = (ctx, playerId, roomType) => {
-  const { msg, penguin, data, world } = ctx;
+export const handleJoinPlayerModern: PenguinHandler<[number, string]> = async (ctx, playerId, roomType) => {
+  const { msg, penguin, data, world, db, bot } = ctx;
+  if (roomType === 'igloo' && !await canJoinIgloo(world, db, penguin, playerId, bot)) {
+    return;
+  }
   // 1000 = backyard
   const roomId = roomType === 'igloo' ? playerId + IGLOO_ROOM_BASE : 1000;
   msg.send(penguin, 'jp', roomId, roomId, roomType);
@@ -404,6 +461,29 @@ export const handleBuddyRequest: PenguinHandler<[number]> = (ctx, targetId) => {
   }
 
   if (penguin.buddy.isBuddy(targetId)) {
+    return;
+  }
+
+  if (isBot(target)) {
+    // Ability to add bots and have them accept friend requests sometimes (~65%)
+    if (Math.random() < 0.65) {
+      setTimeout(() => {
+        target.buddy.add(penguin.id);
+        penguin.buddy.add(target.id);
+        prst(penguin, true);
+
+        // Send buddy accept to the human player
+        msg.send(penguin, 'ba', target.id, target.name);
+
+        // If in the same room, bot greets friend
+        const room = world.getPenguinRoom(target);
+        const playerRoom = world.getPenguinRoom(penguin);
+        if (room && playerRoom && room.id === playerRoom.id) {
+          msg.send(room.players, 'sp', target.id, 25);
+          msg.send(room.players, 'sm', target.id, "we're buddies now! :)");
+        }
+      }, 1500 + Math.random() * 1500);
+    }
     return;
   }
 

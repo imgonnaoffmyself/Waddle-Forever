@@ -10,7 +10,7 @@
 //   - NPC-to-NPC dialogue exchanges
 //   - Rare item detection on player join
 
-import { isGreaterOrEqual, isLower } from '@server/routes/versions';
+import { getDaysDelta, isGreaterOrEqual, isLower, isLowerOrEqual } from '@server/routes/versions';
 import { GameData } from '@server/timelines/game-data';
 import { XtMessenger as PenguinMessenger } from '@server/socket-server/xt-messenger';
 import { RINK_PUCK_START, World } from '@server/socket-server/world/world';
@@ -22,6 +22,8 @@ import { isRareItem } from './npc-clothing';
 import { NpcPenguin } from './npc-penguin';
 import { NPC_NAME_POOL } from './npc-names';
 import { PERSONALITY_DIALOGUE } from './npc-dialogue';
+import { RoomName, ROOMS, IGLOO_ROOM_BASE } from '@server/game-data/rooms';
+import { UPDATES } from '@server/updates/updates';
 import {
   PersonalityTrait,
   DialoguePool,
@@ -211,12 +213,60 @@ export function pointNearPuck(puck: [number, number]): [number, number] {
   ];
 }
 
+interface RoomUpdateEvent {
+  roomId: number;
+  date: string;
+  isNew: boolean;
+}
+
+const ROOM_UPDATE_EVENTS: RoomUpdateEvent[] = [];
+
+for (const u of UPDATES) {
+  if (u.update.availableRooms) {
+    for (const rName of u.update.availableRooms) {
+      const rId = ROOMS[rName]?.id;
+      if (rId !== undefined && rId < IGLOO_ROOM_BASE) {
+        ROOM_UPDATE_EVENTS.push({ roomId: rId, date: u.date, isNew: true });
+      }
+    }
+  }
+  if (u.update.rooms) {
+    for (const rName of Object.keys(u.update.rooms)) {
+      const rId = ROOMS[rName as RoomName]?.id;
+      if (rId !== undefined && rId < IGLOO_ROOM_BASE) {
+        ROOM_UPDATE_EVENTS.push({ roomId: rId, date: u.date, isNew: false });
+      }
+    }
+  }
+}
+
 export function getRoomWeightMap(currentDate: string): Map<number, number> {
   const roomWeights = new Map<number, number>();
 
   for (const entry of ROOM_POOL_ENTRIES) {
     if (!gatePass(entry.gate, currentDate)) continue;
     roomWeights.set(entry.roomId, (roomWeights.get(entry.roomId) ?? 0) + entry.weight);
+  }
+
+  // Dynamically boost weights for recently added or changed rooms
+  const roomBoosts = new Map<number, number>();
+  for (const event of ROOM_UPDATE_EVENTS) {
+    if (isLowerOrEqual(event.date, currentDate)) {
+      const daysAgo = getDaysDelta(event.date, currentDate);
+      if (daysAgo >= 0 && daysAgo <= 45) {
+        const maxBoost = event.isNew ? 4 : 2;
+        const boost = Math.round(maxBoost * (1 - daysAgo / 45));
+        const prevBoost = roomBoosts.get(event.roomId) ?? 0;
+        if (boost > prevBoost) {
+          roomBoosts.set(event.roomId, boost);
+        }
+      }
+    }
+  }
+
+  for (const [roomId, boost] of roomBoosts) {
+    const currentWeight = roomWeights.get(roomId) ?? 1;
+    roomWeights.set(roomId, currentWeight + boost);
   }
 
   return roomWeights;

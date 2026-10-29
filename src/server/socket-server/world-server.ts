@@ -173,6 +173,22 @@ export class WorldServer implements MessageHandler {
   public get mods() {
     return this._mods;
   }
+
+  public get world() {
+    return this._world;
+  }
+
+  public get msg() {
+    return this._msg;
+  }
+
+  public get persister() {
+    return this._persister;
+  }
+
+  public get botManager() {
+    return this._botManager;
+  }
 }
 
 export const setupWorldServer = async (settings: SettingsManager, db: PenguinRepository, gameData: GameData): Promise<EffectService<[WorldServer, World]>> => {

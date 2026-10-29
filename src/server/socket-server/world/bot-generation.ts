@@ -271,7 +271,7 @@ function generateRandomPenguin(
     inventory.push(413); // Beta Party Hat
   }
 
-  const outfit = generateRandomOutfit(data, inventory);
+  const outfit = generateRandomOutfit(data, inventory, isMember);
   if (isDev && data.getDate() === '2005-09-21') {
     outfit.head = 413;
   }

@@ -1,5 +1,5 @@
 import { ItemType } from "@server/game-logic/items";
-import { Version } from "@server/routes/versions";
+import { isLower, isLowerOrEqual, Version } from "@server/routes/versions";
 import { EquipProp } from "@server/socket-server/world/world-penguin";
 import { UPDATES } from "@server/updates/updates";
 
@@ -118,3 +118,61 @@ export function getIncludedCatalogIndex(): OldCatalogIndex {
 }
 
 buildCatalogIndex(CATALOG_ADDED_ITEMS_INDEX, CATALOG_INCLUDED_ITEMS_INDEX);
+
+const ITEM_HISTORY = new Map<number, { firstDate: Version; dates: Version[] }>();
+
+function buildItemHistory(): void {
+  for (const { date, items } of CATALOG_INCLUDED_ITEMS_INDEX) {
+    for (const itemId of items) {
+      let entry = ITEM_HISTORY.get(itemId);
+      if (!entry) {
+        entry = { firstDate: date, dates: [] };
+        ITEM_HISTORY.set(itemId, entry);
+      }
+      entry.dates.push(date);
+    }
+  }
+}
+
+buildItemHistory();
+
+/**
+ * Gets the release and last availability date for an item relative to currentDate.
+ * Returns null if the item has not been released yet as of currentDate.
+ */
+export function getItemAvailability(itemId: number, currentDate: Version): { firstReleaseDate: Version; lastAvailableDate: Version } | null {
+  const entry = ITEM_HISTORY.get(itemId);
+  if (!entry) {
+    return null;
+  }
+  if (isLower(currentDate, entry.firstDate)) {
+    return null;
+  }
+
+  let lastDate = entry.firstDate;
+  for (const d of entry.dates) {
+    if (isLowerOrEqual(d, currentDate)) {
+      lastDate = d;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    firstReleaseDate: entry.firstDate,
+    lastAvailableDate: lastDate
+  };
+}
+
+/**
+ * Returns all item IDs that have ever been released on or before currentDate.
+ */
+export function getReleasedItems(currentDate: Version): number[] {
+  const released: number[] = [];
+  for (const [itemId, entry] of ITEM_HISTORY.entries()) {
+    if (isLowerOrEqual(entry.firstDate, currentDate)) {
+      released.push(itemId);
+    }
+  }
+  return released;
+}

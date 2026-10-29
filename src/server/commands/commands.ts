@@ -6,7 +6,8 @@ import { CARDS } from "@server/game-logic/cards";
 import { PenguinContext, RoomContext } from "@server/socket-server/handlers/handlers";
 import { BotManager } from "@server/socket-server/world/bots";
 import { clamp } from "@common/utils";
-import { calculateMembershipDurationMs, MIN_MEMBERSHIP_COINS } from "@server/auth/membership";
+import { calculateMembershipDurationMs, MIN_MEMBERSHIP_COINS, BETA_CUTOFF_DATE } from "@server/auth/membership";
+import { isLower } from "@server/routes/versions";
 
 type CommandContext = (PenguinContext | RoomContext) & {
   bot: BotManager
@@ -144,13 +145,6 @@ const handleAge: CommandHandler<[]> = ({ msg, prst, penguin, data }) => {
   return 'Updated penguin age';
 }
 
-const handleMember: CommandHandler<[]> = ({ penguin, prst, msg, data }) => {
-  penguin.membership.swap();
-  sendLPMessage(penguin, data, msg);
-  prst(penguin);
-  return penguin.membership.isMember ? 'Penguin is now a member' : 'Penguin is no longer a member';
-}
-
 const handleAddFurniture: CommandHandler<[number, number]> = ({ penguin, prst, msg }, id: number, amount: number) => {
   const ownedAmount = penguin.igloo.getFurnitureAmount(id);
   const addAmount = clamp(amount, 0, 99 - ownedAmount);
@@ -247,21 +241,25 @@ const handleAddCard: CommandHandler<[number, number]> = ({ penguin, prst }, card
   return `Added ${amount} of card ID ${card}`;
 }
 
-const handleBuyMembership: CommandHandler<[number]> = ({ msg, penguin, prst }, coins) => {
-  if (coins < MIN_MEMBERSHIP_COINS) {
+const handleBuyMembership: CommandHandler<[number]> = ({ msg, penguin, prst, data }, coins) => {
+  if (isLower(data.getDate(), BETA_CUTOFF_DATE)) {
+    return 'Membership is not available prior to October 24, 2005.';
+  }
+  const coinsToSpend = typeof coins === 'number' && !Number.isNaN(coins) ? coins : 500;
+  if (coinsToSpend < MIN_MEMBERSHIP_COINS) {
     return `Minimum amount to buy membership is ${MIN_MEMBERSHIP_COINS} coins.`;
   }
-  if (penguin.currency.coins < coins) {
-    return `You need ${coins} coins, but only have ${penguin.currency.coins} coins.`;
+  if (penguin.currency.coins < coinsToSpend) {
+    return `You need ${coinsToSpend} coins, but only have ${penguin.currency.coins} coins.`;
   }
 
-  const addedMs = calculateMembershipDurationMs(coins);
+  const addedMs = calculateMembershipDurationMs(coinsToSpend);
   const now = Date.now();
   const currentExpiry = penguin.membership.membershipExpires;
   const baseTime = (currentExpiry !== null && currentExpiry > now) ? currentExpiry : now;
   const newExpiry = baseTime + addedMs;
 
-  penguin.currency.discount(coins);
+  penguin.currency.discount(coinsToSpend);
   penguin.membership.setMembershipExpires(newExpiry);
   prst(penguin, true);
 
@@ -269,7 +267,7 @@ const handleBuyMembership: CommandHandler<[number]> = ({ msg, penguin, prst }, c
 
   const days = (addedMs / (1000 * 60 * 60 * 24)).toFixed(1);
   const expDate = new Date(newExpiry).toISOString().split('T')[0];
-  return `Purchased ${days} days of membership for ${coins} coins! Expiry: ${expDate}`;
+  return `Purchased ${days} days of membership for ${coinsToSpend} coins! Expiry: ${expDate}`;
 };
 
 const handleBanPlayer: CommandHandler<[string, number, string]> = ({ db, world, msg, prst }, targetName, hours, reason) => {
@@ -470,11 +468,11 @@ const generators: CommandsGenerator = [
   ],
   [
     'member',
-    [c([], handleMember)],
+    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
     {
-      argNames: [],
-      description: "Swap the membership status of your penguin. If your penguin is currently a member, then it will turn into a non-member, and vice-versa.",
-      examples: []
+      argNames: ['coins?'],
+      description: "Buy membership time with coins (defaults to 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
+      examples: ['member', 'member 500', 'member 2500', 'member 8000', 'member 50000']
     }
   ],
   [
@@ -587,20 +585,20 @@ const generators: CommandsGenerator = [
   ],
   [
     'membership',
-    [c(['number'], handleBuyMembership)],
+    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
     {
-      argNames: ['coins'],
-      description: "Buy membership time with coins (minimum 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
-      examples: ['membership 500', 'membership 2500', 'membership 8000', 'membership 50000']
+      argNames: ['coins?'],
+      description: "Buy membership time with coins (defaults to 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
+      examples: ['membership', 'membership 500', 'membership 2500', 'membership 8000', 'membership 50000']
     }
   ],
   [
     'buy',
-    [c(['number'], handleBuyMembership)],
+    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
     {
-      argNames: ['coins'],
-      description: "Alias for membership command.",
-      examples: ['buy 500', 'buy 50000']
+      argNames: ['coins?'],
+      description: "Alias for membership command (defaults to 500 coins).",
+      examples: ['buy', 'buy 500', 'buy 2500', 'buy 50000']
     }
   ],
   [
