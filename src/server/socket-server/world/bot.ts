@@ -1,5 +1,5 @@
 import { choose, clamp, isDisjoint, iterateEntries, randomInt, randomLogNormal, shuffleArray } from "@common/utils";
-import { equipProp, EquipProp, PenguinEquipped, WorldPenguin } from "./world-penguin";
+import { equipProp, EquipProp, isBot, PenguinEquipped, WorldPenguin } from "./world-penguin";
 import { WorldRoom } from "./world-room";
 import { GameData } from "@server/timelines/game-data";
 import { World } from "./world";
@@ -651,9 +651,14 @@ const BEHAVIORS: Behavior[] = [
       return eagerness(attrs.roomDistraction, rng.random() * 120 + 30);
     },
     success({ rng, room }) {
-      if (room.players.length <= 1) return true;
-      if (room.players.length > 20) return rng.random() < 0.8;
-      return rng.random() < 0.4;
+      if (room.hasRealPlayers) {
+        return rng.random() < 0.2;
+      }
+      const botCount = room.players.filter(p => isBot(p)).length;
+      if (botCount > 4) {
+        return rng.random() < 0.7;
+      }
+      return rng.random() < 0.3;
     },
     async start({ bot }) {
       await bot.enter(bot.chooseRoom());
@@ -1005,9 +1010,14 @@ export class Bot implements ClientSocket {
     }
   }
 
-  private stopAllActions() {
+  public stopAllActions() {
     this._lenghts = { ...allBehaviors };
     this.clearAllTimers();
+  }
+
+  public teleportTo(room: WorldRoom, x: number, y: number): void {
+    this.stopAllActions();
+    this.nextActionAt = Date.now() + randomInt(1500, 3500);
   }
 
   private async exitGameMode() {
@@ -1180,13 +1190,31 @@ export class Bot implements ClientSocket {
     const canGo = availableRooms.filter(r => {
       return this._penguin.membership.isMember || !this._data.isRoomMember(r);
     });
-    const canGoSet = new Set(canGo.map(name => ROOMS[name]?.id).filter(id => id !== undefined));
+    const validRoomIds = canGo
+      .map(name => ROOMS[name]?.id)
+      .filter((id): id is number => id !== undefined && id < IGLOO_ROOM_BASE);
 
-    const pool = getRoomPool(this._data.getDate()).filter(roomId => canGoSet.has(roomId));
-    if (pool.length > 0) {
-      return choose(pool);
+    if (validRoomIds.length === 0) {
+      return 100;
     }
-    return ROOMS[choose(canGo)].id;
+
+    // Weight each room inversely to its current penguin count so penguins spread out evenly across every room
+    const weights = validRoomIds.map(roomId => {
+      const room = this._world.getRoom(roomId);
+      const count = room.players.length;
+      return Math.max(1, Math.round(12 / (1 + count)));
+    });
+
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+    let rand = Math.random() * totalWeight;
+    for (let i = 0; i < validRoomIds.length; i++) {
+      rand -= weights[i];
+      if (rand <= 0) {
+        return validRoomIds[i];
+      }
+    }
+
+    return validRoomIds[0];
   }
 
   public executeSteps(steps: DialogueStep[], extraDelayMs = 0): void {

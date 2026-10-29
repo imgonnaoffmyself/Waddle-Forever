@@ -101,6 +101,7 @@ export function getPenguinString(data: GameData, p: WorldPenguin, state: { x: nu
 const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) => {
   const { penguin, msg, data, world, bot } = ctx;
   bot?.prepareIglooVisit(r, penguin);
+  bot?.balanceRoomForPlayer(r, penguin);
   const previousPlayers = r.players;
   r.addPenguin(penguin, x, y);
   world.enterState(penguin, { room: r });

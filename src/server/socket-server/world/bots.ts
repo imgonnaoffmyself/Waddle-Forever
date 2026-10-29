@@ -10,12 +10,12 @@ import { World } from './world';
 import { WorldPenguin } from './world-penguin';
 import { WorldRoom } from './world-room';
 import { choose, clamp, randomInt, shuffleArray } from '@common/utils';
-import { Bot, BotAttributes, WriteFunction } from './bot';
+import { Bot, BotAttributes, getRandomPointInRoom, WriteFunction } from './bot';
 import { FindFourTable } from './find-four';
 import { MancalaTable } from './mancala';
 import { XtMessenger } from '../xt-messenger';
 import { joinWaddle } from '../handlers/room';
-import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
+import { getNameFromId, IGLOO_ROOM_BASE, ROOMS } from '@server/game-data/rooms';
 import path from 'path';
 import { generateBots, generateRandomBot } from './bot-generation';
 import { DialogueStep, DialoguePool } from '@server/npc/npc-types';
@@ -161,6 +161,121 @@ export class BotManager {
       room.addPenguin(bot.penguin, botX, botY);
       this._world.enterState(bot.penguin, { room });
       bot.markHome();
+    }
+  }
+
+  /**
+   * Called right before a human player enters a public room.
+   * If the room has no other human players, checks if we currently have the suitable
+   * number of bot penguins there, and if not, moves some penguins around.
+   */
+  public balanceRoomForPlayer(room: WorldRoom, visitor: WorldPenguin): void {
+    if (isBot(visitor) || visitor.deadInternet) return;
+    if (room.id >= IGLOO_ROOM_BASE) return;
+    if (this._bots.size === 0) return;
+
+    // Check if empty not counting bots: no other real players in room
+    const otherHumans = room.players.filter(p => !isBot(p) && !p.deadInternet && p.id !== visitor.id);
+    if (otherHumans.length > 0) {
+      return;
+    }
+
+    const currentBots = room.players.filter(p => isBot(p));
+    const currentCount = currentBots.length;
+
+    // Calculate suitable number of bots for this room based on island population
+    const availableRooms = this._data.getAvailableRooms();
+    const roomCount = Math.max(1, availableRooms.length);
+    const avgBots = this._bots.size / roomCount;
+    const target = Math.max(2, Math.min(Math.round(avgBots), 5));
+    const minSuitable = Math.max(1, target - 1);
+    const maxSuitable = target + 1;
+
+    // Check if we currently have the suitable number of bot penguins there
+    if (currentCount >= minSuitable && currentCount <= maxSuitable) {
+      return;
+    }
+
+    if (currentCount < minSuitable) {
+      const needed = target - currentCount;
+      const roomName = getNameFromId(room.id);
+      const isMemberRoom = roomName ? this._data.isRoomMember(roomName) : false;
+
+      // Find eligible donor bots from other rooms
+      const candidates: { bot: Bot; donorRoom: WorldRoom; donorScore: number }[] = [];
+
+      for (const bot of this._bots.values()) {
+        if (bot.busy) continue;
+        if (isMemberRoom && !bot.penguin.membership.isMember) continue;
+
+        const donorRoom = this._world.getPenguinRoom(bot.penguin);
+        if (!donorRoom || donorRoom.id === room.id || donorRoom.id >= IGLOO_ROOM_BASE) continue;
+        if (this.isPenguinSeated(donorRoom, bot.penguin)) continue;
+
+        const donorHumans = donorRoom.players.filter(p => !isBot(p) && !p.deadInternet);
+        const donorBots = donorRoom.players.filter(p => isBot(p)).length;
+
+        // Prioritize rooms with no humans, and among those, rooms with the most bots
+        let score = 0;
+        if (donorHumans.length === 0) {
+          score = 1000 + donorBots;
+        } else if (donorBots > minSuitable) {
+          score = 100 + (donorBots - minSuitable);
+        } else {
+          continue;
+        }
+
+        candidates.push({ bot, donorRoom, donorScore: score });
+      }
+
+      candidates.sort((a, b) => b.donorScore - a.donorScore);
+
+      const toMove = candidates.slice(0, needed);
+      for (const { bot, donorRoom } of toMove) {
+        donorRoom.removePenguin(bot.penguin);
+        if (donorRoom.hasRealPlayers) {
+          this._msg.send(donorRoom.players, 'rp', bot.penguin.id);
+        }
+        const [x, y] = getRandomPointInRoom(room);
+        room.addPenguin(bot.penguin, x, y);
+        this._world.enterState(bot.penguin, { room });
+        bot.teleportTo(room, x, y);
+      }
+    } else if (currentCount > maxSuitable) {
+      const excess = currentCount - target;
+      const freeBotsInRoom = currentBots
+        .map(p => this._bots.get(p.id))
+        .filter((b): b is Bot => b !== undefined && !b.busy && !this.isPenguinSeated(room, b.penguin));
+
+      const toMove = freeBotsInRoom.slice(0, excess);
+      const validDestinations = availableRooms
+        .map(name => ROOMS[name]?.id)
+        .filter((id): id is number => id !== undefined && id < IGLOO_ROOM_BASE && id !== room.id);
+
+      for (const bot of toMove) {
+        // Move excess bot to an available room with no humans and the fewest bots
+        let bestDestId: number | undefined;
+        let lowestCount = Infinity;
+        for (const destId of validDestinations) {
+          const destRoom = this._world.getRoom(destId);
+          const hasHumans = destRoom.players.some(p => !isBot(p) && !p.deadInternet);
+          if (!hasHumans && destRoom.players.length < lowestCount) {
+            lowestCount = destRoom.players.length;
+            bestDestId = destId;
+          }
+        }
+
+        if (bestDestId === undefined) {
+          bestDestId = validDestinations[0] ?? 100;
+        }
+
+        const destRoom = this._world.getRoom(bestDestId);
+        room.removePenguin(bot.penguin);
+        const [x, y] = getRandomPointInRoom(destRoom);
+        destRoom.addPenguin(bot.penguin, x, y);
+        this._world.enterState(bot.penguin, { room: destRoom });
+        bot.teleportTo(destRoom, x, y);
+      }
     }
   }
 
@@ -583,25 +698,19 @@ export class BotManager {
     return randomInt(this._settings.minDelay, this._settings.maxDelay);
   }
 
+  private isPenguinSeated(room: WorldRoom, penguin: WorldPenguin): boolean {
+    for (const w of room.getWaddleRooms()) {
+      if (w.getSeats().includes(penguin)) return true;
+    }
+    for (const t of room.getTables()) {
+      if (t.getSeats().includes(penguin)) return true;
+    }
+    return false;
+  }
+
   /** A bot standing in this room that isn't already sitting somewhere */
   private getFreeBotIn(room: WorldRoom): Bot | undefined {
-    const seated = new Set<WorldPenguin>();
-    room.getWaddleRooms().forEach((w) => {
-      w.getSeats().forEach((p) => {
-        if (p !== null) {
-          seated.add(p);
-        }
-      });
-    });
-    room.getTables().forEach((t) => {
-      t.getSeats().forEach((p) => {
-        if (p !== null) {
-          seated.add(p);
-        }
-      });
-    });
-
-    const p = room.players.find(p => isBot(p) && !seated.has(p));
+    const p = room.players.find(p => isBot(p) && !this.isPenguinSeated(room, p));
     if (p === undefined) {
       return undefined;
     }
