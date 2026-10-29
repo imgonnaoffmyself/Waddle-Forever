@@ -37,9 +37,12 @@ export class XtMessenger extends Messenger<WorldPenguin> {
   }
   
   public async send(penguins: WorldPenguin | ClientSocket | Array<ClientSocket | WorldPenguin>, message: string, ...args: Array<string | number>): Promise<void> {
-    logverbose(getGreenString('sending XT: '), message, args);
+    const botPacket = isBotPacket(message, args);
+    if (!botPacket) {
+      logverbose(getGreenString('sending XT: '), message, args);
+    }
 
-    if (isBotPacket(message, args)) {
+    if (botPacket) {
       if (Array.isArray(penguins)) {
         penguins = penguins.filter(p => !this.isPenguin(p) || !p.deadInternet);
       } else if (this.isPenguin(penguins) && penguins.deadInternet) {

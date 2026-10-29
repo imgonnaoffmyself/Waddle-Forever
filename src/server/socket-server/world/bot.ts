@@ -1139,6 +1139,11 @@ export class Bot implements ClientSocket {
       if (path.length > 0) {
         return new Promise<void>((res) => {
           const nextStep = (step: number) => {
+            const currentRoom = this._world.getPenguinRoom(this._penguin);
+            if (!currentRoom || !currentRoom.hasRealPlayers) {
+              res();
+              return;
+            }
             if (step < path.length) {
               const [unscaledX, unscaledY] = [path[step][0] * roomBlock.scale, Math.min(path[step][1] * roomBlock.scale, 410)];
               const distance = Math.sqrt(Math.pow(unscaledX - state.x, 2) + Math.pow(unscaledY - state.y, 2));
@@ -1188,7 +1193,7 @@ export class Bot implements ClientSocket {
     for (const step of steps) {
       this.schedule(() => {
         const room = this._world.getPenguinRoom(this._penguin);
-        if (!room) return;
+        if (!room || !room.hasRealPlayers) return;
 
         switch (step.action.type) {
           case 'chat': {
@@ -1221,6 +1226,8 @@ export class Bot implements ClientSocket {
   }
 
   public sendDynamicMessage(room: WorldRoom): void {
+    if (!room.hasRealPlayers) return;
+
     const dialogue = PERSONALITY_DIALOGUE[this.personalityTrait];
     if (!dialogue) {
       this.sendMessage(choose(CHAT_LINES));
@@ -1336,7 +1343,7 @@ export class Bot implements ClientSocket {
       return;
     }
     const room = this._world.getPenguinRoom(this.penguin);
-    if (room === undefined) {
+    if (room === undefined || !room.hasRealPlayers) {
       return;
     }
 

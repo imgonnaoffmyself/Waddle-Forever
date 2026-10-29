@@ -2,7 +2,7 @@ import { FindFourTable } from "./find-four";
 import { MancalaTable } from "./mancala";
 import { TreasureHuntTable } from "./treasure-hunt";
 import { WaddleRoom } from "./waddle-room";
-import { RoomState, WorldPenguin } from "./world-penguin";
+import { RoomState, WorldPenguin, isBot } from "./world-penguin";
 import { WorldTable } from "./world-table";
 
 export class WorldRoom {
@@ -26,6 +26,15 @@ export class WorldRoom {
 
   public get playerStates() {
     return [...this.penguins.entries()];
+  }
+
+  public get hasRealPlayers(): boolean {
+    for (const p of this.penguins.keys()) {
+      if (!isBot(p) && !p.deadInternet) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public addPenguin(penguin: WorldPenguin, x: number, y: number): void {

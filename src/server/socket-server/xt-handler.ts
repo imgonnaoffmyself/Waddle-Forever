@@ -2,6 +2,7 @@ import { ArgumentsIndicator, parseArgs } from "@server/socket-server/arg-parser"
 import { ClientSocket } from "./socket-server";
 import { WorldContext } from "@server/socket-server/handlers/handlers";
 import { getBlueString, getRedString, logverbose } from "@server/logger";
+import { isBot } from "@server/socket-server/world/world-penguin";
 
 const parseXtMessage = (message: string): [string, string[]] => {
   const values = message.split('%');
@@ -99,7 +100,7 @@ export class XtHandler {
   public handle(client: ClientSocket, context: WorldContext, message: string) {
     const [name, args] = parseXtMessage(message);
     
-    if ('penguin' in context) {
+    if ('penguin' in context && !isBot(context.penguin)) {
       logverbose(getBlueString(`incoming XT [${context.penguin.name}]: `), name, args);
     }
 

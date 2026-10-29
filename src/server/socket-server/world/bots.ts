@@ -172,6 +172,14 @@ export class BotManager {
   public onPlayerEnterRoom(room: WorldRoom, visitor: WorldPenguin): void {
     if (isBot(visitor) || visitor.deadInternet) return;
 
+    // Wake up bots in this room so they become active soon after human arrival
+    const now = Date.now();
+    for (const bot of this._bots.values()) {
+      if (this._world.getPenguinRoom(bot.penguin)?.id === room.id) {
+        bot.nextActionAt = now + randomInt(1000, 3000);
+      }
+    }
+
     if (room.id < IGLOO_ROOM_BASE) {
       this.onPlayerJoinPublicRoom(room, visitor);
       return;
@@ -601,6 +609,7 @@ export class BotManager {
   }
 
   private tickWaddles(room: WorldRoom): void {
+    if (!room.hasRealPlayers) return;
     const now = Date.now();
 
     for (const waddle of room.getWaddleRooms()) {
@@ -655,6 +664,7 @@ export class BotManager {
   }
 
   private tickTables(room: WorldRoom): void {
+    if (!room.hasRealPlayers) return;
     const now = Date.now();
 
     for (const table of room.getTables()) {
@@ -730,6 +740,10 @@ export class BotManager {
 
     for (const bot of this._bots.values()) {
       if (now < bot.nextActionAt || bot.busy) {
+        continue;
+      }
+      const room = this._world.getPenguinRoom(bot.penguin);
+      if (!room || !room.hasRealPlayers) {
         continue;
       }
       bot.nextActionAt = now + this.delay();
