@@ -416,7 +416,7 @@ export interface LocalModPlayerRecord {
 /**
  * Tracks and evaluates moderation actions for messages flagged by LocalMod:
  * - low: take no action
- * - medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+ * - medium: only take action after 2 mediums in a row or 2 mediums in 120 seconds
  * - high: only take action after 2 highs in a row or 2 highs in 60 seconds
  * - critical: take action immediately
  */
@@ -447,10 +447,10 @@ export class LocalModTracker {
       }
 
       case 'high': {
-        // high: only take action after 2 highs in a row or 2 highs in 60 seconds
+        // high: only take action after 2 highs in a row or 2 highs in 180 seconds
         rec.consecutiveMediums = 0;
         rec.consecutiveHighs++;
-        rec.highTimestamps = rec.highTimestamps.filter(t => now - t <= 60_000);
+        rec.highTimestamps = rec.highTimestamps.filter(t => now - t <= 180_000);
         rec.highTimestamps.push(now);
 
         if (rec.consecutiveHighs >= 2 || rec.highTimestamps.length >= 2) {
@@ -461,13 +461,13 @@ export class LocalModTracker {
       }
 
       case 'medium': {
-        // medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+        // medium: only take action after 2 mediums in a row or 2 mediums in 120 seconds
         rec.consecutiveHighs = 0;
         rec.consecutiveMediums++;
-        rec.mediumTimestamps = rec.mediumTimestamps.filter(t => now - t <= 90_000);
+        rec.mediumTimestamps = rec.mediumTimestamps.filter(t => now - t <= 120_000);
         rec.mediumTimestamps.push(now);
 
-        if (rec.consecutiveMediums >= 3 || rec.mediumTimestamps.length >= 3) {
+        if (rec.consecutiveMediums >= 2 || rec.mediumTimestamps.length >= 2) {
           this.resetPlayer(penguinId);
           return true;
         }
