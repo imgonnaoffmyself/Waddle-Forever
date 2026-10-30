@@ -417,7 +417,7 @@ export interface LocalModPlayerRecord {
  * Tracks and evaluates moderation actions for messages flagged by LocalMod:
  * - low: take no action
  * - medium: only take action after 2 mediums in a row or 2 mediums in 120 seconds
- * - high: only take action after 2 highs in a row or 2 highs in 60 seconds
+ * - high: only take action after 2 highs in a row or 2 highs in 180 seconds
  * - critical: take action immediately
  */
 export class LocalModTracker {
