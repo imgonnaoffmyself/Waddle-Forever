@@ -34,6 +34,7 @@ import {
   sampleRandomAgeGroup,
   DialogueChain
 } from '@server/npc/ambient-dialogue';
+import { ModerationManager } from '@server/moderation/moderation-manager';
 export { BOT_ID_BASE, isBot };
 
 
@@ -134,6 +135,7 @@ export class BotManager {
   private _roomLastExchange = new Map<number, number>();
   private _activeExchangeBots = new Set<number>();
   private _ambientChatCooldowns = new Map<string, number>();
+  private _moderationManager: ModerationManager;
 
   constructor(
     private _world: World,
@@ -144,9 +146,18 @@ export class BotManager {
     private disconnect: (b: Bot) => void,
     private _db?: PenguinRepository
   ) {
+    this._moderationManager = new ModerationManager(this._msg, this._db, () => this.getModeratorBot());
     this.initSavedBots().then(() => {
       this.syncTimelineDate();
     });
+  }
+
+  public get moderationManager(): ModerationManager {
+    return this._moderationManager;
+  }
+
+  public getModeratorBot(): Bot | undefined {
+    return [...this._bots.values()].find(b => b.isModerator);
   }
 
   private async initSavedBots(): Promise<void> {
@@ -873,7 +884,7 @@ export class BotManager {
   public tryTriggerDialogueChain(room: WorldRoom, initiator?: Bot): boolean {
     if (!room.hasRealPlayers) return false;
     if (this._bots.size < 2) return false;
-    if (initiator?.isDev) return false;
+    if (initiator?.isDev || initiator?.isModerator) return false;
 
     const now = Date.now();
     const lastExchange = this._roomLastExchange.get(room.id) ?? 0;
@@ -884,7 +895,7 @@ export class BotManager {
     const eligibleBots = room.players
       .filter(p => isBot(p) && !this._activeExchangeBots.has(p.id))
       .map(p => this._bots.get(p.id))
-      .filter((b): b is Bot => b !== undefined && !b.isDev && !b.busy && !b.isHostingIgloo && !this.isPenguinSeated(room, b.penguin));
+      .filter((b): b is Bot => b !== undefined && !b.isDev && !b.isModerator && !b.busy && !b.isHostingIgloo && !this.isPenguinSeated(room, b.penguin));
 
     if (eligibleBots.length < 2) return false;
 
@@ -1000,8 +1011,11 @@ export class BotManager {
 
     if (botsInRoom.length === 0) return;
 
+    // Live moderation evaluation and bot reactions / reporting
+    this._moderationManager.handlePlayerChat(room, player, message, botsInRoom);
+
     // Check ambient non-Club-Penguin conversation topics
-    const nonDevBots = botsInRoom.filter(b => !b.isDev);
+    const nonDevBots = botsInRoom.filter(b => !b.isDev && !b.isModerator);
     if (nonDevBots.length > 0) {
       for (let i = 0; i < AMBIENT_PLAYER_CHAT_TRIGGERS.length; i++) {
         const trigger = AMBIENT_PLAYER_CHAT_TRIGGERS[i];
@@ -1053,6 +1067,22 @@ export class BotManager {
         if (!devKeywords.some(kw => lower.includes(kw))) {
           continue;
         }
+      }
+      if (bot.isModerator) {
+        // Moderator bots only respond to safety/help/mod queries
+        const modKeywords = ['mod', 'moderator', 'rules', 'safe', 'safety', 'police', 'officer', 'report', 'help'];
+        if (!modKeywords.some(kw => lower.includes(kw))) {
+          continue;
+        }
+        const modLines = [
+          'safety first! please follow the island rules :)',
+          'remember: be respectful to other penguins!',
+          'on duty! let a mod know if someone breaks rules.',
+          'waddle on! keep Club Penguin safe and fun.'
+        ];
+        bot.sendMessage(choose(modLines));
+        respondents++;
+        break;
       }
       const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
 

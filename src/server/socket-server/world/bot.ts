@@ -39,6 +39,7 @@ import {
   sampleRandomAgeGroup,
   BotAgeGroup
 } from "@server/npc/ambient-dialogue";
+import { isModeratorName, MODERATOR_IDLE_LINES } from "./moderator-bot";
 
 const EMPTY_SLOT_WEIGHTS: Record<EquipProp, number> = {
   color: 0,
@@ -1307,6 +1308,10 @@ export class Bot implements ClientSocket {
     return DEV_NPC_NAME_SET.has(this._penguin.name);
   }
 
+  public get isModerator(): boolean {
+    return isModeratorName(this._penguin.name);
+  }
+
   public get data() {
     return this._data;
   }
@@ -1742,6 +1747,11 @@ export class Bot implements ClientSocket {
       return;
     }
 
+    if (this.isModerator) {
+      this.sendModeratorMessage(room);
+      return;
+    }
+
     // Attempt initiating a multi-bot dialogue chain with another bot in the room
     if (this._manager && Math.random() < 0.45) {
       if (this._manager.tryTriggerDialogueChain(room, this)) {
@@ -1878,6 +1888,11 @@ export class Bot implements ClientSocket {
       'thanks so much for playing with us today! :)'
     ];
     this.sendMessage(choose(lines));
+  }
+
+  private sendModeratorMessage(room: WorldRoom): void {
+    const line = choose(MODERATOR_IDLE_LINES);
+    this.sendMessage(line);
   }
 
   public sendIglooMessage(room: WorldRoom): void {

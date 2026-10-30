@@ -1,7 +1,7 @@
 import { handleAddEpfItem, handleAddItem, handleBecomeAgent, handleBuddyAccept, handleBuddyDecline, handleBuddyMessage, handleBuddyRemove, handleBuddyRequest, handleDisconnect, handleEPFStamp, handleFindBuddy, handleGetCoins, handleGetEpfMedals, handleGetEpfStatus, handleGetFieldOps, handleGetItems, handleGetMissionStamps, handleGetPartyOp, handleGetPinInfo, handleGetPlayer, handleGetPuffleLaunchData, handleGetRecentStamps, handleGetSpyDrillsChallenge, handleGetSpyDrillsReward, handleGetStampbookCoverData, handleGetTotalCoins, handleGLR, handleGrantAwards, handleHeartbeat, handleJoinPlayerCpip, handleJoinPlayerModern, handleJoinPlayerOld, handleJoinServer, handlePBI, handleReceiveInventory, handleSendCoins, handleSetFieldOps, handleSetPartyOp, handleSetPuffleLaunchData, handleSetStampbookCoverData, handleSetStampEarned, handleSpyRequest, isBackyardGuard, isPreBackyardGuard, joinRoom, sendBuddyOnlineList, sendGetBuddies, sendStamps } from "./handlers/join";
 import { XtCallbackInfo, XtHandler, XtParams } from "./xt-handler";
 import { ArgumentsIndicator, GetArgumentsType } from "@server/socket-server/arg-parser";
-import { handleAddToy, handleAddToyOld, handleCloseToy, handleGetHockeyGame, handleGetTableGame, handleGetTables, handleGetWaddle, handleJoinTable, handleJoinTableGame, handleJoinWaddle, handleJoinWaddleGame, handleLeaveTable, handleLeaveTableGame, handleLeaveWaddle, handleMoveHockeyPuck, handleMoveHockeyPuckOld, handlePlayerTransform, handleSafeMessage, handleSendEmote, handleSendJoke, handleSendLine, handleSendMessage, handleSendTableMove, handleSetAction, handleSetFrame, handleSetPosition, handleSetSnowball, handleTeleport, handleUpdateBackground, handleUpdateBody, handleUpdateColor, handleUpdateFace, handleUpdateFeet, handleUpdateHand, handleUpdateHead, handleUpdateHockeyGame, handleUpdateNeck, handleUpdatePenguinOld, handleUpdatePin, isHockeyGuard, isTableGuard, sendTeleportOld } from "./handlers/room";
+import { handleAddToy, handleAddToyOld, handleCloseToy, handleGetHockeyGame, handleGetTableGame, handleGetTables, handleGetWaddle, handleJoinTable, handleJoinTableGame, handleJoinWaddle, handleJoinWaddleGame, handleLeaveTable, handleLeaveTableGame, handleLeaveWaddle, handleMoveHockeyPuck, handleMoveHockeyPuckOld, handlePlayerTransform, handleReportPlayer, handleSafeMessage, handleSendEmote, handleSendJoke, handleSendLine, handleSendMessage, handleSendTableMove, handleSetAction, handleSetFrame, handleSetPosition, handleSetSnowball, handleTeleport, handleUpdateBackground, handleUpdateBody, handleUpdateColor, handleUpdateFace, handleUpdateFeet, handleUpdateHand, handleUpdateHead, handleUpdateHockeyGame, handleUpdateNeck, handleUpdatePenguinOld, handleUpdatePin, isHockeyGuard, isTableGuard, sendTeleportOld } from "./handlers/room";
 import { doubleFilter } from "@common/utils";
 import { handleAbortCard, handleCardJitsuAction, handleEnterCardGame, handleQuitCard, handleSendCardJitsuStampInfo, handleUpdateCardSeats, isCardJitsuGuard } from "./handlers/card";
 import { handleDeleteMailFromPenguin, handleDeletePostcard, handleGetMail, handleMailTotal, handleSendCard, handleSendMail, handleSetMailCheck } from "./handlers/mail";
@@ -218,6 +218,9 @@ export const createWorldXtHandler = (): XtHandler => {
     p.xt('s', 'u#gp', ['number'], handleGetPlayer),
     
     r.xt('s', 'm#sm', ['string', 'string'], handleSendMessage),
+    r.xt('s', 'o#m', ['number', 'number'], handleReportPlayer),
+    r.xt('s', 'u#m', ['number', 'number'], handleReportPlayer),
+    r.xt('s', 'm#r', ['number', 'number'], handleReportPlayer),
     
     r.xt('s', 't#at', ['string', 'string'], handleAddToy),
     r.xt('s', 't#rt', ['string', 'string'], handleCloseToy),

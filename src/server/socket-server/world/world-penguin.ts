@@ -115,6 +115,9 @@ class Membership {
 class Moderation {
   private _bannedUntil: number | null;
   private _banReason?: string;
+  private _mutedUntil: number | null = null;
+  private _strikes: number = 0;
+  private _warnings: string[] = [];
 
   constructor(data: PenguinJson) {
     this._bannedUntil = data.banned_until ?? null;
@@ -141,6 +144,43 @@ class Moderation {
 
   public isBanned(now: number = Date.now()): boolean {
     return this._bannedUntil !== null && this._bannedUntil > now;
+  }
+
+  public get mutedUntil() {
+    return this._mutedUntil;
+  }
+
+  public isMuted(now: number = Date.now()): boolean {
+    return this._mutedUntil !== null && this._mutedUntil > now;
+  }
+
+  public mute(untilMs: number) {
+    this._mutedUntil = untilMs;
+  }
+
+  public unmute() {
+    this._mutedUntil = null;
+  }
+
+  public get strikes() {
+    return this._strikes;
+  }
+
+  public addStrike(): number {
+    this._strikes++;
+    return this._strikes;
+  }
+
+  public resetStrikes() {
+    this._strikes = 0;
+  }
+
+  public addWarning(warning: string) {
+    this._warnings.push(warning);
+  }
+
+  public get warnings() {
+    return [...this._warnings];
   }
 }
 

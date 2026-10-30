@@ -9,7 +9,7 @@ import { WaddleRoom } from "@server/socket-server/world/waddle-room";
 import { WaddleGame } from "@server/socket-server/world/waddle-game";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
-import { checkProfanity } from "@server/moderation/filter";
+import { checkProfanity, checkPII } from "@server/moderation/filter";
 import { getCommandsHandler } from "@server/commands/commands";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg, data }, x, y) => {
@@ -134,6 +134,22 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
       client.end();
       return;
     }
+
+    // Check if player is currently muted by a moderator
+    if (penguin.moderation.isMuted()) {
+      // Muted: echo only to sender so bubble appears locally, but room never sees it
+      msg.send(penguin, 'sm', _penguinIdParam, message);
+      return;
+    }
+
+    // Check PII filter (Authentic Club Penguin silent drop)
+    const pii = checkPII(message);
+    if (pii.hasPII) {
+      // Silently prevent broadcasting to other players in the room
+      // Echo only to sender so the player's client shows their chat bubble normally
+      msg.send(penguin, 'sm', _penguinIdParam, message);
+      return;
+    }
   }
 
   if (message.trim().toLowerCase() === "dead internet theory") {
@@ -161,6 +177,19 @@ export const handleSafeMessage: RoomHandler<[string]> = ({ room, msg, penguin },
 
 export const handleSendLine: RoomHandler<[string]> = ({ room, msg, penguin }, line) => {
   msg.send(room.players, 'sl', penguin.id, line);
+}
+
+export const handleReportPlayer: RoomHandler<[number, number]> = ({ penguin, room, bot }, targetId, reasonId) => {
+  const target = room.players.find(p => p.id === targetId);
+  bot?.moderationManager.fileReport(
+    penguin.id,
+    targetId,
+    room.id,
+    `Player report (reason: ${reasonId})`,
+    undefined,
+    target,
+    room
+  );
 }
 
 export const handleGetWaddle: RoomHandler<[]> = ({ msg, penguin, room }) => {

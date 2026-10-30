@@ -289,6 +289,39 @@ const handleUnbanPlayer: CommandHandler<[string]> = ({ db, world, prst }, target
   return `Unbanned '${targetName}'.`;
 };
 
+const handleReportPlayerCmd: CommandHandler<[string, string]> = ({ penguin, world, bot }, targetName, reason) => {
+  const onlineTarget = world.players.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  if (!onlineTarget) return `Player '${targetName}' is not currently online.`;
+  const room = world.getPenguinRoom(onlineTarget);
+  if (!room) return `Player '${targetName}' is not in a room.`;
+
+  bot?.moderationManager.fileReport(
+    penguin.id,
+    onlineTarget.id,
+    room.id,
+    reason || 'Reported via command',
+    undefined,
+    onlineTarget,
+    room
+  );
+  return `Report filed for '${targetName}'. A moderator bot has been dispatched to investigate.`;
+};
+
+const handleMutePlayer: CommandHandler<[string, number]> = ({ world }, targetName, minutes) => {
+  const onlineTarget = world.players.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  if (!onlineTarget) return `Player '${targetName}' is not currently online.`;
+  const muteMinutes = minutes > 0 ? minutes : 5;
+  onlineTarget.moderation.mute(Date.now() + muteMinutes * 60 * 1000);
+  return `Muted '${targetName}' for ${muteMinutes} minutes.`;
+};
+
+const handleUnmutePlayer: CommandHandler<[string]> = ({ world }, targetName) => {
+  const onlineTarget = world.players.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  if (!onlineTarget) return `Player '${targetName}' is not currently online.`;
+  onlineTarget.moderation.unmute();
+  return `Unmuted '${targetName}'.`;
+};
+
 const handleSafechat: CommandHandler<[]> = ({ penguin, prst }) => {
   penguin.preference.setSafeChat(!penguin.preference.isSafeChat);
   prst(penguin);
@@ -592,6 +625,39 @@ const generators: CommandsGenerator = [
       argNames: ['player'],
       description: "Unbans a previously banned account.",
       examples: ['unban Player1']
+    }
+  ],
+  [
+    'report',
+    [
+      c(['string', 'string'], handleReportPlayerCmd),
+      c(['string'], (ctx, name) => handleReportPlayerCmd(ctx, name, 'Inappropriate behavior'))
+    ],
+    {
+      argNames: ['player', 'reason'],
+      description: "Reports a player to island moderators and dispatches a moderator bot to investigate.",
+      examples: ['report Player1', 'report Player1 bad language']
+    }
+  ],
+  [
+    'mute',
+    [
+      c(['string', 'number'], handleMutePlayer),
+      c(['string'], (ctx, name) => handleMutePlayer(ctx, name, 5))
+    ],
+    {
+      argNames: ['player', 'minutes'],
+      description: "Mutes a player from public chat for a specified number of minutes (default 5).",
+      examples: ['mute Player1 5', 'mute Player1 10']
+    }
+  ],
+  [
+    'unmute',
+    [c(['string'], handleUnmutePlayer)],
+    {
+      argNames: ['player'],
+      description: "Unmutes a previously muted player.",
+      examples: ['unmute Player1']
     }
   ]
 ];
