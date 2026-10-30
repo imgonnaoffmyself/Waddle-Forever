@@ -33,18 +33,23 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
 
       const cs: ClientSocket = {
         write: async (message: string) => {
-          return new Promise<void>((resolve, reject) => {
-            ws.send(Buffer.from(message, 'utf8'), { binary: true }, (err) => {
-              if (err) {
-                reject(err);
-                return;
-              }
+          if (ws.readyState !== ws.OPEN) return;
+          return new Promise<void>((resolve) => {
+            try {
+              ws.send(Buffer.from(message, 'utf8'), { binary: true }, () => {
+                resolve();
+              });
+            } catch {
               resolve();
-            });
+            }
           })
         },
         end: (d) => {
-          ws.close(undefined, d);
+          try {
+            if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) {
+              ws.close(undefined, d);
+            }
+          } catch {}
         }
       }
 
@@ -97,21 +102,28 @@ export const setupSocketServer = async (name: string, port: number, handler: Mes
 
           const cs: ClientSocket = {
             write: async (message: string) => {
-              return new Promise<void>((resolve, reject) => {
-                socket.write(message, (err) => {
-                  if (err) {
-                    reject(err);
-                  }
+              if (socket.destroyed || socket.writableEnded) {
+                return;
+              }
+              return new Promise<void>((resolve) => {
+                try {
+                  socket.write(message, (err) => {
+                    resolve();
+                  });
+                } catch {
                   resolve();
-                });
+                }
               })
             },
             end: (d) => {
-              if (d === undefined) {
-                socket.end();
-              } else {
-                socket.end(d);
-              }
+              try {
+                if (socket.destroyed || socket.writableEnded) return;
+                if (d === undefined) {
+                  socket.end();
+                } else {
+                  socket.end(d);
+                }
+              } catch {}
             }
           }
 

@@ -39,7 +39,6 @@ import {
   sampleRandomAgeGroup,
   BotAgeGroup
 } from "@server/npc/ambient-dialogue";
-import { MODERATOR_IDLE_LINES } from "./moderator-bot";
 
 const EMPTY_SLOT_WEIGHTS: Record<EquipProp, number> = {
   color: 0,
@@ -1312,11 +1311,14 @@ export class Bot implements ClientSocket {
   private _isModerator: boolean = false;
 
   public get isModerator(): boolean {
-    return this._isModerator || this.isDev;
+    return this._isModerator;
   }
 
   public setModerator(value: boolean): void {
     this._isModerator = value;
+    if (value) {
+      this.ageGroup = '18 and over';
+    }
   }
 
   public get data() {
@@ -1342,7 +1344,7 @@ export class Bot implements ClientSocket {
       ?? DEV_NPC_TRAITS[this._penguin.name as any]
       ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);
     this.ageGroup = _attributes.ageGroup
-      ?? sampleRandomAgeGroup(this.isDev);
+      ?? ((this.isDev || this._isModerator) ? '18 and over' : sampleRandomAgeGroup(false));
   }
 
   public simulate(ext: string, code: string, ...args: Array<string | number>): void {
@@ -1755,11 +1757,6 @@ export class Bot implements ClientSocket {
       return;
     }
 
-    if (this.isModerator) {
-      this.sendModeratorMessage(room);
-      return;
-    }
-
     // Attempt initiating a multi-bot dialogue chain with another bot in the room
     if (this._manager && Math.random() < 0.45) {
       if (this._manager.tryTriggerDialogueChain(room, this)) {
@@ -1896,11 +1893,6 @@ export class Bot implements ClientSocket {
       'thanks so much for playing with us today! :)'
     ];
     this.sendMessage(choose(lines));
-  }
-
-  private sendModeratorMessage(room: WorldRoom): void {
-    const line = choose(MODERATOR_IDLE_LINES);
-    this.sendMessage(line);
   }
 
   public sendIglooMessage(room: WorldRoom): void {

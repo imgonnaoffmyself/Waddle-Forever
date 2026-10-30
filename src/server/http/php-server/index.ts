@@ -10,6 +10,7 @@ import { GameData } from '@server/timelines/game-data';
 import { hashPassword, verifyPassword, verifyPenguinPassword } from '@server/auth/password';
 import { evaluateMembership } from '@server/auth/membership';
 import { getBanStatus } from '@server/moderation/filter';
+import { validateUsername } from '@server/moderation/username-validator';
 import { logverbose } from '@server/logger';
 import { getPreCpipWorldPopulations } from '@server/servers';
 
@@ -88,14 +89,15 @@ const POST_LISTENERS: Record<string, PostCallback> = {
         break;
       
       case 'validate_username':
-        if (body.username.length < 1 || body.username.length > 12) {
-          res += 'error=Please choose a username between 1 and 12 characters.'
+        const nameVal = validateUsername(body.username);
+        if (!nameVal.valid) {
+          res += `error=${nameVal.message}&`;
           break;
         }
 
         if (await db.exists(body.username)) {
-          res += 'error=This penguin already exists!'
-          break
+          res += 'error=This penguin already exists!&';
+          break;
         }
 
         sessionInfo.username = body.username;
@@ -126,7 +128,11 @@ const POST_LISTENERS: Record<string, PostCallback> = {
   },
   '/php/join.php': async (body, { settings, db }) => {
     const name = body.Username;
-    if (name.length < 3 || name.length > 12 || (await db.exists(name))) {
+    const nameVal = validateUsername(name);
+    if (!nameVal.valid) {
+      return nameVal.isInappropriate ? 'e=701' : 'e=700';
+    }
+    if (await db.exists(name)) {
       return 'e=700';
     }
 

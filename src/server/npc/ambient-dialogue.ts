@@ -11,8 +11,8 @@ import { PersonalityTrait } from './npc-types';
 export type BotAgeGroup = '8 and under' | '9 to 12' | '13 to 17' | '18 and over';
 export const BOT_AGE_GROUPS: BotAgeGroup[] = ['8 and under', '9 to 12', '13 to 17', '18 and over'];
 
-export function sampleRandomAgeGroup(isDev?: boolean): BotAgeGroup {
-  if (isDev) return '18 and over';
+export function sampleRandomAgeGroup(isDev?: boolean, isModerator?: boolean): BotAgeGroup {
+  if (isDev || isModerator) return '18 and over';
   const r = Math.random();
   if (r < 0.15) return '8 and under';
   if (r < 0.60) return '9 to 12';

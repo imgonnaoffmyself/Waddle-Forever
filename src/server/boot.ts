@@ -8,11 +8,17 @@ import { HttpServer } from './http';
 import { setupWorldServer } from './socket-server/world-server';
 import { setupLoginServer } from './socket-server/login-server';
 import { setupSnowServer } from './socket-server/snow-server';
+import { startLocalModService } from './moderation/localmod-service';
 
 /** Initialize the db, game data, and the 3 services (http, login, world). Returns the world server and list of failed mods. */
 export async function startServices() {
   const data = new DataFolder(USER_DATA_FOLDER);
   data.init(VERSION);
+
+  // Initialize LocalMod background moderation service
+  startLocalModService().catch(err => {
+    console.error('[LocalMod] Failed to start LocalMod service:', err);
+  });
 
   const gameData = new GameData(settingsManager.settings.version);
 

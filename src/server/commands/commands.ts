@@ -6,6 +6,7 @@ import { CARDS } from "@server/game-logic/cards";
 import { PenguinContext, RoomContext } from "@server/socket-server/handlers/handlers";
 import { BotManager } from "@server/socket-server/world/bots";
 import { clamp } from "@common/utils";
+import { formatBanExpiry } from "@server/moderation/filter";
 
 type CommandContext = (PenguinContext | RoomContext) & {
   bot: BotManager
@@ -262,7 +263,7 @@ const handleBanPlayer: CommandHandler<[string, number, string]> = ({ db, world, 
   if (onlineTarget) {
     onlineTarget.moderation.ban(banExpiry, banReason);
     prst(onlineTarget, true);
-    msg.send(onlineTarget, 'e', 600, banHours);
+    msg.send(onlineTarget, 'e', 600, formatBanExpiry(banExpiry));
     try {
       msg.getClient(onlineTarget).end();
     } catch {}

@@ -148,25 +148,51 @@ export function checkPII(text: string): { hasPII: boolean; reason?: string } {
 }
 
 /**
+ * Formats a ban expiry timestamp into Pacific Time (PST/PDT)
+ * e.g. "October 31, 2026 9:55 AM" as expected by the Flash client ban UI.
+ */
+export function formatBanExpiry(ms: number): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).formatToParts(new Date(ms));
+
+  const val = (type: string) => parts.find(p => p.type === type)?.value || '';
+  return `${val('month')} ${val('day')}, ${val('year')} ${val('hour')}:${val('minute')} ${val('dayPeriod')}`;
+}
+
+/**
  * Checks whether a penguin is currently banned and returns remaining hours.
  */
 export function getBanStatus(penguin: PenguinJson, now: number = Date.now()): {
   banned: boolean;
   remainingHours: number;
+  expiryDateString: string;
   reason?: string;
+  isInappropriateName?: boolean;
 } {
   if (penguin.banned_until !== null && penguin.banned_until !== undefined && penguin.banned_until > now) {
     const diffMs = penguin.banned_until - now;
     const remainingHours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+    const expiryDateString = formatBanExpiry(penguin.banned_until);
+    const isInappropriateName = Boolean(penguin.ban_reason?.toLowerCase().includes('inappropriate username'));
     return {
       banned: true,
       remainingHours,
-      reason: penguin.ban_reason
+      expiryDateString,
+      reason: penguin.ban_reason,
+      isInappropriateName
     };
   }
 
   return {
     banned: false,
-    remainingHours: 0
+    remainingHours: 0,
+    expiryDateString: ''
   };
 }

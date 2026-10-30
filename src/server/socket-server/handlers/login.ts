@@ -8,6 +8,7 @@ import serverList, { getServerPopulation } from "@server/servers";
 import { LoginContext } from "@server/socket-server/xml-handler";
 import { hashPassword, verifyPassword, verifyPenguinPassword } from "@server/auth/password";
 import { getBanStatus } from "@server/moderation/filter";
+import { validateUsername } from "@server/moderation/username-validator";
 
 const STARTING_COINS_CHANGE_DATE = '2008-07-15';
 
@@ -68,6 +69,16 @@ export const login: LoginHandler = async (ctx, message: string) => {
           return;
         }
 
+        const validation = validateUsername(nickname);
+        if (!validation.valid) {
+          if (validation.isInappropriate) {
+            sendError(msg, client, 603);
+          } else {
+            sendError(msg, client, 100);
+          }
+          return;
+        }
+
         const isHash = password.length === 32 && /^[0-9a-fA-F]+$/.test(password);
         const passwordPlain = (!isHash && password) ? password : undefined;
         const passwordHash = password ? await hashPassword(password) : undefined;
@@ -85,6 +96,19 @@ export const login: LoginHandler = async (ctx, message: string) => {
         const idLookup = await db.fromName(nickname);
         if (idLookup !== null) {
           const [existId, existJson] = idLookup;
+
+          // Check if username is inappropriate; if so, enforce ban immediately
+          const validation = validateUsername(nickname);
+          const initialBan = getBanStatus(existJson);
+          if (validation.isInappropriate && !initialBan.banned) {
+            existJson.banned_until = Date.now() + 876000 * 60 * 60 * 1000;
+            existJson.ban_reason = 'Inappropriate username';
+            await db.update(existId, existJson);
+            sendError(msg, client, 603);
+            setTimeout(() => client.end(), 700);
+            return;
+          }
+
           if (!existJson.password_hash && !existJson.password_plain) {
             if (password) {
               const isHash = password.length === 32 && /^[0-9a-fA-F]+$/.test(password);
@@ -111,7 +135,12 @@ export const login: LoginHandler = async (ctx, message: string) => {
 
           const banStatus = getBanStatus(existJson);
           if (banStatus.banned) {
-            msg.send(client, 'e', 600, banStatus.remainingHours);
+            if (banStatus.isInappropriateName) {
+              sendError(msg, client, 603);
+            } else {
+              msg.send(client, 'e', 600, banStatus.expiryDateString);
+            }
+            setTimeout(() => client.end(), 700);
             return;
           }
         }
@@ -134,8 +163,18 @@ export const login: LoginHandler = async (ctx, message: string) => {
       const offlineJson = offline.getJSON();
       const banStatus = getBanStatus(offlineJson);
       if (banStatus.banned) {
-        msg.send(client, 'e', 600, banStatus.remainingHours);
-        client.end();
+        msg.send(client, 'e', banStatus.isInappropriateName ? 603 : 600, banStatus.expiryDateString);
+        setTimeout(() => client.end(), 700);
+        return;
+      }
+
+      const nameVal = validateUsername(offlineJson.name);
+      if (nameVal.isInappropriate) {
+        offlineJson.banned_until = Date.now() + 876000 * 60 * 60 * 1000;
+        offlineJson.ban_reason = 'Inappropriate username';
+        await ctx.db.write(id, offlineJson);
+        msg.send(client, 'e', 603);
+        setTimeout(() => client.end(), 700);
         return;
       }
 

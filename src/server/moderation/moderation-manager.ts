@@ -3,18 +3,8 @@ import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import { Bot } from "@server/socket-server/world/bot";
 import { XtMessenger } from "@server/socket-server/xt-messenger";
 import { evaluateMessage, ModerationEvaluation } from "./localmod";
-import {
-  MODERATOR_WARNING_LINES,
-  MODERATOR_MUTE_LINES,
-  MODERATOR_KICK_LINES,
-  MODERATOR_BAN_LINES,
-  DEV_WARNING_LINES,
-  DEV_KICK_LINES,
-  DEV_BAN_LINES,
-  DEV_TARGETED_REACTIONS,
-  REGULAR_BOT_SHOCK_LINES
-} from "@server/socket-server/world/moderator-bot";
-import { choose, randomInt } from "@common/utils";
+import { formatBanExpiry } from "./filter";
+import { randomInt } from "@common/utils";
 import { PenguinRepository } from "@server/database/database";
 import { isBot } from "@server/socket-server/world/bots";
 
@@ -122,20 +112,7 @@ export class ModerationManager {
       interveningBot = this._ensureModeratorInRoom(room);
     }
 
-    // 4. Swift reaction from bystander regular bots (within 200-450ms)
-    const bystanderBots = botsInRoom.filter(b => b !== interveningBot && !b.isDev && !b.isModerator);
-    if (bystanderBots.length > 0 && Math.random() < 0.85) {
-      const shockBot = choose(bystanderBots);
-      const shockDelay = randomInt(200, 450);
-      setTimeout(() => {
-        const curRoom = shockBot.world.getPenguinRoom(shockBot.penguin);
-        if (curRoom?.id === room.id) {
-          shockBot.sendMessage(choose(REGULAR_BOT_SHOCK_LINES));
-        }
-      }, shockDelay);
-    }
-
-    // 5. Swift moderator intervention (within 350-700ms)
+    // 4. Swift silent moderator intervention (within 350-700ms)
     if (interveningBot) {
       const mod = interveningBot;
       const modDelay = randomInt(350, 700);
@@ -161,55 +138,24 @@ export class ModerationManager {
 
     this._lastInterventionTime.set(target.id, now);
 
-    // Turn/step towards offending player
-    const targetState = room.getState(target);
-    if (targetState) {
-      const offsetX = targetState.x > 400 ? -40 : 40;
-      modBot.walk(targetState.x + offsetX, targetState.y);
-    }
-
     const strikes = target.moderation.addStrike();
-    const isDev = modBot.isDev;
-    const lower = (originalMessage ?? '').toLowerCase();
-    const addressedDevDirectly = isDev && lower.includes(modBot.penguin.name.toLowerCase());
 
-    // Determine punishment escalation
-    if (evalResult.recommendedAction === 'ban' || strikes >= 4) {
+    // Determine punishment escalation (silent actions to prevent exposing moderator bots)
+    if (evalResult.flagged || evalResult.recommendedAction === 'ban' || strikes >= 4) {
       // 24h Ban
       const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
       target.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
       this.persistBan(target, banExpiry, `Moderator ban: ${evalResult.reason}`);
 
-      let banLine: string;
-      if (addressedDevDirectly) {
-        banLine = choose(DEV_TARGETED_REACTIONS);
-      } else if (isDev) {
-        banLine = choose(DEV_BAN_LINES);
-      } else {
-        banLine = choose(MODERATOR_BAN_LINES);
-      }
-      modBot.sendMessage(banLine);
-
       // Swift disconnect within 650ms
       setTimeout(() => {
-        this._msg.send(target, 'e', 600, 24);
+        this._msg.send(target, 'e', 600, formatBanExpiry(banExpiry));
         const client = this._msg.getClient(target);
         if (client) client.end();
       }, 650);
 
     } else if (evalResult.recommendedAction === 'kick' || strikes >= 3) {
-      // Kick from server
-      let kickLine: string;
-      if (addressedDevDirectly) {
-        kickLine = choose(DEV_TARGETED_REACTIONS);
-      } else if (isDev) {
-        kickLine = choose(DEV_KICK_LINES);
-      } else {
-        kickLine = choose(MODERATOR_KICK_LINES);
-      }
-      modBot.sendMessage(kickLine);
-
-      // Swift disconnect within 650ms
+      // Kick from server (silent)
       setTimeout(() => {
         this._msg.send(target, 'e', 610);
         const client = this._msg.getClient(target);
@@ -217,18 +163,13 @@ export class ModerationManager {
       }, 650);
 
     } else if (evalResult.recommendedAction === 'mute' || strikes >= 2) {
-      // 5-minute mute
+      // 5-minute mute (silent)
       const muteDurationMs = 5 * 60 * 1000;
       target.moderation.mute(now + muteDurationMs);
 
-      const muteLine = isDev ? choose(DEV_WARNING_LINES) : choose(MODERATOR_MUTE_LINES);
-      modBot.sendMessage(muteLine);
-
     } else {
-      // Strike 1 / Verbal warning
+      // Strike 1 / Verbal warning (silent record)
       target.moderation.addWarning(evalResult.reason);
-      const warnLine = isDev ? choose(DEV_WARNING_LINES) : choose(MODERATOR_WARNING_LINES);
-      modBot.sendMessage(warnLine);
     }
   }
 

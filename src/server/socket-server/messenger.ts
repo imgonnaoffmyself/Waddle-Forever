@@ -33,7 +33,13 @@ export abstract class Messenger<Penguin> {
       ps = [ps];
     }
 
-    await Promise.all(ps.map(p => (this.isPenguin(p) ? this._clients.get(p) : p)?.write(message + this._delimiter)));
+    await Promise.all(
+      ps.map(p =>
+        (this.isPenguin(p) ? this._clients.get(p) : p)
+          ?.write(message + this._delimiter)
+          .catch(() => {})
+      )
+    );
   }
 
   public close() {

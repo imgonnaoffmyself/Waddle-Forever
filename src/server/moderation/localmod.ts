@@ -1,3 +1,5 @@
+import http from 'http';
+
 export type ModerationCategory = 'toxicity' | 'harassment' | 'nsfw' | 'predatory' | 'spam' | 'none';
 export type ModerationAction = 'none' | 'warn' | 'mute' | 'kick' | 'ban';
 
@@ -41,9 +43,16 @@ const HATE_SPEECH_PATTERNS: RegExp[] = [
   // Ableist slurs
   /\b(?:retard|retarded|retards)\b/i,
   // Hate declarations targeting demographics
-  /\bi\s+hate\s+(?:coons|niggers|blacks|jews|muslims|gays|fags|trans|mexicans|asians|whites)\b/i,
-  /\b(?:kill\s+all\s+(?:blacks|jews|gays|fags|whites|muslims|cops))\b/i,
-  /\b(?:white\s+power|heil\s+hitler|gas\s+the\s+jews|nazi\s+salute)\b/i
+  /\bi\s+hate\s+(?:coons|niggers|blacks|africans|jews|muslims|gays|fags|trans|mexicans|asians|whites)\b/i,
+  /\b(?:kill\s+all\s+(?:blacks|africans|jews|gays|fags|whites|muslims|cops))\b/i,
+  /\b(?:white\s+power|heil\s+hitler|gas\s+the\s+jews|nazi\s+salute)\b/i,
+  // Racist violence, lynching, executions targeting protected groups
+  /\b(?:hung|hanged|hang|lynch(?:ed|ing)?)\s+(?:from\s+(?:trees?|ropes?|poles?)|all)\b/i,
+  /\b(?:africans?|blacks?|niggers?|jews?|muslims?|gays?|trans|minorities)\s+(?:need\s+to\s+be|should\s+be|must\s+be|ought\s+to\s+be)\s+(?:hung|hanged|killed|shot|lynched|exterminated|burned|gassed)\b/i,
+  /\b(?:kill|hang|lynch|shoot|burn|gas|exterminate|wipe\s+out)\s+(?:all\s+)?(?:africans?|blacks?|niggers?|jews?|muslims?|gays?|trans|minorities)\b/i,
+  /\b(?:lynch(?:ing|ed|es)?|lynch\s*mob)\b/i,
+  /\b(?:gas\s+(?:the\s+)?(?:jews|blacks|africans|gays))\b/i,
+  /\bmoonman\b/i
 ];
 
 const SEVERE_TOXICITY_PATTERNS: RegExp[] = [
@@ -237,6 +246,23 @@ export function classifyLocally(message: string): ModerationEvaluation {
   };
 }
 
+export interface LocalModClassifierResult {
+  classifier: string;
+  flagged: boolean;
+  confidence: number;
+  severity: string;
+  categories?: string[];
+  metadata?: Record<string, any>;
+  explanation?: string;
+}
+
+export interface LocalModAnalyzeResponse {
+  flagged: boolean;
+  results: LocalModClassifierResult[];
+  summary: string;
+  processing_time_ms: number;
+}
+
 /**
  * Evaluates a message using an external LocalMod server if reachable,
  * otherwise transparently falls back to our internal heuristic classifier.
@@ -245,68 +271,98 @@ export async function evaluateMessage(
   message: string,
   localmodUrl: string = 'http://127.0.0.1:8000'
 ): Promise<ModerationEvaluation> {
-  // If remote LocalMod is running, query its API endpoint
+  const localEval = classifyLocally(message);
+
   if (localmodUrl) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 200);
+      console.log(`[LocalMod] Sending message to API for analysis: "${message}"`);
+      const data = await new Promise<LocalModAnalyzeResponse>((resolve, reject) => {
+        const body = JSON.stringify({ text: message, classifiers: ['toxicity', 'spam', 'pii'] });
+        const reqOptions: http.RequestOptions = {
+          hostname: '127.0.0.1',
+          port: 8000,
+          path: '/analyze',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+          },
+          timeout: 30000
+        };
 
-      const response = await fetch(`${localmodUrl.replace(/\/+$/, '')}/moderate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: message }),
-        signal: controller.signal
+        const req = http.request(reqOptions, (res) => {
+          let raw = '';
+          res.on('data', (chunk: Buffer) => { raw += chunk; });
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try { resolve(JSON.parse(raw) as LocalModAnalyzeResponse); }
+              catch { reject(new Error('Invalid JSON')); }
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}`));
+            }
+          });
+        });
+
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+        req.write(body);
+        req.end();
       });
 
-      clearTimeout(timeoutId);
+      let nsfw = localEval.scores.nsfw;
+      let toxicity = localEval.scores.toxicity;
+      let spam = localEval.scores.spam;
+      let harassment = localEval.scores.harassment;
+      let predatory = localEval.scores.predatory;
 
-      if (response.ok) {
-        const data = (await response.json()) as any;
-        const cats = data.categories || {};
-        const toxicity = Number(cats.toxicity ?? cats.hate_speech ?? 0);
-        const harassment = Number(cats.harassment ?? 0);
-        const nsfw = Number(cats.nsfw ?? cats.sexual ?? 0);
-        const predatory = Number(cats.predatory ?? cats.child_safety ?? 0);
-        const spam = Number(cats.spam ?? 0);
-
-        const scores: Record<ModerationCategory, number> = {
-          predatory,
-          toxicity,
-          harassment,
-          nsfw,
-          spam,
-          none: 0
-        };
-
-        const maxScore = Math.max(predatory, toxicity, harassment, nsfw, spam);
-        let category: ModerationCategory = 'none';
-        if (maxScore === predatory && predatory > 0) category = 'predatory';
-        else if (maxScore === toxicity && toxicity > 0) category = 'toxicity';
-        else if (maxScore === harassment && harassment > 0) category = 'harassment';
-        else if (maxScore === nsfw && nsfw > 0) category = 'nsfw';
-        else if (maxScore === spam && spam > 0) category = 'spam';
-
-        let recommendedAction: ModerationAction = 'none';
-        if (maxScore >= 0.90) recommendedAction = 'ban';
-        else if (maxScore >= 0.80) recommendedAction = 'kick';
-        else if (maxScore >= 0.65) recommendedAction = 'mute';
-        else if (maxScore >= 0.40) recommendedAction = 'warn';
-
-        return {
-          flagged: data.flagged ?? maxScore >= 0.40,
-          category,
-          severity: maxScore,
-          recommendedAction,
-          reason: `localmod_api_${category}`,
-          scores
-        };
+      for (const res of data.results || []) {
+        const conf = Number(res.confidence ?? 0);
+        if (res.classifier === 'toxicity' && res.flagged) {
+          toxicity = Math.max(toxicity, conf, res.severity === 'critical' ? 0.95 : 0.85);
+        } else if (res.classifier === 'spam' && res.flagged) {
+          spam = Math.max(spam, conf, 0.70);
+        }
       }
-    } catch {
-      // LocalMod server not reachable or timed out; fall back to built-in classifier
+
+      const scores: Record<ModerationCategory, number> = {
+        predatory,
+        toxicity,
+        harassment,
+        nsfw,
+        spam,
+        none: 0
+      };
+
+      const maxScore = Math.max(predatory, toxicity, harassment, nsfw, spam);
+      let category: ModerationCategory = localEval.category;
+      if (maxScore === predatory && predatory > 0) category = 'predatory';
+      else if (maxScore === toxicity && toxicity > 0) category = 'toxicity';
+      else if (maxScore === harassment && harassment > 0) category = 'harassment';
+      else if (maxScore === nsfw && nsfw > 0) category = 'nsfw';
+      else if (maxScore === spam && spam > 0) category = 'spam';
+
+      const isFlagged = data.flagged || localEval.flagged || maxScore >= 0.40;
+      let recommendedAction: ModerationAction = 'none';
+      if (data.flagged || maxScore >= 0.90) recommendedAction = 'ban';
+      else if (maxScore >= 0.80) recommendedAction = 'kick';
+      else if (maxScore >= 0.65) recommendedAction = 'mute';
+      else if (maxScore >= 0.40) recommendedAction = 'warn';
+
+      console.log(`[LocalMod] Evaluated "${message}": flagged=${isFlagged}, category=${category}, action=${recommendedAction}`);
+
+      return {
+        flagged: isFlagged,
+        category,
+        severity: maxScore,
+        recommendedAction,
+        reason: (data.flagged && data.summary) ? data.summary : localEval.reason,
+        scores
+      };
+    } catch (err) {
+      console.error('[LocalMod] Request to moderation API failed:', err);
     }
   }
 
-  // Fallback to local heuristic classifier
-  return classifyLocally(message);
+  return localEval;
 }
 

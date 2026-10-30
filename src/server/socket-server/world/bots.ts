@@ -165,36 +165,36 @@ export class BotManager {
   }
 
   /**
-   * Ensures that at least one undercover moderator bot (or dev bot) is present in `room`.
-   * Moderator bots use normal penguin usernames and blend into the crowd.
+   * Ensures that at least one undercover moderator bot is present in `room`.
+   * Moderator bots use normal penguin usernames and blend into the crowd (strictly non-devs).
    */
   public ensureModeratorInRoom(room: WorldRoom): Bot | undefined {
-    // 1. Check if room already has a moderator (either undercover moderator bot or dev bot)
+    // 1. Check if room already has an undercover moderator bot (strictly not a dev)
     const existing = room.players
       .filter(p => isBot(p))
       .map(p => this._bots.get(p.id))
-      .find(b => b !== undefined && b.isModerator);
+      .find(b => b !== undefined && !b.isDev && b.isModerator);
     if (existing) {
       return existing;
     }
 
-    // 2. If room has free bots, designate one as an undercover moderator
+    // 2. If room has free regular bots, designate one as an undercover moderator
     const freeBot = room.players
       .filter(p => isBot(p))
       .map(p => this._bots.get(p.id))
-      .find(b => b !== undefined && !b.busy);
+      .find(b => b !== undefined && !b.isDev && !b.busy);
     if (freeBot) {
       freeBot.setModerator(true);
       return freeBot;
     }
 
     // 3. Move an existing moderator bot from another room that has excess moderators,
-    // or an idle bot from another room
+    // or an idle regular bot from another room (never move devs!)
     const candidateBot = [...this._bots.values()].find(b => {
-      if (b.busy || b.isHostingIgloo || b.isPartyHomie) return false;
+      if (b.isDev || b.busy || b.isHostingIgloo || b.isPartyHomie) return false;
       const bRoom = this._world.getPenguinRoom(b.penguin);
       if (!bRoom || bRoom.id === room.id) return false;
-      const modsInBRoom = bRoom.players.filter(p => isBot(p) && this._bots.get(p.id)?.isModerator).length;
+      const modsInBRoom = bRoom.players.filter(p => isBot(p) && !this._bots.get(p.id)?.isDev && this._bots.get(p.id)?.isModerator).length;
       return modsInBRoom > 1 || !bRoom.hasRealPlayers;
     });
 
@@ -1101,9 +1101,6 @@ export class BotManager {
 
     if (botsInRoom.length === 0) return;
 
-    // Live moderation evaluation and swift bot reactions
-    this._moderationManager.handlePlayerChat(room, player, message, botsInRoom);
-
     // Check ambient non-Club-Penguin conversation topics
     const nonDevBots = botsInRoom.filter(b => !b.isDev && !b.isModerator);
     if (nonDevBots.length > 0) {
@@ -1157,22 +1154,6 @@ export class BotManager {
         if (!devKeywords.some(kw => lower.includes(kw))) {
           continue;
         }
-      }
-      if (bot.isModerator) {
-        // Moderator bots only respond to safety/help/mod queries
-        const modKeywords = ['mod', 'moderator', 'rules', 'safe', 'safety', 'police', 'officer', 'report', 'help'];
-        if (!modKeywords.some(kw => lower.includes(kw))) {
-          continue;
-        }
-        const modLines = [
-          'safety first! please follow the island rules :)',
-          'remember: be respectful to other penguins!',
-          'on duty! let a mod know if someone breaks rules.',
-          'waddle on! keep Club Penguin safe and fun.'
-        ];
-        bot.sendMessage(choose(modLines));
-        respondents++;
-        break;
       }
       const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
 

@@ -9,7 +9,8 @@ import { WaddleRoom } from "@server/socket-server/world/waddle-room";
 import { WaddleGame } from "@server/socket-server/world/waddle-game";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
-import { checkProfanity, checkPII } from "@server/moderation/filter";
+import { checkProfanity, checkPII, formatBanExpiry } from "@server/moderation/filter";
+import { evaluateMessage } from "@server/moderation/localmod";
 import { getCommandsHandler } from "@server/commands/commands";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg, data }, x, y) => {
@@ -126,12 +127,13 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
       penguin.moderation.ban(banExpiry, `Inappropriate language (24h autoban): "${profanity.matchedWord ?? message}"`);
       prst(penguin, true);
 
-      if (data.isPreCpip()) {
-        await msg.send(penguin, 'e', 5, profanity.matchedWord ?? message);
-      } else {
-        await msg.send(penguin, 'e', 600, 24);
-      }
-      client.end();
+      // Display the ban screen with Pacific date/time as expected by the Flash client ban UI
+      msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+
+      // Allow the ban packet to be fully delivered so the client displays the ban modal
+      setTimeout(() => {
+        client.end();
+      }, 700);
       return;
     }
 
@@ -165,9 +167,42 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
     }
   }
 
+  // 1. BROADCAST TO ROOM FIRST
   msg.send(room.players, 'sm', _penguinIdParam, message);
+
+  // 2. AFTER MESSAGE HAS ALREADY BEEN BROADCAST:
   if (!isBot(penguin)) {
-    bot?.onPlayerChat(room, penguin, message);
+    // Check if there was a moderator in the room at the time it was said
+    const modBot = room.players
+      .filter(p => isBot(p))
+      .map(p => bot?.getBot(p.id))
+      .find(b => b !== undefined && (b.isModerator || b.isDev));
+
+    const hasModeratorInRoom = Boolean(modBot);
+
+    // Send off to LocalMod for evaluation
+    evaluateMessage(message).then((evalResult) => {
+      if (evalResult.flagged) {
+        console.log(`[LocalMod] Flagged message from ${penguin.name} in room ${room.id}: "${message}" -> ${evalResult.reason}`);
+
+        // If there was a moderator in the room at the time it was said, trigger a ban!
+        if (hasModeratorInRoom) {
+          const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+          penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
+          prst(penguin, true);
+          msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+          setTimeout(() => {
+            client.end();
+          }, 700);
+        }
+      } else {
+        // Safe message: run ambient bot dialogue triggers
+        bot?.onPlayerChat(room, penguin, message);
+      }
+    }).catch((err) => {
+      console.error('[LocalMod] Error during evaluation:', err);
+      bot?.onPlayerChat(room, penguin, message);
+    });
   }
 }
 

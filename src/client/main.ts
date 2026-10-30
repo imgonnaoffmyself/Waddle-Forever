@@ -15,6 +15,7 @@ import { NAME, VERSION, WEBSITE } from '@common/constants';
 import { Popups } from './popups';
 import { WorldServer } from '@server/socket-server/world-server';
 import { startServices } from '@server/boot';
+import { stopLocalModService } from '@server/moderation/localmod-service';
 
 log.initialize();
 
@@ -182,7 +183,12 @@ ${failedMods.map(mod => `* ${mod}`).join('\n')}`
 });
 
 
+app.on('will-quit', () => {
+  stopLocalModService();
+});
+
 app.on('window-all-closed', async () => {
+  stopLocalModService();
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
