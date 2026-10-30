@@ -16,7 +16,6 @@ import { NPC_NAME_POOL } from "@server/npc/npc-names";
 import { PersonalityTrait } from "@server/npc/npc-types";
 import { DEV_NPC_NAMES, DEV_NPC_TRAITS } from "@server/npc/npc-manager";
 import { sampleRandomAgeGroup } from "@server/npc/ambient-dialogue";
-import { isModeratorName, getModeratorOutfit } from "./moderator-bot";
 
 // TODO -> Easter Egg names
 //         Game Day NPCs
@@ -333,19 +332,6 @@ function generateRandomPenguin(
     }
   }
 
-  if (forcedName && isModeratorName(forcedName)) {
-    const modOutfit = getModeratorOutfit();
-    const modItems = [modOutfit.color, modOutfit.head, modOutfit.face, modOutfit.neck, modOutfit.body, modOutfit.hand].filter((id): id is number => typeof id === 'number' && id > 0);
-    return {
-      ...base,
-      ...modOutfit,
-      inventory: [...new Set([...inventory, ...modItems])],
-      is_member: true,
-      is_agent: true,
-      noSave: true
-    };
-  }
-
   const outfit = generateRandomOutfit(data, inventory, isMember);
   if (isDev && data.getDate() === '2005-09-21') {
     outfit.head = 413;
@@ -410,13 +396,6 @@ export function generateBots(data: GameData, amount: number): Array<[BotAttribut
       if (bots.length >= amount) break;
       bots.push(generateRandomBot(data, name, DEV_NPC_TRAITS[name], true));
     }
-  }
-
-  // Ensure on-duty moderator bots are roaming the island
-  const modBotsToSpawn = ['Officer_Fluff', 'Mod_Sarah'];
-  for (const modName of modBotsToSpawn) {
-    if (bots.length >= amount) break;
-    bots.push(generateRandomBot(data, modName, 'friendly', true));
   }
 
   while (bots.length < amount) {

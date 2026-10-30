@@ -103,6 +103,7 @@ const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) =>
   const { penguin, msg, data, world, bot } = ctx;
   if (!isBot(penguin)) {
     bot?.resolveBuddyNameConflicts(r, penguin);
+    bot?.ensureModeratorInRoom(r);
   } else if (bot?.hasBuddyNameConflictForBot(r, penguin)) {
     const botObj = bot.getBot(penguin.id);
     const altRoomId = botObj ? botObj.chooseRoom() : undefined;

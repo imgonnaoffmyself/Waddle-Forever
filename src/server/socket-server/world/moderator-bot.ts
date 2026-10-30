@@ -1,47 +1,4 @@
-import { PenguinEquipped } from "@server/socket-server/world/world-penguin";
 import { choose } from "@common/utils";
-
-export const MOD_BOT_NAMES = [
-  'Mod_Bob',
-  'Mod_Sarah',
-  'Mod_Dan',
-  'Mod_Emily',
-  'Officer_Fluff',
-  'Mod_Penguin',
-  'Safety_Sam',
-  'CP_Patrol'
-] as const;
-
-export const MOD_BOT_NAME_SET = new Set<string>(MOD_BOT_NAMES);
-
-export function isModeratorName(name: string): boolean {
-  return MOD_BOT_NAME_SET.has(name);
-}
-
-/**
- * Generates an authentic Club Penguin moderator/safety officer outfit.
- */
-export function getModeratorOutfit(): PenguinEquipped {
-  // Classic police / security / safety officer uniform items
-  const colors = [2, 3, 4, 8]; // Navy, Dark Green, Black, Light Blue
-  const heads = [408, 404, 428, 0]; // Police Cap (408), Hard Hat (404), Tour Hat (428)
-  const faces = [101, 102, 0]; // Agent Sunglasses (101), Black Glasses (102)
-  const necks = [202, 210, 0]; // Black Tie (202), Whistle (210)
-  const bodies = [308, 304, 301, 0]; // Police Vest (308), Safety Vest (304), Suit (301)
-  const hands = [308, 323, 342, 0]; // Megaphone (308), Stop Sign (323), Magnifying Glass (342)
-
-  return {
-    color: choose(colors),
-    head: choose(heads),
-    face: choose(faces),
-    neck: choose(necks),
-    body: choose(bodies),
-    hand: choose(hands),
-    feet: 0,
-    pin: 0,
-    background: 0
-  };
-}
 
 // ─────────────────────────────────────────────────────────────
 // Moderator Bot Dialogue Lines (all strictly <= 48 characters)
@@ -49,20 +6,12 @@ export function getModeratorOutfit(): PenguinEquipped {
 
 export const MODERATOR_IDLE_LINES: string[] = [
   'safety patrol! hope everyone is having fun :)',
-  'officer on duty! let me know if you need help',
+  'island moderator here! enjoy your day :)',
   'keep Club Penguin safe and friendly everyone!',
   'remember: never share your personal info online',
   'everything looks peaceful here! waddle on :)',
-  'on island safety patrol. have a great day! :)',
+  'having fun everyone? keep it safe and friendly!',
   'respect other penguins and enjoy the island!'
-];
-
-export const MODERATOR_DISPATCH_ARRIVAL_LINES: string[] = [
-  'moderator on the scene! is everyone okay?',
-  'i received a report in this room. stay calm.',
-  'moderator on patrol. please follow the rules.',
-  'let\'s keep things safe and friendly in here.',
-  'safety officer here! what seems to be going on?'
 ];
 
 export const MODERATOR_WARNING_LINES: string[] = [
@@ -82,11 +31,57 @@ export const MODERATOR_MUTE_LINES: string[] = [
 export const MODERATOR_KICK_LINES: string[] = [
   'you have been removed from the island.',
   'kicked for breaking Club Penguin safety rules.',
-  'you were kicked for disruptive behavior.'
+  'you were kicked for disruptive behavior.',
+  'that is not allowed here. you are kicked.'
 ];
 
 export const MODERATOR_BAN_LINES: string[] = [
   'your account has been banned for 24 hours.',
   'banned for severe violation of island rules.',
-  'banned for 24 hours: inappropriate conduct.'
+  'banned for 24 hours: inappropriate conduct.',
+  'zero tolerance for that. your account is banned'
 ];
+
+// Canadian developer moderator lines (polite yet firm!)
+export const DEV_WARNING_LINES: string[] = [
+  'hey, please keep the island friendly eh!',
+  'whoa, watch the language! let\'s keep it safe.',
+  'that\'s not cool. please follow the rules eh.',
+  'friendly reminder: keep it clean on our island!'
+];
+
+export const DEV_KICK_LINES: string[] = [
+  'sorry eh, but that is not allowed on our game.',
+  'that\'s completely inappropriate. kicked!',
+  'we have rules here! you have been removed.',
+  'kicked for breaking our community rules, eh.'
+];
+
+export const DEV_BAN_LINES: string[] = [
+  'absolutely not on our watch. banned for 24h.',
+  'zero tolerance for that. 24h ban issued.',
+  'banned for 24 hours. keep Club Penguin safe!',
+  'banned for 24h for inappropriate conduct eh.'
+];
+
+// Dev lines when specifically addressed by an offending player
+export const DEV_TARGETED_REACTIONS: string[] = [
+  'excuse me?! that\'s completely inappropriate.',
+  'what is wrong with you?! absolutely not.',
+  'not cool at all. enjoy the ban eh.',
+  'uh no way. that is completely unacceptable.'
+];
+
+// Regular bot shock lines when witnessing rule-breaking
+export const REGULAR_BOT_SHOCK_LINES: string[] = [
+  'what the heck?!',
+  'eww!! reported!!',
+  'MODS!!',
+  'gross!!',
+  'reported! that is so not okay.',
+  'enjoy the ban lol',
+  'why would you say that?!',
+  'get him out of here!!',
+  'mods are gonna ban you for that!'
+];
+

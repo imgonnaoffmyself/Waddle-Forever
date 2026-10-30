@@ -1,4 +1,4 @@
-export type ModerationCategory = 'toxicity' | 'harassment' | 'inappropriate' | 'spam' | 'none';
+export type ModerationCategory = 'toxicity' | 'harassment' | 'nsfw' | 'predatory' | 'spam' | 'none';
 export type ModerationAction = 'none' | 'warn' | 'mute' | 'kick' | 'ban';
 
 export interface ModerationEvaluation {
@@ -10,69 +10,171 @@ export interface ModerationEvaluation {
   scores: Record<ModerationCategory, number>;
 }
 
-// Heuristic pattern definitions for built-in local moderation
-const SEVERE_TOXICITY_PATTERNS: RegExp[] = [
-  /\b(?:kys|kill\s*your\s*self|go\s*die|hope\s*you\s*die|drink\s*bleach)\b/i,
-  /\b(?:slit\s*your\s*wrists|hang\s*your\s*self)\b/i,
-  /\b(?:die\s+in\s+a\s+fire|shoot\s*your\s*self)\b/i
+// ─────────────────────────────────────────────────────────────
+// 1. Predatory Conduct, Grooming & Child Exploitation (Zero Tolerance)
+// ─────────────────────────────────────────────────────────────
+const PREDATORY_PATTERNS: RegExp[] = [
+  // Direct statements of touching or harming kids/minors
+  /\b(?:i\s+touch\s+(?:kids|children|minors|babies|little\s+(?:girls?|boys?|ones?)))\b/i,
+  /\b(?:touch(?:ing)?|fondl(?:e|ing)|molest(?:ing)?|groom(?:ing)?)\s+(?:kids|children|minors|little\s+(?:girls?|boys?)|toddlers?)\b/i,
+  /\b(?:i\s+like|i\s+love)\s+(?:little\s+(?:girls?|boys?)|kids\s+in\s+a\s+sexual\s+way)\b/i,
+  // Pedophilia identifiers
+  /\b(?:pedophil(?:e|ia)|pedo|paedo|paedophile|pedobear|child\s*toucher|kid\s*toucher|child\s*molester|diddler)\b/i,
+  // Underage sexual references
+  /\b(?:underage|minor)\s+(?:sex|dating|naked|pics|nudes?|porn)\b/i,
+  /\b(?:sex\s+with\s+(?:minors|kids|children|little\s+(?:girls?|boys?)))\b/i,
+  // Jeffrey Epstein / Pedophile ring references
+  /\b(?:epstein(?:'s|s)?|jeffrey\s+epstein|epstein\s+island|lolita\s+express)\b/i,
+  // Solicitation targeting children
+  /\b(?:wanna\s+see\s+my\s+cp|send\s+cp)\b/i,
+  /\b(?:are\s+you\s+a\s+little\s+(?:girl|boy)|how\s+old\s+are\s+you\s+little)\b/i
 ];
 
+// ─────────────────────────────────────────────────────────────
+// 2. Hate Speech, Extremism & Extreme Toxicity
+// ─────────────────────────────────────────────────────────────
+const HATE_SPEECH_PATTERNS: RegExp[] = [
+  // Racial and ethnic slurs
+  /\b(?:coon|coons|nigger|niggers|nigga|niggas|chink|chinks|kike|kikes|spic|spics|gook|gooks|wetback|wetbacks)\b/i,
+  // Anti-LGBTQ+ slurs
+  /\b(?:faggot|faggots|fag|fags|tranny|trannies|shemale)\b/i,
+  // Ableist slurs
+  /\b(?:retard|retarded|retards)\b/i,
+  // Hate declarations targeting demographics
+  /\bi\s+hate\s+(?:coons|niggers|blacks|jews|muslims|gays|fags|trans|mexicans|asians|whites)\b/i,
+  /\b(?:kill\s+all\s+(?:blacks|jews|gays|fags|whites|muslims|cops))\b/i,
+  /\b(?:white\s+power|heil\s+hitler|gas\s+the\s+jews|nazi\s+salute)\b/i
+];
+
+const SEVERE_TOXICITY_PATTERNS: RegExp[] = [
+  /\b(?:kys|kill\s*your\s*self|go\s*die|hope\s*you\s*die|drink\s*bleach)\b/i,
+  /\b(?:slit\s*your\s*wrists?|hang\s*your\s*self|jump\s+off\s+a\s+bridge)\b/i,
+  /\b(?:die\s+in\s+a\s+fire|shoot\s*your\s*self|swallow\s+pills)\b/i
+];
+
+// ─────────────────────────────────────────────────────────────
+// 3. NSFW, Explicit Sexual Conduct & Solicitation
+// ─────────────────────────────────────────────────────────────
+const NSFW_EXPLICIT_PATTERNS: RegExp[] = [
+  // Oral sex and explicit sexual requests
+  /\b(?:suck\s+me\s+off|suck\s+(?:my\s+)?(?:dick|cock|nuts|balls|schlong|penis|willy|pecker|meat))\b/i,
+  /\b(?:lick\s+(?:my\s+)?(?:nuts|balls|cock|dick|ass|pussy|clit|taint|hole|shaft))\b/i,
+  /\b(?:eat\s+(?:each\s+other\s+out|me\s+out|her\s+out|my\s+ass|out))\b/i,
+  /\b(?:blow\s*job|blowjob|hand\s*job|handjob|foot\s*job|rim\s*job|cum\s*shot)\b/i,
+  /\b(?:jerk(?:ing)?\s*off|masturbat(?:e|ing)|wank(?:ing)?)\b/i,
+  // Sex acts / intercourse
+  /\b(?:fuck\s+me|fuck\s+her|fuck\s+him|have\s+sex|sleep\s+with\s+me|wanna\s+have\s+sex|cyber\s*sex)\b/i,
+  // Solicitation & Prostitution / Sexual trade
+  /\b(?:who\s+wants\s+to\s+(?:me\s+)?suck\s+me\s+off|who\s+wants\s+to\s+fuck|who\s+wants\s+to\s+have\s+sex)\b/i,
+  /\b(?:who\s+wants\s+to\s+(?:eat\s+me\s+out|make\s+out|strip))\b/i,
+  /\b(?:for\s+a\s+pound|for\s+(?:\d+|coins|money|cash|robux|free))\b.*(?:suck|fuck|sex|blowjob|strip|nudes?|eat\s+out)/i,
+  /\b(?:suck|fuck|sex|eat\s+out|blowjob).*(?:for\s+a\s+pound|for\s+(?:\d+|coins|money|cash))\b/i,
+  // Genitalia / explicit anatomy
+  /\b(?:nutsack|scrotum|cock|dick|penis|pussy|vagina|boobs|tits|clit|asshole|dildo)\b/i,
+  /\b(?:cum\s+on|cumming|orgasm|ejaculat(?:e|ion))\b/i,
+  // Adult roleplay & in-game dating
+  /\b(?:strip|get\s+naked|take\s+off\s+your\s+clothes|touch\s+my|horny|sensual)\b/i,
+  /\b(?:be\s*my\s*(?:gf|bf|girlfriend|boyfriend)|will\s*you\s*(?:date|marry)\s*me|wanna\s*date)\b/i,
+  /\b(?:dating\s+in\s+(?:the\s+)?(?:boiler\s*room|pizza\s*parlor|igloo|cove|box\s*dimension))\b/i
+];
+
+// ─────────────────────────────────────────────────────────────
+// 4. Harassment & Bullying
+// ─────────────────────────────────────────────────────────────
 const HARASSMENT_PATTERNS: RegExp[] = [
   /\b(?:you(?:'re|\s+are)\s+(?:so\s+)?(?:ugly|stupid|dumb|fat|trash|garbage|pathetic|horrible|useless|annoying|gross|disgusting))\b/i,
   /\b(?:shut\s*up|stfu|get\s*lost|nobody\s*likes\s*you|go\s*away|nobody\s*cares\s*about\s*you)\b/i,
-  /\b(?:idiot|moron|loser|freak|clown|scumbag|crybaby|cry\s*baby|worthless)\b/i,
+  /\b(?:idiot|moron|loser|freak|scumbag|crybaby|cry\s*baby|worthless|clown)\b/i,
   /\b(?:i\s*hate\s*you|you\s*suck|uninstall\s*life|you\s*are\s*a\s*mistake)\b/i,
   /\b(?:leave\s*the\s*game|get\s*out\s*of\s*here\s*loser)\b/i
 ];
 
-const INAPPROPRIATE_DATING_PATTERNS: RegExp[] = [
-  /\b(?:be\s*my\s*(?:gf|bf|girlfriend|boyfriend)|will\s*you\s*(?:date|marry)\s*me|wanna\s*date)\b/i,
-  /\b(?:kiss\s*me|make\s*out|naked|strip|strip\s*club|sexy|hot\s*penguin|in\s*bed)\b/i,
-  /\b(?:take\s*off\s*your\s*(?:clothes|shirt|pants|costume))\b/i,
-  /\b(?:dating\s+in\s+(?:the\s+)?(?:boiler\s*room|pizza\s*parlor|igloo))\b/i,
-  /\b(?:boobs|tits|penis|vagina|horny|sensual)\b/i
-];
+/**
+ * Normalizes repeated punctuation or spacing to catch evasion like "s.u.c.k" or "f  u  c  k"
+ */
+function normalizeEvasions(text: string): string {
+  // Collapse separated letters: "l i c k" -> "lick"
+  let norm = text.replace(/(?:^|\s)((?:[a-zA-Z][\s._\-*~]+)+[a-zA-Z])(?:\s|$)/g, (_m, g) => {
+    return ' ' + g.replace(/[\s._\-*~]+/g, '') + ' ';
+  });
+  // Replace common leetspeak substitutions
+  norm = norm
+    .toLowerCase()
+    .replace(/[@4]/g, 'a')
+    .replace(/[3]/g, 'e')
+    .replace(/[1!|]/g, 'i')
+    .replace(/[0]/g, 'o')
+    .replace(/[$5]/g, 's')
+    .replace(/[7]/g, 't');
+  return norm;
+}
 
 /**
- * Built-in local moderation classifier providing instant, zero-dependency evaluation.
+ * Built-in local moderation classifier providing instant, zero-dependency evaluation
+ * mirroring LocalMod's 6 classifier taxonomy.
  */
 export function classifyLocally(message: string): ModerationEvaluation {
+  let predatoryScore = 0.0;
   let toxicityScore = 0.0;
   let harassmentScore = 0.0;
-  let inappropriateScore = 0.0;
+  let nsfwScore = 0.0;
   let spamScore = 0.0;
   let primaryReason = '';
 
-  const trimmed = message.trim();
+  const raw = message.trim();
+  const normalized = normalizeEvasions(raw);
 
-  // 1. Check severe toxicity / death threats
-  for (const pat of SEVERE_TOXICITY_PATTERNS) {
-    if (pat.test(trimmed)) {
-      toxicityScore = 0.96;
-      primaryReason = 'severe_toxicity';
+  // 1. Check predatory conduct & child exploitation (Maximum severity)
+  for (const pat of PREDATORY_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      predatoryScore = 1.0;
+      primaryReason = 'child_predation_or_grooming';
       break;
     }
   }
 
-  // 2. Check targeted harassment & bullying
+  // 2. Check hate speech & severe toxicity
+  for (const pat of HATE_SPEECH_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      toxicityScore = Math.max(toxicityScore, 0.98);
+      if (!primaryReason) primaryReason = 'hate_speech';
+      break;
+    }
+  }
+
+  for (const pat of SEVERE_TOXICITY_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      toxicityScore = Math.max(toxicityScore, 0.96);
+      if (!primaryReason) primaryReason = 'severe_toxicity_or_threats';
+      break;
+    }
+  }
+
+  // 3. Check NSFW, explicit sexual acts, oral sex, genitals & solicitation
+  for (const pat of NSFW_EXPLICIT_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      // Differentiate explicit sexual acts vs mild dating
+      const isMildDating = /\b(?:be\s*my\s*(?:gf|bf|girlfriend|boyfriend)|wanna\s*date)\b/i.test(raw) &&
+        !/\b(?:suck|lick|eat\s+out|fuck|dick|cock|nuts|balls|pussy|vagina|boobs|strip|naked)\b/i.test(raw);
+
+      const score = isMildDating ? 0.60 : 0.94;
+      nsfwScore = Math.max(nsfwScore, score);
+      if (!primaryReason) primaryReason = isMildDating ? 'dating_conduct' : 'explicit_nsfw_sexual';
+      if (!isMildDating) break;
+    }
+  }
+
+  // 4. Check targeted harassment & bullying
   for (const pat of HARASSMENT_PATTERNS) {
-    if (pat.test(trimmed)) {
-      harassmentScore = Math.max(harassmentScore, 0.72);
+    if (pat.test(raw) || pat.test(normalized)) {
+      harassmentScore = Math.max(harassmentScore, 0.75);
       if (!primaryReason) primaryReason = 'harassment';
+      break;
     }
   }
 
-  // 3. Check inappropriate dating / adult themes
-  for (const pat of INAPPROPRIATE_DATING_PATTERNS) {
-    if (pat.test(trimmed)) {
-      inappropriateScore = Math.max(inappropriateScore, 0.75);
-      if (!primaryReason) primaryReason = 'inappropriate_conduct';
-    }
-  }
-
-  // 4. Check spam / disruptive behavior
-  // Check repetition of same word 4+ times
-  const words = trimmed.split(/\s+/);
+  // 5. Check repetitive spam / disruptive behavior
+  const words = raw.split(/\s+/);
   if (words.length >= 4) {
     const wordCounts = new Map<string, number>();
     for (const w of words) {
@@ -86,16 +188,18 @@ export function classifyLocally(message: string): ModerationEvaluation {
     }
   }
 
-  // Check all caps screaming if message length > 10
-  if (trimmed.length > 10 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) {
+  // All caps screaming if message length > 12
+  if (raw.length > 12 && raw === raw.toUpperCase() && /[A-Z]/.test(raw)) {
     spamScore = Math.max(spamScore, 0.40);
+    if (!primaryReason) primaryReason = 'excessive_caps_spam';
   }
 
-  // Determine top category and overall severity
+  // Map scores
   const scores: Record<ModerationCategory, number> = {
+    predatory: predatoryScore,
     toxicity: toxicityScore,
     harassment: harassmentScore,
-    inappropriate: inappropriateScore,
+    nsfw: nsfwScore,
     spam: spamScore,
     none: 0.0
   };
@@ -141,13 +245,12 @@ export async function evaluateMessage(
   message: string,
   localmodUrl: string = 'http://127.0.0.1:8000'
 ): Promise<ModerationEvaluation> {
-  // If remote localmod is running, query its API endpoint
+  // If remote LocalMod is running, query its API endpoint
   if (localmodUrl) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 350);
+      const timeoutId = setTimeout(() => controller.abort(), 200);
 
-      // Try localmod /moderate endpoint
       const response = await fetch(`${localmodUrl.replace(/\/+$/, '')}/moderate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,22 +265,25 @@ export async function evaluateMessage(
         const cats = data.categories || {};
         const toxicity = Number(cats.toxicity ?? cats.hate_speech ?? 0);
         const harassment = Number(cats.harassment ?? 0);
-        const inappropriate = Number(cats.nsfw ?? cats.sexual ?? 0);
+        const nsfw = Number(cats.nsfw ?? cats.sexual ?? 0);
+        const predatory = Number(cats.predatory ?? cats.child_safety ?? 0);
         const spam = Number(cats.spam ?? 0);
 
         const scores: Record<ModerationCategory, number> = {
+          predatory,
           toxicity,
           harassment,
-          inappropriate,
+          nsfw,
           spam,
           none: 0
         };
 
-        const maxScore = Math.max(toxicity, harassment, inappropriate, spam);
+        const maxScore = Math.max(predatory, toxicity, harassment, nsfw, spam);
         let category: ModerationCategory = 'none';
-        if (maxScore === toxicity && toxicity > 0) category = 'toxicity';
+        if (maxScore === predatory && predatory > 0) category = 'predatory';
+        else if (maxScore === toxicity && toxicity > 0) category = 'toxicity';
         else if (maxScore === harassment && harassment > 0) category = 'harassment';
-        else if (maxScore === inappropriate && inappropriate > 0) category = 'inappropriate';
+        else if (maxScore === nsfw && nsfw > 0) category = 'nsfw';
         else if (maxScore === spam && spam > 0) category = 'spam';
 
         let recommendedAction: ModerationAction = 'none';
@@ -203,3 +309,4 @@ export async function evaluateMessage(
   // Fallback to local heuristic classifier
   return classifyLocally(message);
 }
+

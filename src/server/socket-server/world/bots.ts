@@ -146,7 +146,11 @@ export class BotManager {
     private disconnect: (b: Bot) => void,
     private _db?: PenguinRepository
   ) {
-    this._moderationManager = new ModerationManager(this._msg, this._db, () => this.getModeratorBot());
+    this._moderationManager = new ModerationManager(
+      this._msg,
+      this._db,
+      (room: WorldRoom) => this.ensureModeratorInRoom(room)
+    );
     this.initSavedBots().then(() => {
       this.syncTimelineDate();
     });
@@ -158,6 +162,89 @@ export class BotManager {
 
   public getModeratorBot(): Bot | undefined {
     return [...this._bots.values()].find(b => b.isModerator);
+  }
+
+  /**
+   * Ensures that at least one undercover moderator bot (or dev bot) is present in `room`.
+   * Moderator bots use normal penguin usernames and blend into the crowd.
+   */
+  public ensureModeratorInRoom(room: WorldRoom): Bot | undefined {
+    // 1. Check if room already has a moderator (either undercover moderator bot or dev bot)
+    const existing = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .find(b => b !== undefined && b.isModerator);
+    if (existing) {
+      return existing;
+    }
+
+    // 2. If room has free bots, designate one as an undercover moderator
+    const freeBot = room.players
+      .filter(p => isBot(p))
+      .map(p => this._bots.get(p.id))
+      .find(b => b !== undefined && !b.busy);
+    if (freeBot) {
+      freeBot.setModerator(true);
+      return freeBot;
+    }
+
+    // 3. Move an existing moderator bot from another room that has excess moderators,
+    // or an idle bot from another room
+    const candidateBot = [...this._bots.values()].find(b => {
+      if (b.busy || b.isHostingIgloo || b.isPartyHomie) return false;
+      const bRoom = this._world.getPenguinRoom(b.penguin);
+      if (!bRoom || bRoom.id === room.id) return false;
+      const modsInBRoom = bRoom.players.filter(p => isBot(p) && this._bots.get(p.id)?.isModerator).length;
+      return modsInBRoom > 1 || !bRoom.hasRealPlayers;
+    });
+
+    if (candidateBot) {
+      candidateBot.setModerator(true);
+      const oldRoom = this._world.getPenguinRoom(candidateBot.penguin);
+      if (oldRoom) oldRoom.removePenguin(candidateBot.penguin);
+      const [x, y] = getRandomPointInRoom(room);
+      room.addPenguin(candidateBot.penguin, x, y);
+      this._world.enterState(candidateBot.penguin, { room });
+      candidateBot.teleportTo(room, x, y);
+      return candidateBot;
+    }
+
+    // 4. If population allows, spawn a new undercover bot directly into this room
+    if (this._on && this._bots.size < MAX_SIZE) {
+      const newBot = this.spawn({ roomId: room.id });
+      if (newBot) {
+        newBot.setModerator(true);
+        return newBot;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Scans rooms across the island to ensure every public room and room with real players
+   * has at least one undercover moderator bot.
+   */
+  public ensureModeratorsIslandWide(): void {
+    if (this._bots.size === 0) return;
+
+    // First ensure all rooms with real human players
+    const humanRooms = this.humanRooms();
+    for (const room of humanRooms) {
+      this.ensureModeratorInRoom(room);
+    }
+
+    // Then ensure all available public rooms
+    const availableRooms = this._data.getAvailableRooms();
+    for (const roomName of availableRooms) {
+      const rId = ROOMS[roomName]?.id;
+      if (rId !== undefined && rId < IGLOO_ROOM_BASE) {
+        const room = this._world.getRoom(rId);
+        if (room && room.players.filter(p => isBot(p)).length > 0) {
+          this.ensureModeratorInRoom(room);
+        }
+      }
+    }
   }
 
   private async initSavedBots(): Promise<void> {
@@ -1004,6 +1091,9 @@ export class BotManager {
       return;
     }
 
+    // Ensure room has at least one undercover moderator bot
+    this.ensureModeratorInRoom(room);
+
     const botsInRoom = room.players
       .filter(p => isBot(p))
       .map(p => this._bots.get(p.id))
@@ -1011,7 +1101,7 @@ export class BotManager {
 
     if (botsInRoom.length === 0) return;
 
-    // Live moderation evaluation and bot reactions / reporting
+    // Live moderation evaluation and swift bot reactions
     this._moderationManager.handlePlayerChat(room, player, message, botsInRoom);
 
     // Check ambient non-Club-Penguin conversation topics
@@ -1648,6 +1738,7 @@ export class BotManager {
   private tick(): void {
     const now = Date.now();
     this.syncPopulation();
+    this.ensureModeratorsIslandWide();
     if (this._settings.playGames) {
       this.tickGames();
     }

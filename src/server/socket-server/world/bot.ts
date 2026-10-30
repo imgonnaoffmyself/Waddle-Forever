@@ -39,7 +39,7 @@ import {
   sampleRandomAgeGroup,
   BotAgeGroup
 } from "@server/npc/ambient-dialogue";
-import { isModeratorName, MODERATOR_IDLE_LINES } from "./moderator-bot";
+import { MODERATOR_IDLE_LINES } from "./moderator-bot";
 
 const EMPTY_SLOT_WEIGHTS: Record<EquipProp, number> = {
   color: 0,
@@ -792,6 +792,7 @@ class SledBrain implements BotBrain {
 export type BotAttributes = {
   personalityTrait?: PersonalityTrait;
   ageGroup?: BotAgeGroup;
+  isModerator?: boolean;
   emptyRoomTolerance: number;
   roomDistraction: number;
   snowballFan: number;
@@ -1308,8 +1309,14 @@ export class Bot implements ClientSocket {
     return DEV_NPC_NAME_SET.has(this._penguin.name);
   }
 
+  private _isModerator: boolean = false;
+
   public get isModerator(): boolean {
-    return isModeratorName(this._penguin.name);
+    return this._isModerator || this.isDev;
+  }
+
+  public setModerator(value: boolean): void {
+    this._isModerator = value;
   }
 
   public get data() {
@@ -1330,6 +1337,7 @@ export class Bot implements ClientSocket {
     private _manager?: BotManager
   ) {
     this._simulate = (e, c, ...a) => writeFn(this, e, c, ...a);
+    this._isModerator = _attributes.isModerator ?? false;
     this.personalityTrait = _attributes.personalityTrait
       ?? DEV_NPC_TRAITS[this._penguin.name as any]
       ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);

@@ -4,15 +4,18 @@ import { Bot } from "@server/socket-server/world/bot";
 import { XtMessenger } from "@server/socket-server/xt-messenger";
 import { evaluateMessage, ModerationEvaluation } from "./localmod";
 import {
-  MODERATOR_DISPATCH_ARRIVAL_LINES,
   MODERATOR_WARNING_LINES,
   MODERATOR_MUTE_LINES,
   MODERATOR_KICK_LINES,
-  MODERATOR_BAN_LINES
+  MODERATOR_BAN_LINES,
+  DEV_WARNING_LINES,
+  DEV_KICK_LINES,
+  DEV_BAN_LINES,
+  DEV_TARGETED_REACTIONS,
+  REGULAR_BOT_SHOCK_LINES
 } from "@server/socket-server/world/moderator-bot";
 import { choose, randomInt } from "@common/utils";
 import { PenguinRepository } from "@server/database/database";
-import { PersonalityTrait } from "@server/npc/npc-types";
 import { isBot } from "@server/socket-server/world/bots";
 
 export interface PlayerReport {
@@ -33,11 +36,11 @@ export class ModerationManager {
   constructor(
     private _msg: XtMessenger,
     private _db?: PenguinRepository,
-    private _getModeratorBot?: () => Bot | undefined
+    private _ensureModeratorInRoom?: (room: WorldRoom) => Bot | undefined
   ) {}
 
-  public setModeratorBotGetter(fn: () => Bot | undefined): void {
-    this._getModeratorBot = fn;
+  public setModeratorGetter(fn: (room: WorldRoom) => Bot | undefined): void {
+    this._ensureModeratorInRoom = fn;
   }
 
   public get reports(): PlayerReport[] {
@@ -45,8 +48,8 @@ export class ModerationManager {
   }
 
   /**
-   * Files a report against a player (from a bot or a real player)
-   * and dispatches a moderator bot to the scene.
+   * Files a report against a player (from a command or player report)
+   * and triggers swift moderator investigation.
    */
   public fileReport(
     reporterId: number,
@@ -60,7 +63,7 @@ export class ModerationManager {
     const reportKey = `${reporterId}:${targetId}:${roomId}`;
     const now = Date.now();
     const lastReport = this._reportCooldowns.get(reportKey) ?? 0;
-    if (now - lastReport < 15_000) return; // Cooldown between duplicate reports
+    if (now - lastReport < 10_000) return; // Cooldown between duplicate reports
 
     this._reportCooldowns.set(reportKey, now);
 
@@ -77,20 +80,19 @@ export class ModerationManager {
     this._reports.push(report);
     if (this._reports.length > 100) this._reports.shift();
 
-    // Trigger live moderator dispatch
+    // Trigger swift moderator intervention in the reported room
     if (targetPenguin && room) {
       setTimeout(() => {
         this.dispatchModerator(room, targetPenguin, category);
-      }, randomInt(1800, 3500));
+      }, randomInt(600, 1200));
     }
   }
 
   /**
    * Evaluates player chat in real time.
    * If flagged:
-   * - If a moderator bot is already in the room, they intervene live!
-   * - Otherwise, regular bots in the room react with shock/reporting lines and submit a report,
-   *   which dispatches a moderator bot to the room.
+   * - An undercover moderator bot (or developer) already in the room reacts swiftly.
+   * - Bystander bots in the room react with shock/disgust.
    */
   public async handlePlayerChat(
     room: WorldRoom,
@@ -103,74 +105,44 @@ export class ModerationManager {
     const evalResult = await evaluateMessage(message);
     if (!evalResult.flagged) return;
 
-    // Check if a live moderator bot is already in this room
-    const modBotInRoom = botsInRoom.find(b => b.isModerator);
-    if (modBotInRoom) {
-      // Live intervention right in front of everyone!
-      setTimeout(() => {
-        this.handleModeratorIntervention(modBotInRoom, room, player, evalResult);
-      }, randomInt(800, 1600));
-      return;
+    const lower = message.toLowerCase();
+
+    // 1. Check if a Dev NPC is in the room and specifically addressed
+    let interveningBot: Bot | undefined = botsInRoom.find(
+      b => b.isDev && lower.includes(b.penguin.name.toLowerCase())
+    );
+
+    // 2. Otherwise find any moderator bot already in this room (which includes dev bots)
+    if (!interveningBot) {
+      interveningBot = botsInRoom.find(b => b.isModerator);
     }
 
-    // Regular bots in the room notice the bad behavior
-    const regularBots = botsInRoom.filter(b => !b.isDev && !b.isModerator);
-    if (regularBots.length === 0) return;
+    // 3. If none in room yet, guarantee one immediately
+    if (!interveningBot && this._ensureModeratorInRoom) {
+      interveningBot = this._ensureModeratorInRoom(room);
+    }
 
-    const reportingBot = choose(regularBots);
+    // 4. Swift reaction from bystander regular bots (within 200-450ms)
+    const bystanderBots = botsInRoom.filter(b => b !== interveningBot && !b.isDev && !b.isModerator);
+    if (bystanderBots.length > 0 && Math.random() < 0.85) {
+      const shockBot = choose(bystanderBots);
+      const shockDelay = randomInt(200, 450);
+      setTimeout(() => {
+        const curRoom = shockBot.world.getPenguinRoom(shockBot.penguin);
+        if (curRoom?.id === room.id) {
+          shockBot.sendMessage(choose(REGULAR_BOT_SHOCK_LINES));
+        }
+      }, shockDelay);
+    }
 
-    const reactionLines: Record<PersonalityTrait, string[]> = {
-      grumpy: [
-        'im reporting you. that is not okay.',
-        'get reported.',
-        'enjoy the ban.',
-        'that is completely against the rules.'
-      ],
-      shy: [
-        'that was really mean...',
-        'i\'m reporting you..',
-        'please don\'t say things like that..',
-        'reporting that..'
-      ],
-      excitable: [
-        'HEY THAT IS NOT COOL!!',
-        'IM REPORTING YOU RIGHT NOW!!!',
-        'MODS ARE GONNA SEE THAT!!',
-        'YOU CANT SAY THAT HERE!!'
-      ],
-      friendly: [
-        'please be nice to everyone!',
-        'that\'s not very friendly, reporting that.',
-        'let\'s follow the rules please.',
-        'i had to report that, please be kind.'
-      ],
-      curious: [
-        'why would you say that? reporting it.',
-        'the moderators definitely won\'t like that.',
-        'reported. rules are there for a reason.'
-      ]
-    };
-
-    const lines = reactionLines[reportingBot.personalityTrait] ?? reactionLines.friendly;
-    const reaction = choose(lines);
-
-    setTimeout(() => {
-      const curRoom = reportingBot.world.getPenguinRoom(reportingBot.penguin);
-      if (curRoom?.id === room.id) {
-        reportingBot.sendMessage(reaction);
-      }
-    }, randomInt(700, 1600));
-
-    // File report which dispatches a live moderator bot
-    this.fileReport(
-      reportingBot.penguin.id,
-      player.id,
-      room.id,
-      evalResult.category,
-      message,
-      player,
-      room
-    );
+    // 5. Swift moderator intervention (within 350-700ms)
+    if (interveningBot) {
+      const mod = interveningBot;
+      const modDelay = randomInt(350, 700);
+      setTimeout(() => {
+        this.handleModeratorIntervention(mod, room, player, evalResult, message);
+      }, modDelay);
+    }
   }
 
   /**
@@ -180,22 +152,26 @@ export class ModerationManager {
     modBot: Bot,
     room: WorldRoom,
     target: WorldPenguin,
-    evalResult: ModerationEvaluation
+    evalResult: ModerationEvaluation,
+    originalMessage?: string
   ): void {
     const now = Date.now();
     const lastAction = this._lastInterventionTime.get(target.id) ?? 0;
-    if (now - lastAction < 5000) return; // Prevent overlapping interventions
+    if (now - lastAction < 3000) return; // Prevent overlapping interventions
 
     this._lastInterventionTime.set(target.id, now);
 
-    // Walk towards the offending player
+    // Turn/step towards offending player
     const targetState = room.getState(target);
     if (targetState) {
-      const offsetX = targetState.x > 400 ? -45 : 45;
+      const offsetX = targetState.x > 400 ? -40 : 40;
       modBot.walk(targetState.x + offsetX, targetState.y);
     }
 
     const strikes = target.moderation.addStrike();
+    const isDev = modBot.isDev;
+    const lower = (originalMessage ?? '').toLowerCase();
+    const addressedDevDirectly = isDev && lower.includes(modBot.penguin.name.toLowerCase());
 
     // Determine punishment escalation
     if (evalResult.recommendedAction === 'ban' || strikes >= 4) {
@@ -204,65 +180,68 @@ export class ModerationManager {
       target.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
       this.persistBan(target, banExpiry, `Moderator ban: ${evalResult.reason}`);
 
-      const banLine = choose(MODERATOR_BAN_LINES);
+      let banLine: string;
+      if (addressedDevDirectly) {
+        banLine = choose(DEV_TARGETED_REACTIONS);
+      } else if (isDev) {
+        banLine = choose(DEV_BAN_LINES);
+      } else {
+        banLine = choose(MODERATOR_BAN_LINES);
+      }
       modBot.sendMessage(banLine);
 
+      // Swift disconnect within 650ms
       setTimeout(() => {
         this._msg.send(target, 'e', 600, 24);
         const client = this._msg.getClient(target);
         if (client) client.end();
-      }, 1800);
+      }, 650);
 
     } else if (evalResult.recommendedAction === 'kick' || strikes >= 3) {
       // Kick from server
-      const kickLine = choose(MODERATOR_KICK_LINES);
+      let kickLine: string;
+      if (addressedDevDirectly) {
+        kickLine = choose(DEV_TARGETED_REACTIONS);
+      } else if (isDev) {
+        kickLine = choose(DEV_KICK_LINES);
+      } else {
+        kickLine = choose(MODERATOR_KICK_LINES);
+      }
       modBot.sendMessage(kickLine);
 
+      // Swift disconnect within 650ms
       setTimeout(() => {
         this._msg.send(target, 'e', 610);
         const client = this._msg.getClient(target);
         if (client) client.end();
-      }, 1800);
+      }, 650);
 
     } else if (evalResult.recommendedAction === 'mute' || strikes >= 2) {
       // 5-minute mute
       const muteDurationMs = 5 * 60 * 1000;
       target.moderation.mute(now + muteDurationMs);
 
-      const muteLine = choose(MODERATOR_MUTE_LINES);
+      const muteLine = isDev ? choose(DEV_WARNING_LINES) : choose(MODERATOR_MUTE_LINES);
       modBot.sendMessage(muteLine);
 
     } else {
       // Strike 1 / Verbal warning
       target.moderation.addWarning(evalResult.reason);
-      const warnLine = choose(MODERATOR_WARNING_LINES);
+      const warnLine = isDev ? choose(DEV_WARNING_LINES) : choose(MODERATOR_WARNING_LINES);
       modBot.sendMessage(warnLine);
     }
   }
 
   /**
-   * Dispatches an available moderator bot to investigate a reported room.
+   * Dispatches or assigns a moderator bot to investigate a reported room.
    */
   public async dispatchModerator(
     room: WorldRoom,
     target: WorldPenguin,
     reason: string
   ): Promise<void> {
-    if (!this._getModeratorBot) return;
-    const modBot = this._getModeratorBot();
+    const modBot = this._ensureModeratorInRoom ? this._ensureModeratorInRoom(room) : undefined;
     if (!modBot) return;
-
-    const currentModRoom = modBot.world.getPenguinRoom(modBot.penguin);
-    if (currentModRoom?.id !== room.id) {
-      // Moderator bot enters the reported room
-      await modBot.enter(room.id);
-      await new Promise(r => setTimeout(r, 1200));
-
-      // Announce arrival
-      const arrivalMsg = choose(MODERATOR_DISPATCH_ARRIVAL_LINES);
-      modBot.sendMessage(arrivalMsg);
-      await new Promise(r => setTimeout(r, 1500));
-    }
 
     // Check if target player is still in the room
     const targetRoom = room.players.find(p => p.id === target.id);
@@ -270,10 +249,10 @@ export class ModerationManager {
       const evalResult: ModerationEvaluation = {
         flagged: true,
         category: 'harassment',
-        severity: 0.55,
+        severity: 0.65,
         recommendedAction: 'warn',
         reason: `Report investigation: ${reason}`,
-        scores: { toxicity: 0.5, harassment: 0.5, inappropriate: 0, spam: 0, none: 0 }
+        scores: { predatory: 0, toxicity: 0.5, harassment: 0.65, nsfw: 0, spam: 0, none: 0 }
       };
       this.handleModeratorIntervention(modBot, room, target, evalResult);
     }
