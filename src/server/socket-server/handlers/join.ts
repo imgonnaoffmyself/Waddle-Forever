@@ -21,6 +21,7 @@ import { IGLOO_ROOM_BASE } from '@server/game-data/rooms';
 import { handleLeaveWaddle } from './room'
 import { handleQuitCard } from './card';
 import { BotManager } from '@server/socket-server/world/bots';
+import { preBroadcastTracker, postBroadcastTracker } from '@server/moderation/localmod';
 
 
 function unequipPuffle(p: WorldPenguin): void {
@@ -701,6 +702,8 @@ export const handleFindBuddy: PenguinHandler<[number]> = ({ msg, penguin, world 
 export const handleDisconnect = async (ctx: WorldContext) => {
   if ('penguin' in ctx) {
     const { penguin, msg, prst, world } = ctx;
+    preBroadcastTracker.resetPlayer(penguin.id);
+    postBroadcastTracker.resetPlayer(penguin.id);
     if (penguin.psa.isPending) {
       penguin.inventory.add(800);
     }

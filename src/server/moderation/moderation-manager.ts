@@ -2,7 +2,7 @@ import { WorldRoom } from "@server/socket-server/world/world-room";
 import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import { Bot } from "@server/socket-server/world/bot";
 import { XtMessenger } from "@server/socket-server/xt-messenger";
-import { evaluateMessage, ModerationEvaluation } from "./localmod";
+import { evaluateMessage, ModerationEvaluation, localModTracker } from "./localmod";
 import { formatBanExpiry } from "./filter";
 import { randomInt } from "@common/utils";
 import { PenguinRepository } from "@server/database/database";
@@ -93,7 +93,14 @@ export class ModerationManager {
     if (isBot(player)) return;
 
     const evalResult = await evaluateMessage(message);
-    if (!evalResult.flagged) return;
+    if (!evalResult.flagged) {
+      localModTracker.recordSafeMessage(player.id);
+      return;
+    }
+
+    if (!localModTracker.shouldTakeAction(player.id, evalResult)) {
+      return;
+    }
 
     const lower = message.toLowerCase();
 
@@ -191,6 +198,7 @@ export class ModerationManager {
         flagged: true,
         category: 'harassment',
         severity: 0.65,
+        severityLevel: 'medium',
         recommendedAction: 'warn',
         reason: `Report investigation: ${reason}`,
         scores: { predatory: 0, toxicity: 0.5, harassment: 0.65, nsfw: 0, spam: 0, none: 0 }

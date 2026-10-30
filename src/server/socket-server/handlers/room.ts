@@ -10,7 +10,7 @@ import { WaddleGame } from "@server/socket-server/world/waddle-game";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
 import { checkProfanity, checkPII, formatBanExpiry } from "@server/moderation/filter";
-import { evaluateMessage } from "@server/moderation/localmod";
+import { evaluateMessage, classifyLocally, preBroadcastTracker, postBroadcastTracker, SEVERITY_RANK, ModerationSeverity } from "@server/moderation/localmod";
 import { getCommandsHandler } from "@server/commands/commands";
 
 export const handleSetPosition: RoomHandler<[number, number]> = ({ penguin, room, msg, data }, x, y) => {
@@ -121,20 +121,45 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
   }
 
   if (!isBot(penguin)) {
+    // Evaluate message before broadcast using local moderation classifier
+    const preEval = classifyLocally(message);
     const profanity = checkProfanity(message);
     if (profanity.isSwear) {
-      const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
-      penguin.moderation.ban(banExpiry, `Inappropriate language (24h autoban): "${profanity.matchedWord ?? message}"`);
-      prst(penguin, true);
+      // Determine severity of profanity
+      const isSevere = /\b(?:nigger|nigga|faggot|fag|cunt|kys|kill\s*your\s*self)\b/i.test(message);
+      const swearSeverity: ModerationSeverity = isSevere ? 'critical' : 'high';
+      if (SEVERITY_RANK[swearSeverity] > SEVERITY_RANK[preEval.severityLevel]) {
+        preEval.flagged = true;
+        preEval.severityLevel = swearSeverity;
+        preEval.reason = `Inappropriate language: "${profanity.matchedWord ?? message}"`;
+      }
+    }
 
-      // Display the ban screen with Pacific date/time as expected by the Flash client ban UI
-      msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+    if (preEval.flagged) {
+      const takePreAction = preBroadcastTracker.shouldTakeAction(penguin.id, preEval);
+      console.log(`[LocalMod Pre-Broadcast] Flagged message (${preEval.severityLevel}) from ${penguin.name}: "${message}" -> ${preEval.reason} (takeAction=${takePreAction})`);
 
-      // Allow the ban packet to be fully delivered so the client displays the ban modal
-      setTimeout(() => {
-        client.end();
-      }, 700);
-      return;
+      // Criteria:
+      // - low: take no action
+      // - medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+      // - high: only take action after 2 highs in a row or 2 highs in 60 seconds
+      // - critical: take action immediately
+      if (takePreAction) {
+        const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+        penguin.moderation.ban(banExpiry, `Moderator ban: ${preEval.reason}`);
+        prst(penguin, true);
+
+        // Display the ban screen with Pacific date/time as expected by the Flash client ban UI
+        msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+
+        // Allow the ban packet to be fully delivered so the client displays the ban modal
+        setTimeout(() => {
+          client.end();
+        }, 700);
+        return;
+      }
+    } else {
+      preBroadcastTracker.recordSafeMessage(penguin.id);
     }
 
     // Check if player is currently muted by a moderator
@@ -170,7 +195,7 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
   // 1. BROADCAST TO ROOM FIRST
   msg.send(room.players, 'sm', _penguinIdParam, message);
 
-  // 2. AFTER MESSAGE HAS ALREADY BEEN BROADCAST:
+  // 2. AFTER MESSAGE HAS ALREADY BEEN BROADCAST (LLM REVIEW):
   if (!isBot(penguin)) {
     // Check if there was a moderator in the room at the time it was said
     const modBot = room.players
@@ -180,27 +205,37 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
 
     const hasModeratorInRoom = Boolean(modBot);
 
-    // Send off to LocalMod for evaluation
+    // Send off to LocalMod LLM for evaluation
     evaluateMessage(message).then((evalResult) => {
       if (evalResult.flagged) {
-        console.log(`[LocalMod] Flagged message from ${penguin.name} in room ${room.id}: "${message}" -> ${evalResult.reason}`);
+        const takeAction = postBroadcastTracker.shouldTakeAction(penguin.id, evalResult);
+        console.log(`[LocalMod Post-Broadcast LLM] Flagged message (${evalResult.severityLevel}) from ${penguin.name} in room ${room.id}: "${message}" -> ${evalResult.reason} (takeAction=${takeAction})`);
 
-        // If there was a moderator in the room at the time it was said, trigger a ban!
-        if (hasModeratorInRoom) {
-          const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
-          penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
-          prst(penguin, true);
-          msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
-          setTimeout(() => {
-            client.end();
-          }, 700);
+        // Criteria:
+        // - low: take no action
+        // - medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+        // - high: only take action after 2 highs in a row or 2 highs in 60 seconds
+        // - critical: take action immediately
+        if (takeAction) {
+          // If there was a moderator in the room at the time it was said, trigger a ban!
+          if (hasModeratorInRoom) {
+            const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+            penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
+            prst(penguin, true);
+            msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+            setTimeout(() => {
+              client.end();
+            }, 700);
+          }
         }
       } else {
+        postBroadcastTracker.recordSafeMessage(penguin.id);
         // Safe message: run ambient bot dialogue triggers
         bot?.onPlayerChat(room, penguin, message);
       }
     }).catch((err) => {
       console.error('[LocalMod] Error during evaluation:', err);
+      postBroadcastTracker.recordSafeMessage(penguin.id);
       bot?.onPlayerChat(room, penguin, message);
     });
   }

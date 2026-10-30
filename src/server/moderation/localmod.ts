@@ -2,11 +2,29 @@ import http from 'http';
 
 export type ModerationCategory = 'toxicity' | 'harassment' | 'nsfw' | 'predatory' | 'spam' | 'none';
 export type ModerationAction = 'none' | 'warn' | 'mute' | 'kick' | 'ban';
+export type ModerationSeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+export const SEVERITY_RANK: Record<ModerationSeverity, number> = {
+  none: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4
+};
+
+export function scoreToSeverityLevel(score: number): ModerationSeverity {
+  if (score >= 0.90) return 'critical';
+  if (score >= 0.70) return 'high';
+  if (score >= 0.50) return 'medium';
+  if (score >= 0.40) return 'low';
+  return 'none';
+}
 
 export interface ModerationEvaluation {
   flagged: boolean;
   category: ModerationCategory;
   severity: number; // 0.0 to 1.0
+  severityLevel: ModerationSeverity;
   recommendedAction: ModerationAction;
   reason: string;
   scores: Record<ModerationCategory, number>;
@@ -223,16 +241,17 @@ export function classifyLocally(message: string): ModerationEvaluation {
     }
   }
 
-  const flagged = maxScore >= 0.40;
+  const severityLevel = scoreToSeverityLevel(maxScore);
+  const flagged = severityLevel !== 'none';
   let recommendedAction: ModerationAction = 'none';
 
-  if (maxScore >= 0.90) {
+  if (severityLevel === 'critical') {
     recommendedAction = 'ban';
-  } else if (maxScore >= 0.80) {
+  } else if (severityLevel === 'high') {
     recommendedAction = 'kick';
-  } else if (maxScore >= 0.65) {
+  } else if (severityLevel === 'medium') {
     recommendedAction = 'mute';
-  } else if (maxScore >= 0.40) {
+  } else if (severityLevel === 'low') {
     recommendedAction = 'warn';
   }
 
@@ -240,6 +259,7 @@ export function classifyLocally(message: string): ModerationEvaluation {
     flagged,
     category: maxCategory,
     severity: maxScore,
+    severityLevel,
     recommendedAction,
     reason: primaryReason || 'clean',
     scores
@@ -315,12 +335,20 @@ export async function evaluateMessage(
       let harassment = localEval.scores.harassment;
       let predatory = localEval.scores.predatory;
 
+      let apiMaxSeverity: ModerationSeverity = 'none';
       for (const res of data.results || []) {
         const conf = Number(res.confidence ?? 0);
         if (res.classifier === 'toxicity' && res.flagged) {
           toxicity = Math.max(toxicity, conf, res.severity === 'critical' ? 0.95 : 0.85);
         } else if (res.classifier === 'spam' && res.flagged) {
           spam = Math.max(spam, conf, 0.70);
+        }
+
+        if (res.flagged && res.severity) {
+          const s = res.severity.toLowerCase() as ModerationSeverity;
+          if (SEVERITY_RANK[s] !== undefined && SEVERITY_RANK[s] > SEVERITY_RANK[apiMaxSeverity]) {
+            apiMaxSeverity = s;
+          }
         }
       }
 
@@ -341,19 +369,31 @@ export async function evaluateMessage(
       else if (maxScore === nsfw && nsfw > 0) category = 'nsfw';
       else if (maxScore === spam && spam > 0) category = 'spam';
 
-      const isFlagged = data.flagged || localEval.flagged || maxScore >= 0.40;
-      let recommendedAction: ModerationAction = 'none';
-      if (data.flagged || maxScore >= 0.90) recommendedAction = 'ban';
-      else if (maxScore >= 0.80) recommendedAction = 'kick';
-      else if (maxScore >= 0.65) recommendedAction = 'mute';
-      else if (maxScore >= 0.40) recommendedAction = 'warn';
+      const localSeverity = localEval.severityLevel;
+      let overallSeverityLevel: ModerationSeverity =
+        SEVERITY_RANK[apiMaxSeverity] > SEVERITY_RANK[localSeverity]
+          ? apiMaxSeverity
+          : localSeverity;
 
-      console.log(`[LocalMod] Evaluated "${message}": flagged=${isFlagged}, category=${category}, action=${recommendedAction}`);
+      if ((data.flagged || localEval.flagged || maxScore >= 0.40) && overallSeverityLevel === 'none') {
+        const fallback = scoreToSeverityLevel(maxScore);
+        overallSeverityLevel = fallback !== 'none' ? fallback : 'low';
+      }
+
+      const isFlagged = overallSeverityLevel !== 'none';
+      let recommendedAction: ModerationAction = 'none';
+      if (overallSeverityLevel === 'critical') recommendedAction = 'ban';
+      else if (overallSeverityLevel === 'high') recommendedAction = 'kick';
+      else if (overallSeverityLevel === 'medium') recommendedAction = 'mute';
+      else if (overallSeverityLevel === 'low') recommendedAction = 'warn';
+
+      console.log(`[LocalMod] Evaluated "${message}": flagged=${isFlagged}, category=${category}, severityLevel=${overallSeverityLevel}, action=${recommendedAction}`);
 
       return {
         flagged: isFlagged,
         category,
         severity: maxScore,
+        severityLevel: overallSeverityLevel,
         recommendedAction,
         reason: (data.flagged && data.summary) ? data.summary : localEval.reason,
         scores
@@ -364,5 +404,132 @@ export async function evaluateMessage(
   }
 
   return localEval;
+}
+
+export interface LocalModPlayerRecord {
+  consecutiveMediums: number;
+  mediumTimestamps: number[];
+  consecutiveHighs: number;
+  highTimestamps: number[];
+}
+
+/**
+ * Tracks and evaluates moderation actions for messages flagged by LocalMod:
+ * - low: take no action
+ * - medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+ * - high: only take action after 2 highs in a row or 2 highs in 60 seconds
+ * - critical: take action immediately
+ */
+export class LocalModTracker {
+  private _records = new Map<number, LocalModPlayerRecord>();
+
+  public shouldTakeAction(
+    penguinId: number,
+    evaluation: ModerationEvaluation,
+    now: number = Date.now()
+  ): boolean {
+    if (!evaluation.flagged || evaluation.severityLevel === 'none') {
+      const rec = this._records.get(penguinId);
+      if (rec) {
+        rec.consecutiveMediums = 0;
+        rec.consecutiveHighs = 0;
+      }
+      return false;
+    }
+
+    const rec = this._getRecord(penguinId);
+
+    switch (evaluation.severityLevel) {
+      case 'critical': {
+        // critical: take action immediately
+        this.resetPlayer(penguinId);
+        return true;
+      }
+
+      case 'high': {
+        // high: only take action after 2 highs in a row or 2 highs in 60 seconds
+        rec.consecutiveMediums = 0;
+        rec.consecutiveHighs++;
+        rec.highTimestamps = rec.highTimestamps.filter(t => now - t <= 60_000);
+        rec.highTimestamps.push(now);
+
+        if (rec.consecutiveHighs >= 2 || rec.highTimestamps.length >= 2) {
+          this.resetPlayer(penguinId);
+          return true;
+        }
+        return false;
+      }
+
+      case 'medium': {
+        // medium: only take action after 3 mediums in a row or 3 mediums in 90 seconds
+        rec.consecutiveHighs = 0;
+        rec.consecutiveMediums++;
+        rec.mediumTimestamps = rec.mediumTimestamps.filter(t => now - t <= 90_000);
+        rec.mediumTimestamps.push(now);
+
+        if (rec.consecutiveMediums >= 3 || rec.mediumTimestamps.length >= 3) {
+          this.resetPlayer(penguinId);
+          return true;
+        }
+        return false;
+      }
+
+      case 'low': {
+        // low: take no action
+        rec.consecutiveMediums = 0;
+        rec.consecutiveHighs = 0;
+        return false;
+      }
+
+      default:
+        return false;
+    }
+  }
+
+  public recordSafeMessage(penguinId: number): void {
+    const rec = this._records.get(penguinId);
+    if (rec) {
+      rec.consecutiveMediums = 0;
+      rec.consecutiveHighs = 0;
+    }
+  }
+
+  public resetPlayer(penguinId: number): void {
+    this._records.delete(penguinId);
+  }
+
+  public getPlayerRecord(penguinId: number): Readonly<LocalModPlayerRecord> | undefined {
+    return this._records.get(penguinId);
+  }
+
+  public clear(): void {
+    this._records.clear();
+  }
+
+  private _getRecord(penguinId: number): LocalModPlayerRecord {
+    let rec = this._records.get(penguinId);
+    if (!rec) {
+      rec = {
+        consecutiveMediums: 0,
+        mediumTimestamps: [],
+        consecutiveHighs: 0,
+        highTimestamps: []
+      };
+      this._records.set(penguinId, rec);
+    }
+    return rec;
+  }
+}
+
+export const preBroadcastTracker = new LocalModTracker();
+export const postBroadcastTracker = new LocalModTracker();
+export const localModTracker = postBroadcastTracker;
+
+export function shouldTakeActionOnFlaggedMessage(
+  penguinId: number,
+  evaluation: ModerationEvaluation,
+  now: number = Date.now()
+): boolean {
+  return localModTracker.shouldTakeAction(penguinId, evaluation, now);
 }
 
