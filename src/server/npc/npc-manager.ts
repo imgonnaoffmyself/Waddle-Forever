@@ -47,12 +47,12 @@ export const DEV_NPC_NAME_SET = new Set<string>(DEV_NPC_NAMES);
 export const DEV_NPC_TRAITS: Record<(typeof DEV_NPC_NAMES)[number], PersonalityTrait> = {
   Rsnail: 'friendly',
   Billybob: 'curious',
-  Gizmo: 'shy',
-  Screenhog: 'grumpy',
+  Gizmo: 'friendly',
+  Screenhog: 'excitable',
 };
 
 /** Exact timeline snapshots that enable the NPC module */
-const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE, '2005-09-22']);
+const ACTIVE_DATES = new Set(['2005-08-22', '2005-09-12', '2005-09-13', BETA_TEST_PARTY_DATE, '2005-09-22', '2005-10-20', '2005-10-24']);
 
 export const SNOW_FORTS_ROOM_ID = 801;
 export const ICE_RINK_ROOM_ID = 802;
@@ -102,6 +102,7 @@ export const ROOM_POOL_ENTRIES: WeightedRoomEntry[] = [
 
   // Base weights for other prominent rooms when they open
   { roomId: 230, weight: 3, gate: { after: '2005-10-20' } }, // Mountain (Sled Racing)
+  { roomId: 803, weight: 1, gate: { after: '2005-10-04' } }, // Agent HQ
   { roomId: 220, weight: 2 }, // Ski Lodge
   { roomId: 300, weight: 3, gate: { after: '2006-03-31' } }, // Plaza
   { roomId: 330, weight: 3, gate: { after: '2006-03-31' } }, // Pizza Parlor
@@ -143,6 +144,7 @@ export const SPAWN_ZONES: Record<number, [number, number, number, number]> = {
   800: [250, 350, 700, 410], // Dock
   801: [160, 260, 730, 410], // Snow Forts
   802: [150, 200, 750, 410], // Ice Rink
+  803: [180, 240, 580, 410], // Agent HQ
   805: [250, 280, 550, 400], // Iceberg
   806: [200, 320, 600, 410], // Cave
   808: [200, 320, 600, 410], // Mine

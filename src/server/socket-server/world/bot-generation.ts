@@ -15,6 +15,7 @@ import { getMissionItems } from "@server/game-logic/items-mission";
 import { NPC_NAME_POOL } from "@server/npc/npc-names";
 import { PersonalityTrait } from "@server/npc/npc-types";
 import { DEV_NPC_NAMES, DEV_NPC_TRAITS } from "@server/npc/npc-manager";
+import { sampleRandomAgeGroup } from "@server/npc/ambient-dialogue";
 
 // TODO -> Easter Egg names
 //         Game Day NPCs
@@ -239,20 +240,70 @@ function generateRandomPenguin(
   forcedName?: string,
   isDev?: boolean
 ): PenguinJson {
+  const isLaunchDay = data.getDate() === '2005-10-24';
   const name = forcedName ?? ((Math.random() < 0.6 && NPC_NAME_POOL.length > 0)
     ? choose(NPC_NAME_POOL)
     : `${choose(NAME_PARTS_A)}${choose(NAME_PARTS_B)}${randomInt(1, 999)}`);
-  // TODO -> more realistic distribution
-  const age = randomInt(0, getDaysDelta(START_DATE, data.getDate()));
-  const startDate = addDays(data.getDate(), -age);
+
+  let startDate: Version;
+  let isMember: boolean;
+  let startingCoins: number;
+  let isAgent = false;
+  let isBetaTester = false;
+
+  if (isDev) {
+    startDate = '2005-08-22';
+    isMember = true;
+    startingCoins = randomInt(5000, 10000);
+    if (data.getDate() === '2005-09-21' || isLaunchDay) {
+      isBetaTester = true;
+      if (isLaunchDay) {
+        isAgent = true;
+      }
+    }
+  } else if (isLaunchDay) {
+    // 18% former beta testers, 82% newcomers
+    isBetaTester = Math.random() < 0.18;
+    if (isBetaTester) {
+      const age = randomInt(1, Math.max(1, getDaysDelta(START_DATE, data.getDate())));
+      startDate = addDays(data.getDate(), -age);
+      // Former beta testers get a free month to start + 2000-3500 coins gift
+      isMember = true;
+      startingCoins = randomInt(2000, 3500);
+      // Secret agent feature: accounts old enough (>= 30 days) that pass quiz
+      if (age >= 30 && attrs.agentFan > 0.4) {
+        isAgent = true;
+      }
+    } else {
+      // Newcomers
+      startDate = '2005-10-24';
+      // Paid memberships introduced: non-members can now pop up alongside paid members
+      isMember = Math.random() < 0.4; // 40% paid members, 60% non-members
+      startingCoins = randomInt(500, 1200);
+      isAgent = false;
+    }
+  } else {
+    const age = randomInt(0, getDaysDelta(START_DATE, data.getDate()));
+    startDate = addDays(data.getDate(), -age);
+    isMember = Math.random() <= MEMBER_CHANCE;
+    startingCoins = 500;
+  }
+
   const starterColor = choose(data.getStarterColors());
-  const isMember = isDev ? true : (Math.random() <= MEMBER_CHANCE);
   const base = getDefaultPenguin(
     name,
-    1,
+    starterColor,
     isMember,
-    versionToEpoch(data.getDate())
+    versionToEpoch(startDate),
+    data.getDate()
   );
+  base.coins = startingCoins;
+  base.is_agent = isAgent;
+  base.is_member = isMember;
+  if (isMember) {
+    base.membership_expires = Date.now() + 30 * 86400 * 1000;
+  }
+
   const [ninjaRank, fireRank, waterRank, snowRank] = generateNinjaStats(data.getDate(), startDate, attrs.ninjaFan);
 
   const inventory = generateRandomInventory(
@@ -267,12 +318,26 @@ function generateRandomPenguin(
     attrs
   );
 
-  if (isDev && data.getDate() === '2005-09-21') {
+  if (isDev && (data.getDate() === '2005-09-21' || isLaunchDay)) {
     inventory.push(413); // Beta Party Hat
+    if (isLaunchDay) {
+      inventory.push(800); // Spy Phone
+    }
+  } else if (isLaunchDay) {
+    if (isBetaTester && attrs.tester > 0.4 && !inventory.includes(413)) {
+      inventory.push(413);
+    }
+    if (isAgent && !inventory.includes(800)) {
+      inventory.push(800);
+    }
   }
 
   const outfit = generateRandomOutfit(data, inventory, isMember);
   if (isDev && data.getDate() === '2005-09-21') {
+    outfit.head = 413;
+  } else if (isDev && isLaunchDay && Math.random() < 0.5) {
+    outfit.head = 413;
+  } else if (isLaunchDay && isBetaTester && inventory.includes(413) && Math.random() < 0.5) {
     outfit.head = 413;
   }
 
@@ -280,6 +345,7 @@ function generateRandomPenguin(
     ...base,
     ...outfit,
     inventory,
+    is_agent: isAgent,
     fireNinja: fireRank === MAX_FIRE_RANK,
     waterNinja: waterRank === MAX_WATER_RANK,
     snowNinja: snowRank >= SNOW_NINJA_RANK,
@@ -297,6 +363,7 @@ export function generateRandomBot(
   const trait = forcedTrait ?? (forcedName ? DEV_NPC_TRAITS[forcedName as any] : undefined) ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);
   const attrs: BotAttributes = {
     personalityTrait: trait,
+    ageGroup: sampleRandomAgeGroup(isDev),
     danceFan: Math.random(),
     snowballFan: Math.random(),
     waveFan: Math.random(),
@@ -324,7 +391,7 @@ export function generateRandomBot(
 
 export function generateBots(data: GameData, amount: number): Array<[BotAttributes, PenguinJson]> {
   const bots: Array<[BotAttributes, PenguinJson]> = [];
-  if (data.getDate() === '2005-09-21') {
+  if (data.getDate() === '2005-09-21' || data.getDate() === '2005-10-24') {
     for (const name of DEV_NPC_NAMES) {
       if (bots.length >= amount) break;
       bots.push(generateRandomBot(data, name, DEV_NPC_TRAITS[name], true));

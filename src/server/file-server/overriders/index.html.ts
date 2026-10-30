@@ -33,6 +33,9 @@ export async function overrideIndexHtml(d: GameData, s: SettingsManager, b: Buff
   // For modern-as3.html, inject the correct url for media
   b = b.replaceAll('##MEDIA_URL##', makeUrl(s.targetIP, s.targetPort));
 
+  // Rewrite membership links to the local /membership portal
+  b = b.replace(/https?:\/\/(?:[a-zA-Z0-9_-]+\.)*clubpenguin\.com\/member(?:ship)?\/?/gi, '/membership');
+
   // Ruffle socket proxy
   const socketProxy = JSON.stringify([
     socketInfo(s.targetIP, s.loginPort),

@@ -2,7 +2,7 @@ import path from "path";
 import fs from 'fs';
 import { readFile, writeFile } from "@common/utils";
 import { MASCOTS } from "@server/game-data/mascots";
-import { isLower } from "@server/routes/versions";
+import { isGreaterOrEqual, isLower } from "@server/routes/versions";
 
 export type StampbookCover = {
   color: number,
@@ -98,6 +98,7 @@ export interface PenguinJson {
   
 // CURRENCY
   coins: number
+  beta_bonus_coins?: boolean
 
 // UNUSED - Meta information
   registration_date: number
@@ -209,7 +210,9 @@ function getStartingCoins(version?: string): number {
 
 export function getDefaultPenguin(name: string, color: number, member: boolean, virtualTimestamp: number, version?: string, passwordHash?: string, passwordPlain?: string): PenguinJson {
   const vDate = new Date(virtualTimestamp);
-  const vDateStr = `${vDate.getUTCFullYear()}-${String(vDate.getUTCMonth() + 1).padStart(2, '0')}-${String(vDate.getUTCDate()).padStart(2, '0')}`;
+  const vDateStr = version ?? `${vDate.getFullYear()}-${String(vDate.getMonth() + 1).padStart(2, '0')}-${String(vDate.getDate()).padStart(2, '0')}`;
+  const isPostBeta = version ? isGreaterOrEqual(version, '2005-10-24') : false;
+  const initialMember = member !== undefined ? member : (isPostBeta ? false : true);
 
   return {
     name: capitalizeName(name),
@@ -220,7 +223,7 @@ export function getDefaultPenguin(name: string, color: number, member: boolean, 
     account_created: Date.now(),
     virtual_registration_date: vDateStr,
 
-    is_member: member,
+    is_member: initialMember,
     membership_expires: null,
     banned_until: null,
     is_agent: false,
@@ -670,6 +673,33 @@ export class PenguinRepository {
 
   public async exists(name: string): Promise<boolean> {
     return await this.fromName(name) !== null;
+  }
+
+  public async getSavedBots(): Promise<Array<[number, PenguinJson]>> {
+    const files = await new Promise<string[]>((resolve, reject) => {
+      fs.readdir(this._path, (err, files) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(files || []);
+      });
+    });
+    const bots: Array<[number, PenguinJson]> = [];
+    for (const file of files) {
+      const idMatch = file.match(/^(\d+)\.json$/);
+      if (idMatch !== null) {
+        const id = Number(idMatch[1]);
+        if (id >= 9_000_000) {
+          try {
+            const content = JSON.parse((await readFile(path.join(this._path, file))).toString('utf-8'));
+            bots.push([id, content]);
+          } catch {
+            // Ignore malformed files
+          }
+        }
+      }
+    }
+    return bots;
   }
 }
 

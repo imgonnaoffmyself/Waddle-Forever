@@ -38,7 +38,7 @@ function isPSAAgent(p: WorldPenguin): boolean {
   return p.inventory.has(800);
 }
 
-const isNewBuddyProtocol = (data: GameData): boolean => {
+export const isNewBuddyProtocol = (data: GameData): boolean => {
   return !data.isPreCpip() || data.getChatVersion() >= 506;
 }
 
@@ -101,6 +101,18 @@ export function getPenguinString(data: GameData, p: WorldPenguin, state: { x: nu
 
 const enterRoom: PenguinHandler<[WorldRoom, number, number]> = (ctx, r, x, y) => {
   const { penguin, msg, data, world, bot } = ctx;
+  if (!isBot(penguin)) {
+    bot?.resolveBuddyNameConflicts(r, penguin);
+  } else if (bot?.hasBuddyNameConflictForBot(r, penguin)) {
+    const botObj = bot.getBot(penguin.id);
+    const altRoomId = botObj ? botObj.chooseRoom() : undefined;
+    if (altRoomId !== undefined && altRoomId !== r.id) {
+      const altRoom = world.getRoom(altRoomId);
+      world.enterState(penguin, { room: altRoom });
+      enterRoom(ctx, altRoom, 0, 0);
+      return;
+    }
+  }
   bot?.prepareIglooVisit(r, penguin);
   bot?.balanceRoomForPlayer(r, penguin);
   const previousPlayers = r.players;
@@ -255,7 +267,7 @@ export const leaveRoom: RoomHandler<[]> = async (ctx) => {
   await msg.send(room.players, 'rp', penguin.id, ...room.playerStates.map(([p, s]) => getPenguinString(data, p, s)));
 }
 
-export const joinRoom: PenguinHandler<[number, number, number]> = (ctx, id: number, x: number, y: number) => {
+export const joinRoom: PenguinHandler<number[]> = (ctx, id: number, x: number = 0, y: number = 0) => {
   const { world, penguin, msg, data } = ctx;
   if ('room' in ctx) {
     leaveRoom(ctx);
@@ -454,7 +466,7 @@ export const sendBuddyOnlineList: PenguinHandler<[]> = ({ msg, penguin, world })
 }
 
 export const handleBuddyRequest: PenguinHandler<[number]> = (ctx, targetId) => {
-  const { msg, penguin, world, data, prst } = ctx;
+  const { msg, penguin, world, data, prst, db } = ctx;
   const target = world.getById(targetId);
   if (target === undefined) {
     return;
@@ -465,12 +477,20 @@ export const handleBuddyRequest: PenguinHandler<[number]> = (ctx, targetId) => {
   }
 
   if (isBot(target)) {
-    // Ability to add bots and have them accept friend requests sometimes (~65%)
-    if (Math.random() < 0.65) {
-      setTimeout(() => {
+    // Chance for bots to accept (~60%) or say no (~40%)
+    const botObj = ctx.bot?.getBot(target.id);
+    const trait = botObj?.personalityTrait ?? 'friendly';
+
+    if (Math.random() < 0.60) {
+      setTimeout(async () => {
         target.buddy.add(penguin.id);
         penguin.buddy.add(target.id);
         prst(penguin, true);
+
+        // Persist the bot buddy in the database so they survive relogs & restarts!
+        target.setCanSave(true);
+        await db.write(target.id, { ...target.getJSON(), noSave: false });
+        ctx.bot?.recordSavedBotName(target.id, target.name);
 
         // Send buddy accept to the human player
         msg.send(penguin, 'ba', target.id, target.name);
@@ -479,8 +499,62 @@ export const handleBuddyRequest: PenguinHandler<[number]> = (ctx, targetId) => {
         const room = world.getPenguinRoom(target);
         const playerRoom = world.getPenguinRoom(penguin);
         if (room && playerRoom && room.id === playerRoom.id) {
-          msg.send(room.players, 'sp', target.id, 25);
-          msg.send(room.players, 'sm', target.id, "we're buddies now! :)");
+          msg.send(room.players, 'sf', target.id, 25);
+          const acceptLines: Record<string, string[]> = {
+            friendly: ["we're buddies now! :)", "yay, let's be friends! :D", "happy to be buddies!"],
+            excitable: ["yay!! we're buddies now!!", "let's hang out all the time!! :D", "awesome!! :D"],
+            curious: ["we're buddies now! :)", "nice to meet you, buddy!", "glad to be friends!"],
+            shy: ["we're buddies now... :)", "thanks for adding me... :)", "happy to be friends..."],
+            grumpy: ["fine, we're buddies now.", "sure, whatever.", "alright, added."]
+          };
+          const lines = acceptLines[trait] ?? acceptLines.friendly;
+          const line = lines[Math.floor(Math.random() * lines.length)];
+          msg.send(room.players, 'sm', target.id, line);
+        }
+      }, 1500 + Math.random() * 1500);
+    } else {
+      setTimeout(() => {
+        // Send buddy decline to the player
+        msg.send(penguin, 'bd', target.id, target.name);
+
+        // If in the same room, bot says no
+        const room = world.getPenguinRoom(target);
+        const playerRoom = world.getPenguinRoom(penguin);
+        if (room && playerRoom && room.id === playerRoom.id) {
+          const declineLines: Record<string, string[]> = {
+            friendly: [
+              "sorry, my buddy list is full!",
+              "sorry, i already have too many friends!",
+              "maybe later!",
+              "sorry, not right now!",
+              "i'm good, thanks though!"
+            ],
+            excitable: [
+              "sorry, my friends list is completely maxed out!!",
+              "can't right now, sorry!!",
+              "maybe later, i'm running around a lot today!"
+            ],
+            curious: [
+              "not right now, but maybe later!",
+              "sorry, my buddy list is packed!",
+              "maybe another time!"
+            ],
+            shy: [
+              "sorry, i'm a bit shy...",
+              "maybe later...",
+              "sorry, i don't know you that well yet..."
+            ],
+            grumpy: [
+              "no thanks.",
+              "i work alone.",
+              "leave me alone.",
+              "no thank you.",
+              "not interested."
+            ]
+          };
+          const lines = declineLines[trait] ?? declineLines.friendly;
+          const line = lines[Math.floor(Math.random() * lines.length)];
+          msg.send(room.players, 'sm', target.id, line);
         }
       }, 1500 + Math.random() * 1500);
     }
@@ -499,7 +573,7 @@ export const handleBuddyRequest: PenguinHandler<[number]> = (ctx, targetId) => {
 }
 
 export const handleBuddyAccept: PenguinHandler<[number]> = async (ctx, requesterId) => {
-  const { world, penguin, prst, msg, data, off } = ctx;
+  const { world, penguin, prst, msg, data, off, db } = ctx;
   const requester = world.getById(requesterId) ?? await off.getPenguin(requesterId);
 
   penguin.buddy.add(requesterId);
@@ -513,6 +587,25 @@ export const handleBuddyAccept: PenguinHandler<[number]> = async (ctx, requester
   }
   prst(requester);
 
+  if (requester instanceof WorldPenguin && isBot(requester)) {
+    requester.setCanSave(true);
+    await db.write(requester.id, { ...requester.getJSON(), noSave: false });
+    ctx.bot?.recordSavedBotName(requester.id, requester.name);
+
+    const room = world.getPenguinRoom(requester);
+    const playerRoom = world.getPenguinRoom(penguin);
+    if (room && playerRoom && room.id === playerRoom.id) {
+      msg.send(room.players, 'sf', requester.id, 25);
+      const acceptLines = [
+        "yay, thanks for adding me! :D",
+        "awesome, we're buddies now!",
+        "thanks for the add! :)",
+        "yay! let's hang out soon!"
+      ];
+      msg.send(room.players, 'sm', requester.id, acceptLines[Math.floor(Math.random() * acceptLines.length)]);
+    }
+  }
+
   if (isNewBuddyProtocol(data)) {
     sendGetBuddies(ctx);
     if (requester instanceof WorldPenguin) {
@@ -520,7 +613,7 @@ export const handleBuddyAccept: PenguinHandler<[number]> = async (ctx, requester
     }
   }
 
-  prst(penguin);
+  prst(penguin, true);
 }
 
 export const handleBuddyDecline: PenguinHandler<[number]> = (ctx, requesterId) => {
@@ -529,6 +622,20 @@ export const handleBuddyDecline: PenguinHandler<[number]> = (ctx, requesterId) =
   const requester = world.getById(requesterId);
   if (requester !== undefined) {
     msg.send(requester, 'bd', penguin.id, penguin.name);
+
+    if (isBot(requester)) {
+      const room = world.getPenguinRoom(requester);
+      const playerRoom = world.getPenguinRoom(penguin);
+      if (room && playerRoom && room.id === playerRoom.id) {
+        const declineReactions = [
+          "aww okay :(",
+          "maybe next time!",
+          "no worries!",
+          "aww :("
+        ];
+        msg.send(room.players, 'sm', requester.id, declineReactions[Math.floor(Math.random() * declineReactions.length)]);
+      }
+    }
   }
 }
 

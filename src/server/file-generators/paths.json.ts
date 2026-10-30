@@ -621,7 +621,7 @@ export function getPathsJson(d: GameData): string {
       "connection_web": "http:\/\/www.clubpenguin.com\/help\/help-topics\/connection-topics\/why-did-i-lose-my-connection-club-penguin",
       "cant_connect_web": "http:\/\/www.clubpenguin.com\/help\/help-topics\/connection-topics\/why-cant-i-connect-server",
       "support_web": "http:\/\/support.clubpenguin.com\/help\/",
-      "member_web": "https:\/\/secured.clubpenguin.com\/membership\/",
+      "member_web": "\/membership",
       "manage_web": "https:\/\/secured.clubpenguin.com\/parent-tools\/login",
       "community_web": "http:\/\/community.clubpenguin.com\/",
       "guide_web": "http:\/\/www.clubpenguin.com\/parents\/club_penguin_guide.htm",

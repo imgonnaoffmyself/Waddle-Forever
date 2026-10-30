@@ -71,7 +71,8 @@ export class WorldServer implements MessageHandler {
           convertXtMessage(e, c, ...a)
         );
       },
-      (b) => this.disconnect(b)
+      (b) => this.disconnect(b),
+      this._db
     );
   }
 

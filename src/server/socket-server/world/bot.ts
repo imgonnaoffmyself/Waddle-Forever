@@ -9,6 +9,7 @@ import { FindFourTable } from "./find-four";
 import { MancalaTable } from "./mancala";
 import { CardJitsu, NinjaPlayer } from "./card";
 import { SledRace } from "./sled";
+import { buildSledMap, SLED_HILL_0 } from "./sled-track";
 import { getNameFromId, getRoomFromName, IGLOO_ROOM_BASE, ROOMS } from "@server/game-data/rooms";
 import { getItemAvailability, getItemTypeFromEquipProp, getReleasedItems } from "@server/timelines/items";
 import { getBlock, findPathBetweenBlockPoints, compactPath, findLeftmostMiddlemostPosition, getRandomPositionFromBlock } from "./bot-block";
@@ -31,6 +32,13 @@ import {
 } from "@server/npc/npc-manager";
 import { RINK_PUCK_START } from "./world";
 import { getDaysDelta, isGreaterOrEqual, isLower } from "@server/routes/versions";
+import type { BotManager } from "./bots";
+import {
+  getAllEligibleSoloLinesForAge,
+  getAmbientSoloLine,
+  sampleRandomAgeGroup,
+  BotAgeGroup
+} from "@server/npc/ambient-dialogue";
 
 const EMPTY_SLOT_WEIGHTS: Record<EquipProp, number> = {
   color: 0,
@@ -65,6 +73,18 @@ export function generateRandomOutfit(
     const targetType = getItemTypeFromEquipProp(prop);
     const candidates: { id: number; weight: number }[] = [];
 
+    if (!isMember) {
+      if (prop === 'pin') {
+        // Pins are free in Club Penguin
+      } else if (prop === 'head' && inventory.includes(413)) {
+        // Former beta testers who didn't renew can still wear their beta party hat
+        candidates.push({ id: 413, weight: 100 });
+      } else {
+        items.push([prop, 0]);
+        return;
+      }
+    }
+
     // Empty slot option
     const emptyWeight = EMPTY_SLOT_WEIGHTS[prop] ?? 70;
     candidates.push({ id: 0, weight: emptyWeight });
@@ -84,10 +104,14 @@ export function generateRandomOutfit(
       // Most common items being the ones currently obtainable
       if (allAvailable.has(itemId)) {
         candidates.push({ id: itemId, weight: 100 });
-      } else {
+      } else if (inventory.includes(itemId)) {
         // Items obtainable in the past have a lower chance decaying by how long ago they were available
         const daysAgo = Math.max(0, getDaysDelta(availability.lastAvailableDate, currentDate));
-        const pastWeight = Math.max(1, Math.round(25 * Math.exp(-daysAgo / 180)));
+        let pastWeight = Math.max(1, Math.round(25 * Math.exp(-daysAgo / 180)));
+        if (itemId === 413 && currentDate === '2005-10-24') {
+          // Former beta testers flaunting their party hat on launch day
+          pastWeight = 120;
+        }
         candidates.push({ id: itemId, weight: pastWeight });
       }
     }
@@ -162,36 +186,119 @@ const TABLE_THINK_MAX = 4.2;
 const EMOTES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 
-// TODO -> Add safe chat lines
-//         Richer library of lines
-const CHAT_LINES = [
-  'hi', 'hello!', 'sup', 'wanna be buddies?', 'brb', 'cool igloo',
-  'lets go sledding', 'anyone wanna play find four?', 'nice hat',
-  'im so bored', 'party at my igloo', 'waddle on', 'lol', 'thanks!',
-  'where is everyone', 'first!', 'im a member', 'add me',
-  'hi everyone', 'whats up', 'wanna dance', 'lets dance', 'nice outfit',
-  'cool penguin', 'im hungry', 'wanna be friends', 'you are cool', 'peace',
-  'lets play', 'yay', 'grrrr', 'hello world', 'now check this out',
-  'check the newspaper', 'cant wait for the next party',
-  'everyone smile!', 'hey', 'yo', 'i saw a secret agent once',
-  'spy phone? what is that?', 'lets play hockey later',
-  'the catalog has a secret item', 'penguin chat', 'you guys are silly',
-  'now thats what im talking about!', 'snails used to live on our island',
-  'i need coins', 'i want coffee', 'im saving up for cool items',
-  'im saving up for expensive furniture', 'ur so random lol',
-  'im looking for cool penguins to hang with', 'good game',
-  'best day ever!', 'lets roleplay!', 'has anyone seen my friend?',
-  'this island is so cool :)', 'love it here already', 'wonder who else is online right now!',
-  'i hope i can make lots of friends', 'it\'s such a nice day out', 'waddling around is fun',
-  'everyone is so nice :)', 'im gonna explore the whole map today', 'has anyone seen a cool new room?',
-  'the games here are actually pretty fun', 'have you tried astro barrier? its upstairs in the dance club',
-  'still finding bugs lol but its still fun', 'i used to play penguin chat 3 so i had to sign up for the big update',
-  'club penguin is such a cute name for the big update', 'wow actually people on here today :)',
-  'the island feels kinda small but i love it', 'the cp team is gonna be here!!', 'anyone wanna play bean counters?',
-  'love the coffee shop :)', 'the coffee smell in here is so good!!', 'bean counters is my fave right now',
-  'anyone actually playing mancala here??', 'hey!! welcome :)', 'welcome to the island!!',
-  'glad you made it to the beta :D', 'so cool!!', 'nice moves!'
+interface GatedChatLine {
+  text: string;
+  after?: string;
+  before?: string;
+}
+
+const TIMELINE_CHAT_LINES: GatedChatLine[] = [
+  { text: 'hi' },
+  { text: 'hello!' },
+  { text: 'sup' },
+  { text: 'wanna be buddies?' },
+  { text: 'brb' },
+  { text: 'cool igloo' },
+  { text: 'nice hat' },
+  { text: 'im so bored' },
+  { text: 'party at my igloo' },
+  { text: 'waddle on' },
+  { text: 'lol' },
+  { text: 'thanks!' },
+  { text: 'where is everyone' },
+  { text: 'first!' },
+  { text: 'add me' },
+  { text: 'hi everyone' },
+  { text: 'whats up' },
+  { text: 'wanna dance' },
+  { text: 'lets dance' },
+  { text: 'nice outfit' },
+  { text: 'cool penguin' },
+  { text: 'im hungry' },
+  { text: 'wanna be friends' },
+  { text: 'you are cool' },
+  { text: 'peace' },
+  { text: 'lets play' },
+  { text: 'yay' },
+  { text: 'grrrr' },
+  { text: 'hello world' },
+  { text: 'now check this out' },
+  { text: 'everyone smile!' },
+  { text: 'hey' },
+  { text: 'yo' },
+  { text: 'lets play hockey later' },
+  { text: 'penguin chat' },
+  { text: 'you guys are silly' },
+  { text: 'now thats what im talking about!' },
+  { text: 'snails used to live on our island' },
+  { text: 'i need coins' },
+  { text: 'i want coffee' },
+  { text: 'im saving up for cool items' },
+  { text: 'im saving up for expensive furniture' },
+  { text: 'ur so random lol' },
+  { text: 'im looking for cool penguins to hang with' },
+  { text: 'good game' },
+  { text: 'best day ever!' },
+  { text: 'lets roleplay!' },
+  { text: 'has anyone seen my friend?' },
+  { text: 'this island is so cool :)' },
+  { text: 'love it here already' },
+  { text: 'wonder who else is online right now!' },
+  { text: 'i hope i can make lots of friends' },
+  { text: "it's such a nice day out" },
+  { text: 'waddling around is fun' },
+  { text: 'everyone is so nice :)' },
+  { text: 'im gonna explore the whole map today' },
+  { text: 'has anyone seen a cool new room?' },
+  { text: 'the games here are actually pretty fun' },
+  { text: 'still finding bugs lol but its still fun' },
+  { text: 'i played penguin chat 3, had to try update!' },
+  { text: 'club penguin is such a cute name for it :)' },
+  { text: 'wow actually people on here today :)' },
+  { text: 'the island feels kinda small but i love it' },
+  { text: 'the cp team is gonna be here!!' },
+  { text: 'anyone wanna play bean counters?' },
+  { text: 'love the coffee shop :)' },
+  { text: 'the coffee smell in here is so good!!' },
+  { text: 'bean counters is my fave right now' },
+  { text: 'hey!! welcome :)' },
+  { text: 'welcome to the island!!' },
+  { text: 'anyone actually playing mancala here??' },
+  { text: 'so cool!!' },
+  { text: 'nice moves!' },
+
+  // Beta era only (< 2005-10-24)
+  { text: 'glad you made it to the beta :D', before: '2005-10-24' },
+  { text: 'cant wait for the next party', before: '2005-10-24' },
+
+  // Astro Barrier (>= 2005-09-13)
+  { text: 'tried astro barrier upstairs in dance club?', after: '2005-09-13' },
+
+  // Sled Racing & Mountain (>= 2005-10-20)
+  { text: 'lets go sledding', after: '2005-10-20' },
+  { text: 'who wants to race down the mountain?', after: '2005-10-20' },
+
+  // Launch Day, PSA, Newspaper, Catalogs, Membership (>= 2005-10-24)
+  { text: 'i saw a secret agent once', after: '2005-10-24' },
+  { text: 'spy phone? what is that?', after: '2005-10-24' },
+  { text: 'the catalog has a secret item', after: '2005-10-24' },
+  { text: 'check the newspaper', after: '2005-10-24' },
+  { text: 'im a member', after: '2005-10-24' },
+
+  // Find Four in Ski Lodge (>= 2006-04-27)
+  { text: 'anyone wanna play find four?', after: '2006-04-27' }
 ];
+
+export function getEligibleChatLines(currentDate: string, ageGroup?: BotAgeGroup): string[] {
+  const eligible = TIMELINE_CHAT_LINES.filter(item => {
+    if (item.after && isLower(currentDate, item.after)) return false;
+    if (item.before && !isLower(currentDate, item.before)) return false;
+    return true;
+  }).map(item => item.text);
+  const ambient = ageGroup ? getAllEligibleSoloLinesForAge(ageGroup) : [];
+  const combined = [...eligible, ...ambient];
+  return combined.length > 0 ? combined : ['hi', 'hello!', 'waddle on'];
+}
 
 export const IGLOO_PISSED_LINES = [
   "who the hell are you?! get out!",
@@ -201,7 +308,7 @@ export const IGLOO_PISSED_LINES = [
   "excuse me?! door's behind you, get lost!",
   "what the fuck are you doing in my igloo?!",
   "trespasser!! OUT!",
-  "did you really just walk into my house unannounced?!",
+  "you really just walked in unannounced?!",
   "i'm calling the cops. GET OUT.",
   "fuck off creep!!",
   "do you mind?! this is a PRIVATE igloo!",
@@ -212,17 +319,17 @@ export const IGLOO_PISSED_LINES = [
 
 export const IGLOO_DECOR_LINES = [
   "omg a guest!! what do you think of my setup?!",
-  "hey! be honest, does this couch match the carpet?",
-  "welcome!! i just spent all my coins on this furniture, how does it look?",
-  "hey!! look around, what do you think of the vibes?",
-  "you like the decor? took me hours to place this just right!",
+  "be honest, does this couch match carpet?",
+  "spent all my coins on furniture, how is it?",
+  "look around, what do you think of vibes?",
+  "like the decor? took hours to place right!",
   "welcome to my house! rate it 1 to 10 please!!",
   "i'm thinking of getting a fireplace next, thoughts?",
   "check out my stereo! pretty sweet right?",
-  "does this room feel cozy or too crowded? be honest!",
-  "glad someone came by! how do you like the layout?",
-  "took me forever to save up for this flooring, look!",
-  "hey!! do you think i should move the stereo over there?"
+  "does room feel cozy or crowded? be honest!",
+  "glad you came by! how is the layout?",
+  "took forever to save for this flooring!",
+  "should i move the stereo over there?"
 ];
 
 export const IGLOO_PLEASED_LINES = [
@@ -235,7 +342,7 @@ export const IGLOO_PLEASED_LINES = [
   "hey buddy! pull up a bean bag :)",
   "oh hi there! good to see a friendly face!",
   "make yourself comfortable, glad you stopped by!",
-  "hey friend!! perfect timing, I just put on some music"
+  "perfect timing, just put on some music!"
 ];
 
 export const IGLOO_STARTLED_LINES = [
@@ -243,11 +350,11 @@ export const IGLOO_STARTLED_LINES = [
   "woah!! how did you get in here?!",
   "wait what... who gave you my address?!",
   "omg you scared the feathers off me!!",
-  "did you just... walk right through my front door?!",
+  "did you just walk through my front door?!",
   "uhhh... hello? can i help you?? lol",
   "wait I was just changing clothes omg look away!!",
   "uhhh.. ignore the mess, I wasn't expecting company",
-  "i literally just vacuumed please take your shoes off",
+  "just vacuumed, please take shoes off!",
   "omg my heart... knock next time please!!"
 ];
 
@@ -507,23 +614,165 @@ class SledBrain implements BotBrain {
     private _send: SendFunction,
     private _onEnd: () => void
   ) {
-    let tickCount = 0;
+    const map = buildSledMap(SLED_HILL_0);
+    const lanes = [160, 120, 80, 40];
+    const seatId = Math.max(0, this._seatId);
+    let x = lanes[seatId] ?? 100;
+    let y = 0;
+    let speed = 0;
+    let isCrashed = false;
+    let crashTimer = 0;
+    let isFinished = false;
+    let finishTimer = 0;
+    const startTime = Date.now();
+    let lastTime = startTime;
+    let lastSyncTime = startTime;
+
+    // 82% to 98% dodge skill
+    const dodgeSkill = 0.82 + Math.random() * 0.16;
+
     this._interval = setInterval(() => {
       if (this._disposed) return;
-      tickCount++;
-      const progress = tickCount / 12;
-      const x = 380 + Math.sin(tickCount) * 100;
-      const y = Math.round(progress * 1000);
-      this._send('z', 'zm', this._seatId, Math.round(x), y, Date.now());
+      const now = Date.now();
+      const dt = Math.min(200, Math.max(10, now - lastTime));
+      lastTime = now;
 
-      if (tickCount >= 12) {
-        this.dispose();
+      if (!this._sled.isRacing()) {
+        return;
       }
-    }, 1500);
+
+      const gameTime = this._sled.getGameTime();
+
+      if (isFinished) {
+        finishTimer += dt;
+        if (finishTimer >= 3000) {
+          this.dispose();
+        }
+        return;
+      }
+
+      if (isCrashed) {
+        crashTimer -= dt;
+        speed *= 0.9;
+        if (crashTimer <= 0) {
+          isCrashed = false;
+          speed = 10;
+        }
+        return;
+      }
+
+      // Normal speed curve
+      if (speed < 20) {
+        speed = Math.min(20, speed + 2);
+      } else if (speed > 20) {
+        speed = Math.max(20, speed * 0.96);
+      }
+
+      const move = (dt / 40) * speed;
+      y += move;
+
+      const py = Math.floor(y / 20);
+      const px = Math.min(9, Math.max(0, Math.round(x / 20)));
+
+      // Finish line at row 890 / y 17800
+      if (py >= 890 || y >= 17800) {
+        isFinished = true;
+        this._send('z', 'zm', seatId, 0, Math.round(y), gameTime);
+        this._send('z', 'zo', Math.min(4, Math.max(1, seatId + 1)));
+        return;
+      }
+
+      const currentTile = map[py]?.[px] ?? 0;
+
+      // Obstacle collision (tile 11: tree or rock)
+      if (currentTile === 11) {
+        isCrashed = true;
+        crashTimer = 1200;
+        speed = 20;
+        this._send('z', 'zm', seatId, 1, Math.round(y), gameTime);
+        return;
+      }
+
+      // Boost ramp (tile 12)
+      if (currentTile === 12 && speed < 60) {
+        speed = 60;
+        // In AS2 SledRacing2006.swf, sending n >= 400 triggers `player.s = mySpeed[diff]`, where diff is a float,
+        // resulting in undefined (NaN) due to AS2 float indexing.
+        // Instead, the bot accelerates internally and sends normal position (x + 100).
+        this._send('z', 'zm', seatId, x + 100, Math.round(y), gameTime);
+        return;
+      }
+
+      // Lookahead obstacle dodging & boost targeting
+      const lookahead = 12;
+      let obstacleAheadInLane = false;
+      for (let r = 1; r <= lookahead; r++) {
+        if (map[py + r]?.[px] === 11) {
+          obstacleAheadInLane = true;
+          break;
+        }
+      }
+
+      let desiredCol = px;
+      if (obstacleAheadInLane && Math.random() < dodgeSkill) {
+        const leftCol = px - 1;
+        const rightCol = px + 1;
+        let leftSafe = leftCol >= 0;
+        let rightSafe = rightCol <= 9;
+
+        if (leftSafe) {
+          for (let r = 1; r <= lookahead; r++) {
+            if (map[py + r]?.[leftCol] === 11) {
+              leftSafe = false;
+              break;
+            }
+          }
+        }
+        if (rightSafe) {
+          for (let r = 1; r <= lookahead; r++) {
+            if (map[py + r]?.[rightCol] === 11) {
+              rightSafe = false;
+              break;
+            }
+          }
+        }
+
+        if (leftSafe && rightSafe) {
+          desiredCol = Math.abs(leftCol - 4.5) < Math.abs(rightCol - 4.5) ? leftCol : rightCol;
+        } else if (leftSafe) {
+          desiredCol = leftCol;
+        } else if (rightSafe) {
+          desiredCol = rightCol;
+        }
+      } else if (!obstacleAheadInLane && Math.random() < 0.25) {
+        for (let r = 1; r <= 8; r++) {
+          if (px > 0 && map[py + r]?.[px - 1] === 12) {
+            desiredCol = px - 1;
+            break;
+          } else if (px < 9 && map[py + r]?.[px + 1] === 12) {
+            desiredCol = px + 1;
+            break;
+          }
+        }
+      }
+
+      let steered = false;
+      if (desiredCol !== px) {
+        const targetX = desiredCol * 20;
+        const dir = targetX > x ? 1 : -1;
+        x = Math.max(0, Math.min(180, x + dir * 20));
+        steered = true;
+      }
+
+      if (steered || now - lastSyncTime >= 400) {
+        lastSyncTime = now;
+        this._send('z', 'zm', seatId, x + 100, Math.round(y), gameTime);
+      }
+    }, 100);
   }
 
   handle(name: string, args: string[]): void {
-    if (name === 'zo' || name === 'lz') {
+    if (name === 'zo' || name === 'lz' || name === 'lt') {
       this.dispose();
     }
   }
@@ -541,6 +790,7 @@ class SledBrain implements BotBrain {
 
 export type BotAttributes = {
   personalityTrait?: PersonalityTrait;
+  ageGroup?: BotAgeGroup;
   emptyRoomTolerance: number;
   roomDistraction: number;
   snowballFan: number;
@@ -759,7 +1009,15 @@ const BEHAVIORS: Behavior[] = [
         return false;
       }
       if (room.hasRealPlayers) {
-        return rng.random() < 0.15;
+        const botCount = room.players.filter(p => isBot(p)).length;
+        const weightMap = getRoomWeightMap(bot.data.getDate());
+        const baseWeight = Math.max(1, weightMap.get(room.id) ?? 1);
+        const crowdLimit = baseWeight >= 3 ? Math.round(baseWeight * 2.5) : 3;
+        // Don't leave if the room is at or below minimum crowd threshold
+        if (botCount <= Math.max(2, Math.floor(crowdLimit * 0.5))) {
+          return rng.random() < 0.04;
+        }
+        return rng.random() < 0.12;
       }
       const botCount = room.players.filter(p => isBot(p)).length;
       const weightMap = getRoomWeightMap(bot.data.getDate());
@@ -993,7 +1251,19 @@ export class Bot implements ClientSocket {
   public isPartyHomie = false;
   private _brain: BotBrain | null = null;
   public get busy () {
-    return this._brain !== null;
+    if (this._brain !== null) {
+      return true;
+    }
+    const room = this._world.getPenguinRoom(this.penguin);
+    if (room !== undefined) {
+      if (room.getWaddleRooms().some(w => w.getSeats().some(p => p?.id === this.penguin.id))) {
+        return true;
+      }
+      if (room.getTables().some(t => t.getSeats().some(p => p?.id === this.penguin.id))) {
+        return true;
+      }
+    }
+    return false;
   }
   private _timers = new Set<NodeJS.Timeout>();
 
@@ -1017,6 +1287,7 @@ export class Bot implements ClientSocket {
   }
 
   public personalityTrait: PersonalityTrait;
+  public ageGroup: BotAgeGroup;
   public recentMessages: string[] = [];
   public recentTopics: any[] = [];
 
@@ -1026,6 +1297,10 @@ export class Bot implements ClientSocket {
 
   public get membership() {
     return this._penguin.membership;
+  }
+
+  public get isMember(): boolean {
+    return this._penguin.membership.isMember;
   }
 
   public get isDev() {
@@ -1046,12 +1321,15 @@ export class Bot implements ClientSocket {
     private _world: World,
     public nextActionAt: number,
     writeFn: WriteFunction,
-    private _attributes: BotAttributes
+    private _attributes: BotAttributes,
+    private _manager?: BotManager
   ) {
     this._simulate = (e, c, ...a) => writeFn(this, e, c, ...a);
     this.personalityTrait = _attributes.personalityTrait
       ?? DEV_NPC_TRAITS[this._penguin.name as any]
       ?? choose(['friendly', 'shy', 'grumpy', 'excitable', 'curious']);
+    this.ageGroup = _attributes.ageGroup
+      ?? sampleRandomAgeGroup(this.isDev);
   }
 
   public simulate(ext: string, code: string, ...args: Array<string | number>): void {
@@ -1134,8 +1412,8 @@ export class Bot implements ClientSocket {
     this.nextActionAt = Date.now() + randomInt(1500, 3500);
   }
 
-  private async exitGameMode() {
-    await this.enter(this.chooseRoom());
+  private async exitGameMode(targetRoomId?: number) {
+    await this.enter(targetRoomId ?? this.chooseRoom());
   }
 
   private handleOverworld(message: string, args: string[]): void {
@@ -1180,13 +1458,14 @@ export class Bot implements ClientSocket {
   }
 
   public joinSled(sled: SledRace): void {
+    this.stopAllActions();
     this._brain = new SledBrain(
       sled,
       sled.getSeatId(this._penguin),
       this._simulate,
       () => {
         this._brain = null;
-        this.exitGameMode();
+        this.exitGameMode(230);
       }
     );
   }
@@ -1239,6 +1518,9 @@ export class Bot implements ClientSocket {
   }
 
   public sendMessage(message: string) {
+    if (message.length > 48) {
+      message = message.slice(0, 48);
+    }
     if (this._data.isPreCpip()) {
       this._simulate('m', 'sm', this._penguin.id, message);
     } else {
@@ -1312,6 +1594,11 @@ export class Bot implements ClientSocket {
   }
 
   public chooseRoom(): number {
+    if (this.isDev && this._data.getDate() === '2005-10-24') {
+      const devRooms = [100, 110, 120]; // Town, Coffee Shop, Dance Club
+      return choose(devRooms);
+    }
+
     // Small chance (~7%) to visit an open igloo where the owner is inside
     if (Math.random() < 0.07) {
       const openPlayers = this._world.getOpenIglooPlayers();
@@ -1321,6 +1608,9 @@ export class Bot implements ClientSocket {
         const currentRoom = this._world.getPenguinRoom(p);
         const pIglooId = p.id + IGLOO_ROOM_BASE;
         if (currentRoom && currentRoom.id === pIglooId) {
+          if (this._manager && this._manager.hasBuddyNameConflictForBot(currentRoom, this._penguin, p)) {
+            continue;
+          }
           eligibleIgloos.push(pIglooId);
         }
       }
@@ -1331,11 +1621,24 @@ export class Bot implements ClientSocket {
 
     const availableRooms = this._data.getAvailableRooms();
     const canGo = availableRooms.filter(r => {
+      if (r === 'agent') {
+        return this._penguin.inventory.has(800) || this._penguin.psa?.isAgent;
+      }
       return this._penguin.membership.isMember || !this._data.isRoomMember(r);
     });
-    const validRoomIds = canGo
+    let validRoomIds = canGo
       .map(name => ROOMS[name]?.id)
       .filter((id): id is number => id !== undefined && id < IGLOO_ROOM_BASE);
+
+    if (this._manager) {
+      const nonConflicting = validRoomIds.filter(roomId => {
+        const room = this._world.getRoom(roomId);
+        return !this._manager?.hasBuddyNameConflictForBot(room, this._penguin);
+      });
+      if (nonConflicting.length > 0) {
+        validRoomIds = nonConflicting;
+      }
+    }
 
     if (validRoomIds.length === 0) {
       return 100;
@@ -1360,8 +1663,15 @@ export class Bot implements ClientSocket {
       const targetShare = Math.max(1, (baseWeight / totalBaseWeight) * totalBots);
 
       let weightMultiplier: number;
-      if (currentCount === 0) {
-        weightMultiplier = 2.0;
+      if (room.hasRealPlayers) {
+        // Bots naturally want to hang out in rooms with real human players!
+        if (currentCount < targetShare) {
+          weightMultiplier = 3.0 + 2.0 * (targetShare - currentCount) / targetShare;
+        } else {
+          weightMultiplier = Math.max(0.8, targetShare / (currentCount + 1));
+        }
+      } else if (currentCount === 0) {
+        weightMultiplier = 1.2;
       } else if (currentCount < targetShare) {
         weightMultiplier = 1.0 + (targetShare - currentCount) / targetShare;
       } else {
@@ -1427,13 +1737,31 @@ export class Bot implements ClientSocket {
       return;
     }
 
-    const dialogue = PERSONALITY_DIALOGUE[this.personalityTrait];
-    if (!dialogue) {
-      this.sendMessage(choose(CHAT_LINES));
+    if (this.isDev) {
+      this.sendDevMessage(room);
       return;
     }
 
+    // Attempt initiating a multi-bot dialogue chain with another bot in the room
+    if (this._manager && Math.random() < 0.45) {
+      if (this._manager.tryTriggerDialogueChain(room, this)) {
+        return;
+      }
+    }
+
+    const dialogue = PERSONALITY_DIALOGUE[this.personalityTrait];
     const currentDate = this._data.getDate();
+    if (!dialogue) {
+      this.sendMessage(choose(getEligibleChatLines(currentDate)));
+      return;
+    }
+
+    // 40% chance to speak about ambient real-world topics partitioned by age group and personality trait
+    if (Math.random() < 0.40) {
+      this.sendMessage(getAmbientSoloLine(this.ageGroup, this.personalityTrait));
+      return;
+    }
+
     const roomPool = dialogue.onIdle[room.id];
     const anyPool = dialogue.onIdle['any'];
 
@@ -1448,8 +1776,108 @@ export class Bot implements ClientSocket {
     if (entry !== undefined) {
       this.executeSteps(entry.steps);
     } else {
-      this.sendMessage(choose(CHAT_LINES));
+      this.sendMessage(choose(getEligibleChatLines(currentDate)));
     }
+  }
+
+  private sendDevMessage(room: WorldRoom): void {
+    const currentDate = this._data.getDate();
+    const devName = this._penguin.name;
+
+    // Beta Test Party (2005-09-21)
+    if (currentDate === '2005-09-21') {
+      const partyLinesByDev: Record<string, string[]> = {
+        'Rsnail': [
+          'welcome to the beta party eh! :)',
+          'thanks so much for testing club penguin!',
+          'grab a party hat from the boxes in town!',
+          'so great seeing everyone testing today :)'
+        ],
+        'Billybob': [
+          'billybob here! thanks for coming out eh! :)',
+          'everyone loving the party hats? so cool!',
+          'thanks a bunch for testing with us! :)'
+        ],
+        'Screenhog': [
+          'hope you like the party hat i drew! :D',
+          'screenhog here! loving the music eh!',
+          'drawing all these penguins is a blast! :D'
+        ],
+        'Gizmo': [
+          'gizmo here! servers holding up great eh!',
+          'welcome to the beta test party everyone! :)',
+          'thanks for helping us test the server! :)'
+        ]
+      };
+      const lines = partyLinesByDev[devName] ?? [
+        'welcome to the beta test party eh! :)',
+        'thanks so much for testing club penguin!'
+      ];
+      this.sendMessage(choose(lines));
+      return;
+    }
+
+    // Launch Day (2005-10-24)
+    if (currentDate === '2005-10-24') {
+      const launchLinesByDev: Record<string, string[]> = {
+        'Rsnail': [
+          'welcome to launch day everyone! :)',
+          'rsnail here! thanks for playing club penguin',
+          'we are officially launched eh! so happy!',
+          'hope you are enjoying the island eh! :)'
+        ],
+        'Billybob': [
+          'billybob here! happy launch day eh! :D',
+          'welcome new penguins and beta testers alike!',
+          'thanks a million for joining us today! :)'
+        ],
+        'Screenhog': [
+          'screenhog here! hope you like the art! :D',
+          'look at the shadows under our feet eh! :D',
+          'working on new tunes for the coffee shop! :)'
+        ],
+        'Gizmo': [
+          'gizmo here! happy launch day everyone! :)',
+          'so glad to have you all here on the island!',
+          'thanks for being part of club penguin eh! :)'
+        ]
+      };
+      const lines = launchLinesByDev[devName] ?? [
+        'welcome to official launch day everyone! :)',
+        'thanks so much for joining us on the island!'
+      ];
+      this.sendMessage(choose(lines));
+      return;
+    }
+
+    // General / other dates
+    const generalLinesByDev: Record<string, string[]> = {
+      'Rsnail': [
+        'hope you are having fun on the island eh! :)',
+        'rsnail here! let us know if you find bugs',
+        'thanks for playing club penguin with us! :)'
+      ],
+      'Billybob': [
+        'billybob here! hope you are having a blast!',
+        'always happy to see new penguins waddling! :)',
+        'thanks a bunch for stopping by eh! :)'
+      ],
+      'Screenhog': [
+        'screenhog here! doodling some new rooms :)',
+        'hope you enjoy the island music and art! :D',
+        'having such a fun time animating penguins! :D'
+      ],
+      'Gizmo': [
+        'gizmo here! everything running smoothly eh!',
+        'hi there! thanks for waddling around with us',
+        'hope you have a wonderful day on the island'
+      ]
+    };
+    const lines = generalLinesByDev[devName] ?? [
+      'hope you have a wonderful day on the island',
+      'thanks so much for playing with us today! :)'
+    ];
+    this.sendMessage(choose(lines));
   }
 
   public sendIglooMessage(room: WorldRoom): void {
@@ -1491,12 +1919,13 @@ export class Bot implements ClientSocket {
       ]
     };
 
+    const currentDate = this._data.getDate();
     const guestLines: Record<PersonalityTrait, string[]> = {
       friendly: [
         'great igloo! loving the setup',
         'this place is so cozy',
         'turn up the music! ♫',
-        'who wants to play find four later?',
+        ...(isGreaterOrEqual(currentDate, '2006-04-27') ? ['who wants to play find four later?'] : ['who wants to play minigames later?']),
         'love what you did with the furniture!'
       ],
       excitable: [
@@ -1607,7 +2036,7 @@ export class Bot implements ClientSocket {
   }
 
   public wearOutfit(): void {
-    const outfit = generateRandomOutfit(this._data, [...this._penguin.inventory.items]);
+    const outfit = generateRandomOutfit(this._data, [...this._penguin.inventory.items], this.isMember);
     equipProp.forEach(prop => {
       this.wearItem(prop, outfit[prop]);
     })
@@ -1635,6 +2064,12 @@ export class Bot implements ClientSocket {
     }
     const room = this._world.getPenguinRoom(this.penguin);
     if (room === undefined || !room.hasRealPlayers) {
+      return;
+    }
+    if (room.getWaddleRooms().some(w => w.getSeats().some(p => p?.id === this.penguin.id))) {
+      return;
+    }
+    if (room.getTables().some(t => t.getSeats().some(p => p?.id === this.penguin.id))) {
       return;
     }
 

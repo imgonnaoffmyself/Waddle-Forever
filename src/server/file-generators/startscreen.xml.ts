@@ -58,7 +58,7 @@ export function getStartscreenXML(d: GameData) {
 		
 		<button id="create_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:CreateAccountButton" href="create/" target="_top" x="650" y="370">Create a new Penguin</button>
 		
-		<button id="member_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:BecomeMemberButton" href="http://www.clubpenguin.com/membership/" target="_top" x="650" y="425">Become a member</button>
+		<button id="member_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:BecomeMemberButton" href="/membership" target="_blank" x="650" y="425">Become a member</button>
 		
 		<button id="unlock_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:UnlockItemButton" src="http://media1.clubpenguin.com/play/start/image/unlock-items-icon.swf" href="redeem/" target="_top" x="95" y="400">Unlock items online!</button>
 		
@@ -119,7 +119,7 @@ export function getStartscreenXML(d: GameData) {
 		
 		<button id="create_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:CreateAccountButton" href="" target="_top" x="180" y="405" fontSize="18">Create a Penguin</button>
 		
-		<button id="membership_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:MembershipButton" href="http://betateam.www.clubpenguin.com/membership/" target="_top" x="440" y="287" fontSize="12">Buy a Membership</button>
+		<button id="membership_button" classpath="com:clubpenguin:web:play:startscreen:view:ui:MembershipButton" href="/membership" target="_blank" x="440" y="287" fontSize="12">Buy a Membership</button>
 		
 	</button_list>
 	

@@ -31,6 +31,76 @@ export function getServerPopulation(): number {
   }
 }
 
+/**
+ * Returns a population value for pre-CPIP clients.
+ * For chatVersion < 506 (e.g. 291, 299, 339), clients calculate bars by player count:
+ * <50 -> 1 bar, <100 -> 2 bars, <200 -> 3 bars, <400 -> 4 bars, <500 -> 5 bars, >=500 -> 6 bars.
+ * For chatVersion >= 506 (e.g. 506, 604), clients directly call gotoAndStop(Number(Pop)) with 1-6.
+ */
+export function getPreCpipServerPopulation(isBlizzard: boolean, chatVersion: number): number {
+  const level = isBlizzard ? 5 : getServerPopulation();
+  if (chatVersion >= 506) {
+    return level;
+  }
+  switch (level) {
+    case 1:
+      return Math.floor(Math.random() * 40) + 5;
+    case 2:
+      return Math.floor(Math.random() * 40) + 55;
+    case 3:
+      return Math.floor(Math.random() * 80) + 110;
+    case 4:
+      return Math.floor(Math.random() * 150) + 220;
+    case 5:
+      return Math.floor(Math.random() * 80) + 410;
+    case 6:
+      return Math.floor(Math.random() * 50) + 500;
+    default:
+      return Math.floor(Math.random() * 40) + 5;
+  }
+}
+
+/**
+ * Generates comma-delimited world population parameter 'w' for pre-CPIP login.php.
+ * Format for each entry is `id|population`.
+ */
+export function getPreCpipWorldPopulations(chatVersion: number): string {
+  const entries: string[] = [];
+  const handledIds = new Set<number>();
+
+  // 1. Blizzard (id 100)
+  entries.push(`100|${getPreCpipServerPopulation(true, chatVersion)}`);
+  handledIds.add(100);
+
+  // 2. Pre-CPIP classic server ID ranges
+  const precpipRanges: [number, number][] = [
+    [101, 165],
+    [200, 215],
+    [300, 315],
+    [400, 405]
+  ];
+
+  for (const [start, end] of precpipRanges) {
+    for (let id = start; id <= end; id++) {
+      if (!handledIds.has(id)) {
+        handledIds.add(id);
+        entries.push(`${id}|${getPreCpipServerPopulation(false, chatVersion)}`);
+      }
+    }
+  }
+
+  // 3. Servers in serverList
+  for (const server of serverList) {
+    if (!handledIds.has(server.id)) {
+      handledIds.add(server.id);
+      const isBlizzard = server.name === 'Blizzard';
+      entries.push(`${server.id}|${getPreCpipServerPopulation(isBlizzard, chatVersion)}`);
+    }
+  }
+
+  return entries.join(',');
+}
+
 type PenguinServer = {
   name: string
   id: number

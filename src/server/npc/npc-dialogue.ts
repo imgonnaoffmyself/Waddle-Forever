@@ -37,6 +37,7 @@
 //   1 = normal  2 = walk  13 = sit  25 = wave  26 = dance
 
 import { PersonalityDialogue, PersonalityTrait } from './npc-types';
+import { isLower } from '@server/routes/versions';
 
 // ─────────────────────────────────────────────────────────────
 // FRIENDLY
@@ -107,15 +108,15 @@ const FRIENDLY: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'great. a party on wednesday. going to be so laggy.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'great. wednesday party will be so laggy.' } }],
       },
       {
         gate: { after: '2005-09-13', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'new game AND a party this week. they really went for it' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'new game AND a party! really went for it.' } }],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'have you tried astro barrier? its upstairs in the dance club' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'tried astro barrier upstairs in dance club?' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -123,11 +124,11 @@ const FRIENDLY: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i used to play penguin chat 3 so i had to sign up for the big update' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'played penguin chat 3, had to try big update!' } }],
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'club penguin is such a cute name for the big update' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'club penguin is such a cute name for it :)' } }],
       },
     ],
     100: [ // Town
@@ -172,7 +173,7 @@ const FRIENDLY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'kinda quiet compared to downstairs' } }] },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is so fun!! i keep coming back up here' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is so fun! keep coming up here!' } }],
       },
       {
         gate: { after: '2005-09-13' },
@@ -183,7 +184,7 @@ const FRIENDLY: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i cant believe they added a new game!! astro barrier is amazing!!' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'cant believe the new game! astro barrier rocks!' } }],
       },
     ],
     130: [ // Gift Shop
@@ -204,11 +205,11 @@ const FRIENDLY: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'this is the best room for snowball fights already' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'this is the best room for snowball fights!' } }],
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is getting close!! maybe they decorate the forts too' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is getting close! hope they decorate forts' } }],
       },
     ],
     802: [ // Ice Rink
@@ -235,7 +236,7 @@ const FRIENDLY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the view from up here is incredible!!' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'who wants to race on the 4 player track?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'sled racing is so fast!' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'watch out for the ice patches on the way down lol' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'watch out for ice patches on the way down lol' } }] },
     ],
   },
 
@@ -309,11 +310,11 @@ const FRIENDLY: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 800, action: { type: 'chat', message: 'i came over from penguin chat 3 to try the big update :)' } }],
+          steps: [{ delayMs: 800, action: { type: 'chat', message: 'came from penguin chat 3 for the big update :)' } }],
         },
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'some people still call club penguin the big update lol' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'people still call club penguin big update lol' } }],
         },
       ],
     },
@@ -393,11 +394,11 @@ const FRIENDLY: PersonalityDialogue = {
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 900, action: { type: 'chat', message: 'oh the snow forts!! best place for snowball fights :)' } }],
+          steps: [{ delayMs: 900, action: { type: 'chat', message: 'snow forts! best place for snowball fights :)' } }],
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 1100, action: { type: 'chat', message: 'yeah!! they opened by the rink and theyre super fun' } }],
+          steps: [{ delayMs: 1100, action: { type: 'chat', message: 'yeah! opened by the rink, theyre super fun!' } }],
         },
       ],
     },
@@ -413,7 +414,7 @@ const FRIENDLY: PersonalityDialogue = {
       keywords: ['ballistic', 'biscuit', 'hydro', 'score'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'my high score in ballistic biscuit is terrible lol' } }] },
+        { steps: [{ delayMs: 1000, action: { type: 'chat', message: 'my score in ballistic biscuit is terrible lol' } }] },
         { steps: [{ delayMs: 1200, action: { type: 'chat', message: 'i keep falling off the tube' } }] },
       ],
     },
@@ -446,7 +447,7 @@ const FRIENDLY: PersonalityDialogue = {
       cooldownMs: 30_000,
       responses: [
         { steps: [{ delayMs: 800, action: { type: 'chat', message: 'i have so many coins from bean counters!!' } }] },
-        { steps: [{ delayMs: 900, action: { type: 'chat', message: 'coins are so easy to get if you play games all day' } }] },
+        { steps: [{ delayMs: 900, action: { type: 'chat', message: 'coins are easy to get if you play all day' } }] },
         { steps: [{ delayMs: 700, action: { type: 'chat', message: 'im trying to save up but i keep spending lol' } }] },
         { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 800, action: { type: 'chat', message: 'tons of coins but nothing to spend them on :(' } }] },
       ],
@@ -641,11 +642,11 @@ const SHY: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i only joined because i used to play penguin chat 3..' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i only joined because of penguin chat 3..' } }],
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'everyone still calling club penguin the big update is kinda confusing..' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'calling it the big update is confusing..' } }],
       },
       {
         gate: { before: '2005-09-21' },
@@ -674,7 +675,7 @@ const SHY: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is less stressful when no one is watching..' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier is calmer when no one watches..' } }],
       },
     ],
     130: [
@@ -691,11 +692,11 @@ const SHY: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'i liked it more when town and the rink were separate..' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'liked it more when town and rink were separate' } }],
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is getting close.. which means more people..' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is getting close.. means more people..' } }],
       },
     ],
     200: [
@@ -779,7 +780,7 @@ const SHY: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'i knew about it from penguin chat 3.. before they called it club penguin' } }],
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'knew it from penguin chat 3.. before cp' } }],
         },
         {
           gate: { before: '2005-10-24' },
@@ -817,11 +818,11 @@ const SHY: PersonalityDialogue = {
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 2200, action: { type: 'chat', message: 'oh.. the snow forts are kind of scary when everyone starts throwing snowballs' } }],
+          steps: [{ delayMs: 2200, action: { type: 'chat', message: 'snow forts get scary with all the snowballs..' } }],
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'i know the snow forts.. theyre by the rink right?' } }],
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'know the snow forts.. theyre by the rink?' } }],
         },
       ],
     },
@@ -836,7 +837,7 @@ const SHY: PersonalityDialogue = {
       keywords: ['ballistic', 'biscuit', 'hydro', 'score'],
       cooldownMs: 45_000,
       responses: [
-        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i tried ballistic biscuit and fell off right away..' } }] },
+        { steps: [{ delayMs: 1500, action: { type: 'chat', message: 'tried ballistic biscuit, fell off right away..' } }] },
       ],
     },
     {
@@ -881,7 +882,7 @@ const SHY: PersonalityDialogue = {
         { steps: [{ delayMs: 1200, action: { type: 'chat', message: 'ballistic biscuit is kinda scary..' } }] },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'astro barrier is.. actually kind of fun? when nobody is around..' } }],
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'astro barrier is fun when nobody is around..' } }],
         },
       ],
     },
@@ -891,11 +892,11 @@ const SHY: PersonalityDialogue = {
       responses: [
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 1800, action: { type: 'chat', message: 'oh.. yeah astro barrier.. i tried it when nobody was looking' } }],
+          steps: [{ delayMs: 1800, action: { type: 'chat', message: 'tried astro barrier when nobody was looking..' } }],
         },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'its upstairs in the club.. not many people know about it yet i think..' } }],
+          steps: [{ delayMs: 2000, action: { type: 'chat', message: 'upstairs in club.. not many know about it yet..' } }],
         },
       ],
     },
@@ -999,7 +1000,7 @@ const SHY: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.1,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'penguin chat 3 players really did all sign up for the big update huh' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'penguin chat 3 players signed up for update!' } } },
         { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah.. and now its called club penguin' } } },
         { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'i still forget the new name sometimes..' } } },
       ],
@@ -1042,7 +1043,7 @@ const GRUMPY: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'penguin chat 3 was simpler. this big update better be worth it.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'pc3 was simpler. update better be worth it.' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -1081,16 +1082,16 @@ const GRUMPY: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the snow forts turned the walk to the rink into a war zone.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'snow forts turned the walk into a war zone.' } }],
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is in nine days and everyone is already unbearable.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'party in 9 days and everyone is unbearable.' } }],
       },
     ],
     802: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'the puck just did a weird little jump' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what even is the point of an ice rink if nobody chases the puck' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'whats the point of a rink if no one chases puck' } }] },
     ],
     200: [
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'literally nothing to do here' } }] },
@@ -1101,11 +1102,11 @@ const GRUMPY: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'upstairs. nothing here either.' } }] },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier. so now theres a crowd up here too.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'astro barrier. now theres a crowd up here too.' } }],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'the new game is fine i guess. the music loop is annoying.' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'new game is fine i guess. music loop is annoying' } }],
       },
     ],
     130: [
@@ -1164,7 +1165,7 @@ const GRUMPY: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i came from penguin chat 3. thats the only reason im here.' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'came from penguin chat 3. only reason im here.' } }],
         },
         {
           gate: { before: '2005-10-24' },
@@ -1196,7 +1197,7 @@ const GRUMPY: PersonalityDialogue = {
       keywords: ['puck', 'rink', 'hockey'],
       cooldownMs: 30_000,
       responses: [
-        { steps: [{ delayMs: 800, action: { type: 'chat', message: 'the puck is real. the hockey is mostly imagination.' } }] },
+        { steps: [{ delayMs: 800, action: { type: 'chat', message: 'puck is real. hockey is mostly imagination.' } }] },
       ],
     },
     {
@@ -1212,11 +1213,11 @@ const GRUMPY: PersonalityDialogue = {
       responses: [
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah i tried it. the music loop alone made me leave.' } }],
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'tried it. the music loop made me leave.' } }],
         },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'new game. upstairs in the club. not that exciting.' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'new game upstairs in club. not that exciting.' } }],
         },
         {
           gate: { after: '2005-09-13' },
@@ -1258,7 +1259,7 @@ const GRUMPY: PersonalityDialogue = {
         },
         {
           gate: { before: '2005-09-12' },
-          steps: [{ delayMs: 1400, action: { type: 'chat', message: 'what snow forts. did they build them in your imagination?' } }],
+          steps: [{ delayMs: 1400, action: { type: 'chat', message: 'what snow forts? built in your imagination?' } }],
         },
         {
           gate: { after: '2005-09-12' },
@@ -1266,7 +1267,7 @@ const GRUMPY: PersonalityDialogue = {
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'they exist. theyre loud. thats all i need to know.' } }],
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'they exist. theyre loud. thats all i know.' } }],
         },
       ],
     },
@@ -1514,14 +1515,14 @@ const EXCITABLE: PersonalityDialogue = {
       {
         gate: { after: '2005-09-13', before: '2005-09-21' },
         steps: [
-          { delayMs: 0,    action: { type: 'chat',  message: 'ASTRO BARRIER AND A PARTY IN EIGHT DAYS!!! THIS WEEK IS INSANE!!!' } },
+          { delayMs: 0,    action: { type: 'chat',  message: 'ASTRO BARRIER AND PARTY IN 8 DAYS! INSANE!!' } },
           { delayMs: 2500, action: { type: 'frame', frame: 26 } },
           { delayMs: 5500, action: { type: 'frame', frame: 1  } },
         ],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'ASTRO BARRIER IS THE BEST THING THEY HAVE EVER ADDED' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'ASTRO BARRIER IS THE BEST THING EVER ADDED!' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -1531,11 +1532,11 @@ const EXCITABLE: PersonalityDialogue = {
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'I PLAYED PENGUIN CHAT 3 AND NOW WE GET THE BIG UPDATE!!!' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'PLAYED PENGUIN CHAT 3, NOW WE GET THE UPDATE!!' } }],
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'CLUB PENGUIN IS THE BEST NAME EVER FOR THE BIG UPDATE!!!' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'CLUB PENGUIN IS THE BEST NAME FOR THE UPDATE!!' } }],
       },
     ],
     120: [
@@ -1560,11 +1561,11 @@ const EXCITABLE: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'HAVE YOU PLAYED ASTRO BARRIER YET??? ITS SO HARD BUT AMAZING' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'PLAYED ASTRO BARRIER YET? HARD BUT AMAZING!!' } }],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'NEW GAME AND PARTY IN EIGHT DAYS I LITERALLY CANNOT CONTAIN MYSELF' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'NEW GAME AND PARTY IN 8 DAYS! CANT WAIT!!' } }],
       },
     ],
     130: [
@@ -1681,7 +1682,7 @@ const EXCITABLE: PersonalityDialogue = {
         },
         {
           gate: { before: '2005-10-24' },
-          steps: [{ delayMs: 400, action: { type: 'chat', message: 'THE BIG UPDATE BECOMING CLUB PENGUIN IS SO COOL!!!' } }],
+          steps: [{ delayMs: 400, action: { type: 'chat', message: 'BIG UPDATE BEING CLUB PENGUIN IS SO COOL!!' } }],
         },
       ],
     },
@@ -1726,11 +1727,11 @@ const EXCITABLE: PersonalityDialogue = {
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 300, action: { type: 'chat', message: 'THE SNOW FORTS ARE AMAZING!!! ITS LIKE A HUGE SNOWBALL BATTLE ZONE!!!' } }],
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'SNOW FORTS ARE AMAZING! HUGE SNOWBALL ZONE!!' } }],
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES!!! THE SNOW FORTS BY THE RINK!!! I LOVE IT THERE!!!' } }],
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES! SNOW FORTS BY THE RINK! LOVE IT THERE!!' } }],
         },
       ],
     },
@@ -1792,7 +1793,7 @@ const EXCITABLE: PersonalityDialogue = {
         { steps: [{ delayMs: 400, action: { type: 'chat', message: 'THE GAMES ON THIS ISLAND ARE AMAZING' } }] },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 300, action: { type: 'chat', message: 'ASTRO BARRIER JUST LAUNCHED IN THE DANCE LOUNGE GO PLAY IT NOW!!!' } }],
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'ASTRO BARRIER IN THE DANCE LOUNGE! GO PLAY!!' } }],
         },
       ],
     },
@@ -1814,7 +1815,7 @@ const EXCITABLE: PersonalityDialogue = {
         },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO THE DANCE LOUNGE ITS IN THERE UPSTAIRS!!! SO FUN!!!' } }],
+          steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO DANCE LOUNGE UPSTAIRS! SO MUCH FUN!!' } }],
         },
       ],
     },
@@ -1986,19 +1987,19 @@ const CURIOUS: PersonalityDialogue = {
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'is there anything outside the map?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think they\'ll add more games?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'how many coins do you think exist on the island?' } }] },
-      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what happens if you stay on the island all night?' } }] },
+      { steps: [{ delayMs: 0, action: { type: 'chat', message: 'what happens if you stay on island all night?' } }] },
       { steps: [{ delayMs: 0, action: { type: 'chat', message: 'are we the first penguins here?' } }] },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think all the beta testers came from penguin chat 3?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'did all beta testers come from penguin chat 3?' } }],
       },
       {
         gate: { before: '2005-10-24' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'when did everyone stop calling club penguin the big update?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'when did folks stop calling cp the big update?' } }],
       },
       {
         gate: { before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the cp team will talk to us at the party?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'will the cp team talk to us at the party?' } }],
       },
       {
         gate: { before: '2005-10-24' },
@@ -2045,22 +2046,22 @@ const CURIOUS: PersonalityDialogue = {
     121: [
       {
         gate: { before: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'what is the point of the lounge if there are no games?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'what is the point of lounge without games?' } }],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long do you think astro barrier has been here? did they just add it?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how long has astro barrier been here? just added' } }],
       },
       {
         gate: { after: '2005-09-13' },
         steps: [
-          { delayMs: 0,    action: { type: 'chat', message: 'i wonder what level you can actually get to in astro barrier' } },
+          { delayMs: 0,    action: { type: 'chat', message: 'wonder what level you can reach in astro barrier' } },
           { delayMs: 3000, action: { type: 'emote', emoteId: 8 } },
         ],
       },
       {
         gate: { after: '2005-09-13' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how did they get astro barrier into the dance lounge? it just appeared' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'how did astro barrier get here? just appeared!' } }],
       },
     ],
     800: [
@@ -2073,11 +2074,11 @@ const CURIOUS: PersonalityDialogue = {
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'do you think the snow forts changed how everyone walks around the island?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'did snow forts change how we walk the island?' } }],
       },
       {
         gate: { after: '2005-09-12', before: '2005-09-21' },
-        steps: [{ delayMs: 0, action: { type: 'chat', message: 'if the party is close do you think the forts get decorations too?' } }],
+        steps: [{ delayMs: 0, action: { type: 'chat', message: 'if party is close, will forts get decorated?' } }],
       },
     ],
     221: [
@@ -2142,7 +2143,7 @@ const CURIOUS: PersonalityDialogue = {
       keywords: ['dojo'],
       cooldownMs: 45_000,
       responses: [
-        { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what is the dojo? is it really just an empty room?' } }] },
+        { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what is the dojo? is it just an empty room?' } }] },
         { condition: (npc, room) => room && room.id !== 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'i heard there\'s a hidden room somewhere on the map' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'well.. found the dojo. just a big empty room.' } }] },
         { condition: (npc, room) => room && room.id === 320, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i wonder why the dojo is just completely empty?' } }] },
@@ -2154,19 +2155,19 @@ const CURIOUS: PersonalityDialogue = {
       responses: [
         {
           gate: { before: '2005-09-12' },
-          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'snow forts? hmm.. i havent seen those on the island yet' } }],
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'snow forts? hmm.. havent seen those yet' } }],
         },
         {
           gate: { before: '2005-09-12' },
-          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what are the snow forts supposed to be? a new room?' } }],
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'what are snow forts supposed to be? new room?' } }],
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'oh the snow forts! they changed that whole area near the rink' } }],
+          steps: [{ delayMs: 1200, action: { type: 'chat', message: 'snow forts! changed that whole area by rink!' } }],
         },
         {
           gate: { after: '2005-09-12' },
-          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i think the snow forts made the island feel a lot more active' } }],
+          steps: [{ delayMs: 1500, action: { type: 'chat', message: 'snow forts made island feel a lot more active!' } }],
         },
       ],
     },
@@ -2204,7 +2205,7 @@ const CURIOUS: PersonalityDialogue = {
       responses: [
         { condition: npc => !npc.membership.isMember, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'will non-members ever get to buy clothes?' } }] },
         { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 900,  action: { type: 'chat', message: 'i wonder when they add new items' } }] },
-        { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1200, action: { type: 'chat', message: 'how many items are there in the catalog right now?' } }] },
+        { condition: npc => npc.membership.isMember,  steps: [{ delayMs: 1200, action: { type: 'chat', message: 'how many items are in the catalog right now?' } }] },
       ],
     },
     {
@@ -2225,11 +2226,11 @@ const CURIOUS: PersonalityDialogue = {
         { steps: [{ delayMs: 900,  action: { type: 'chat', message: 'what\'s your high score on bean counters?' } }] },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 900, action: { type: 'chat', message: 'have you tried astro barrier yet? it just appeared in the dance lounge' } }],
+          steps: [{ delayMs: 900, action: { type: 'chat', message: 'tried astro barrier yet? upstairs in lounge!' } }],
         },
         {
           gate: { after: '2005-09-13' },
-          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'i wonder how many levels astro barrier actually has' } }],
+          steps: [{ delayMs: 1000, action: { type: 'chat', message: 'wonder how many levels astro barrier has' } }],
         },
       ],
     },
@@ -2240,7 +2241,7 @@ const CURIOUS: PersonalityDialogue = {
         {
           gate: { after: '2005-09-13' },
           steps: [
-            { delayMs: 900,  action: { type: 'chat', message: 'oh yeah astro barrier just appeared in the dance lounge' } },
+            { delayMs: 900,  action: { type: 'chat', message: 'astro barrier just appeared in dance lounge!' } },
             { delayMs: 3000, action: { type: 'chat', message: 'i wonder when they actually finished making it' } },
           ],
         },
@@ -2308,7 +2309,7 @@ const CURIOUS: PersonalityDialogue = {
       steps: [
         { delayMs: 600, action: { type: 'snowball', target: 'origin' } },
         { delayMs: 1200, action: { type: 'snowball', target: 'random-npc' } },
-        { delayMs: 2000, action: { type: 'chat', message: 'interesting. the forts really do make this room chaotic.' } },
+        { delayMs: 2000, action: { type: 'chat', message: 'interesting. forts really make room chaotic.' } },
       ],
     },
     {
@@ -2382,7 +2383,7 @@ const CURIOUS: PersonalityDialogue = {
       chance: 0.1,
       steps: [
         { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'were all the beta testers from penguin chat 3?' } } },
-        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'i think so. thats how i heard about the big update' } } },
+        { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'think so. thats how i heard about big update' } } },
         { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'club penguin is definitely easier to say though' } } },
       ],
     },
@@ -2391,9 +2392,9 @@ const CURIOUS: PersonalityDialogue = {
       cooldownMs: 180_000,
       chance: 0.12,
       steps: [
-        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'did you see that astro barrier just appeared in the dance lounge?' } } },
+        { who: 'a', step: { delayMs: 0,    action: { type: 'chat', message: 'did you see astro barrier in dance lounge?' } } },
         { who: 'b', step: { delayMs: 2500, action: { type: 'chat', message: 'yeah! i tried it. it just starts and keeps going' } } },
-        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'i wonder if anyone actually knows how many levels there are' } } },
+        { who: 'a', step: { delayMs: 2000, action: { type: 'chat', message: 'wonder if anyone knows how many levels exist' } } },
         { who: 'a', step: { delayMs: 1500, action: { type: 'emote', emoteId: 8 } } },
       ],
     },
@@ -2404,21 +2405,21 @@ const BETA_TEST_PARTY_GATE = { after: '2005-09-21', before: '2005-09-22' } as co
 const POST_BETA_TEST_PARTY_GATE = { after: '2005-09-22', before: '2005-09-23' } as const;
 
 FRIENDLY.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta test party day!! there are penguins everywhere :)' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone has a party hat on and it looks so cute' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta party day! penguins everywhere :)' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone has a party hat on, so cute!' } }] },
 );
 FRIENDLY.onIdle.any?.push(
-  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is over but i still like seeing the hats around :)' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is over but love seeing hats around :)' } }] },
   { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'im keeping this party hat forever' } }] },
-  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'kinda feel bad for penguins who missed the party hat..' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'feel bad for penguins who missed party hat..' } }] },
 );
 FRIENDLY.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
   cooldownMs: 20_000,
   responses: [
-    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'walk to one of the hat boxes in town!! they have the party hats :)' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant get the party hat anymore, sorry. the party is over' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'sorry, you missed it :( i got mine during the party though' } }] },
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'walk to hat boxes in town! they have hats :)' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'cant get party hat anymore, sorry! party over' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'sorry, you missed it :( got mine at party though' } }] },
   ],
 });
 FRIENDLY.npcExchanges.push({
@@ -2427,23 +2428,23 @@ FRIENDLY.npcExchanges.push({
   chance: 0.16,
   condition: (_npc, other) => other.isDev,
   steps: [
-    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'wait are you one of the penguins making the game?' } } },
-    { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'yeah! we are still building it, thanks for testing with us' } } },
-    { who: 'a', step: { delayMs: 2500, action: { type: 'chat', message: 'that is so cool. thanks for letting us be here :)' } } },
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'wait are you one of the devs making the game?' } } },
+    { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'yeah! still building, thanks for testing!' } } },
+    { who: 'a', step: { delayMs: 2500, action: { type: 'chat', message: 'that is so cool. thanks for having us here :)' } } },
   ],
 });
 
 SHY.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'there are so many penguins here today..' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i got my party hat from the town box.. i think there are a few of them' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'got party hat from town box.. there are a few' } }] },
 );
 SHY.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
   cooldownMs: 20_000,
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'um.. try walking to one of the hat boxes in town' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'oh.. i dont think you can get one now.. the party is over' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'sorry.. i think you missed the hat.. i barely got mine yesterday' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'dont think you can get one now.. party is over' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'sorry.. missed the hat.. barely got mine too' } }] },
   ],
 });
 SHY.npcExchanges.push({
@@ -2453,14 +2454,14 @@ SHY.npcExchanges.push({
   condition: (_npc, other) => other.isDev,
   steps: [
     { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'um.. are you really from the team?' } } },
-    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'yeah, still fixing bugs and adding things while beta is live' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'yeah, still fixing bugs while beta is live' } } },
     { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'oh.. okay. thanks for making it' } } },
   ],
 });
 
 GRUMPY.onIdle.any?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'whole island is packed. just what i needed.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'everybody has the same party hat on. very original.' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'everyone has same party hat on. very original.' } }] },
 );
 GRUMPY.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
@@ -2468,7 +2469,7 @@ GRUMPY.onPlayerChat.unshift({
   responses: [
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town. one of the hat boxes. hard to miss.' } }] },
     { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant. party is over. you missed it.' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'missed the party, missed the hat. thats how it works.' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'missed party, missed hat. thats how it works.' } }] },
   ],
 });
 GRUMPY.npcExchanges.push({
@@ -2477,23 +2478,23 @@ GRUMPY.npcExchanges.push({
   chance: 0.15,
   condition: (_npc, other) => other.isDev,
   steps: [
-    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'so when are you fixing the bugs and finishing the newspaper' } } },
-    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'hopefully soon. beta is exactly when we catch stuff like that' } } },
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'when are you fixing bugs and newspaper?' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'hopefully soon! beta catches stuff like that' } } },
     { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'good. because the lorem ipsum is getting old.' } } },
   ],
 });
 
 EXCITABLE.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE BETA TEST PARTY IS LIVE!!! LOOK AT ALL THESE PENGUINS!!!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'BETA PARTY IS LIVE! LOOK AT ALL THE PENGUINS!!' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'EVERYONE HAS PARTY HATS AHHHH THIS IS SO COOL' } }] },
 );
 EXCITABLE.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
   cooldownMs: 20_000,
   responses: [
-    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO TOWN!! THE HAT BOXES HAVE THE PARTY HATS!!!' } }] },
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'GO TO TOWN! HAT BOXES HAVE THE PARTY HATS!!' } }] },
     { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 350, action: { type: 'chat', message: 'NOOO THE PARTY IS OVER!!! YOU CANT GET IT NOW!!!' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.45, steps: [{ delayMs: 350, action: { type: 'chat', message: 'I GOT MINE YESTERDAY!!! IM NEVER TAKING IT OFF!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.45, steps: [{ delayMs: 350, action: { type: 'chat', message: 'GOT MINE YESTERDAY! IM NEVER TAKING IT OFF!!' } }] },
   ],
 });
 EXCITABLE.npcExchanges.push({
@@ -2503,22 +2504,22 @@ EXCITABLE.npcExchanges.push({
   condition: (_npc, other) => other.isDev,
   steps: [
     { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'WAIT ARE YOU REALLY ONE OF THE DEVS?!' } } },
-    { who: 'b', step: { delayMs: 1800, action: { type: 'chat', message: 'yeah!! thanks for showing up to the beta test party' } } },
+    { who: 'b', step: { delayMs: 1800, action: { type: 'chat', message: 'yeah! thanks for coming to the beta party!' } } },
     { who: 'a', step: { delayMs: 2200, action: { type: 'chat', message: 'THIS GAME RULES PLEASE KEEP MAKING MORE STUFF!!!' } } },
   ],
 });
 
 CURIOUS.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder how they got this many penguins online at once' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'do the hat boxes in town refill themselves somehow?' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder how so many penguins are online at once' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'do hat boxes in town refill themselves?' } }] },
 );
 CURIOUS.onPlayerChat.unshift({
   keywords: ['party hat', 'hat box', 'hat boxes', 'get a party hat', 'get the party hat'],
   cooldownMs: 20_000,
   responses: [
-    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'pretty sure you just walk to one of the hat boxes in town and pick one up' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you cant get it now. the hat boxes were only for the party' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you missed it. the hat is kinda the only proof you were there' } }] },
+    { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'just walk to hat boxes in town and pick one up!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'cant get it now. hat boxes were party only.' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'you missed it. hat was proof you were there.' } }] },
   ],
 });
 CURIOUS.npcExchanges.push({
@@ -2534,20 +2535,20 @@ CURIOUS.npcExchanges.push({
 });
 
 FRIENDLY.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'this party feels HUGE compared to normal beta days' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep seeing new penguins every few seconds today' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the beta test party is making the island feel so alive' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party feels HUGE compared to normal beta days!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'keep seeing new penguins every few seconds!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta party makes island feel so alive!' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'hey everyone :) welcome to the beta test party' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'thanks for testing and hanging out with us today :)' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'thanks for testing and hanging out with us :)' } }] },
 );
 FRIENDLY.onIdle[100]?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is the place to be today!! everyones getting their hats here' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is place to be! everyones getting hats!' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'ive never seen town this busy before!!' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the hat boxes in town are getting swarmed lol' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'seeing town this full is really cool' } }] },
 );
 FRIENDLY.onPlayerJoin[100]?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'welcome to the beta test party!! grab a hat from the boxes :)' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'welcome to beta party! grab hat from boxes :)' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 900, action: { type: 'chat', message: 'hey! glad you made it to the party :)' } }] },
 );
 FRIENDLY.onPlayerChat.push(
@@ -2556,10 +2557,10 @@ FRIENDLY.onPlayerChat.push(
     cooldownMs: 20_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'yeah!! the whole island feels packed today :)' } }] },
-      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town is suuuper busy because of the party hats lol' } }] },
-      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'beta test party day is way more lively than usual!!' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is over now.. but you still see party hats everywhere' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'im kinda glad i made it in time for the party hat' } }] },
+      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'town is suuuper busy because of party hats lol' } }] },
+      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'beta test party day is way more lively!!' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is over.. but party hats everywhere' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'im kinda glad i made it in time for the hat' } }] },
     ],
   },
   {
@@ -2574,31 +2575,31 @@ FRIENDLY.onPlayerChat.push(
     keywords: ['bug', 'glitch', 'broken', 'report'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 800, action: { type: 'chat', message: 'if you spot a bug, tell one of us! beta is for fixing stuff too' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 800, action: { type: 'chat', message: 'if you spot a bug, tell us! beta fixes stuff' } }] },
       { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 900, action: { type: 'chat', message: 'we are definitely still squashing bugs lol' } }] },
     ],
   },
 );
 
 SHY.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'it feels like there are three times as many penguins online today..' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'feels like 3x as many penguins online today..' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is nice.. just also very loud..' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone is wearing the same hat.. which is kind of cute..' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'almost everyone wears same hat.. kind of cute..' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'hi.. im gizmo. thanks for testing with us today' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'if something breaks.. um.. please tell one of the devs' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'if something breaks.. please tell the devs..' } }] },
 );
 SHY.onIdle.any?.push(
-  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'it feels quieter today.. i guess the party is over..' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'feels quieter today.. i guess party is over..' } }] },
   { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'im glad i got the party hat yesterday..' } }] },
-  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.22, steps: [{ delayMs: 0, action: { type: 'chat', message: 'if you missed the party hat.. i think you missed it for good..' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.22, steps: [{ delayMs: 0, action: { type: 'chat', message: 'missed party hat.. think you missed it for good' } }] },
 );
 SHY.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is way too crowded for me today..' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i had to squeeze between like eight penguins to reach a hat box..' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'i keep hiding at the edge of town to watch the crowd..' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'squeezed past eight penguins for a hat box..' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'hiding at edge of town to watch the crowd..' } }] },
 );
 SHY.onPlayerJoin[100]?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1300, action: { type: 'chat', message: 'oh.. hi. if you want a party hat, the boxes are in town' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1300, action: { type: 'chat', message: 'if you want a party hat, boxes are in town' } }] },
   { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 1500, action: { type: 'chat', message: 'welcome.. sorry if its a little chaotic in here' } }] },
 );
 SHY.onPlayerChat.push(
@@ -2607,9 +2608,9 @@ SHY.onPlayerChat.push(
     cooldownMs: 22_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1200, action: { type: 'chat', message: 'yeah.. its a lot more crowded than usual' } }] },
-      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'i think the party hats are making everyone gather in town..' } }] },
+      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'party hats are making everyone gather in town..' } }] },
       { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1400, action: { type: 'chat', message: 'party was yesterday.. its calmer now' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.3, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'i keep seeing party hats still.. some penguins look really proud of them' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.3, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'still seeing party hats.. folks look proud!' } }] },
     ],
   },
   {
@@ -2617,39 +2618,35 @@ SHY.onPlayerChat.push(
     cooldownMs: 25_000,
     responses: [
       { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 1400, action: { type: 'chat', message: 'um.. hi. yeah im gizmo' } }] },
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'one of the dev penguins might answer if you ask nicely..' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'one of the devs might answer if you ask nicely' } }] },
     ],
   },
   {
     keywords: ['bug', 'glitch', 'broken', 'report'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 1400, action: { type: 'chat', message: 'if you found a bug.. thats actually helpful for us' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 1400, action: { type: 'chat', message: 'if you found a bug.. thats helpful for us' } }] },
       { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1500, action: { type: 'chat', message: 'beta testing means we are still fixing things..' } }] },
     ],
   },
 );
 
 GRUMPY.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party day and suddenly the entire island forgot personal space.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'if one more penguin asks where the hat box is im gonna lose it.' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party day and island forgot personal space.' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'one more ask about hat boxes and im done.' } }] },
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the party is fine. the crowd is the problem.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'yes im screenhog. no i will not fix your typo personally.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta test party is live. try not to break everything at once.' } }] },
 );
 GRUMPY.onIdle.any?.push(
   { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party is over. finally.' } }] },
-  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'half the island still wearing that hat like its an achievement.' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'half island wears that hat like an achievement.' } }] },
   { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.2, steps: [{ delayMs: 0, action: { type: 'chat', message: 'if you missed the hat, thats on you.' } }] },
 );
 GRUMPY.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town is a traffic jam with beaks.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'the hat boxes are in town. that is why nobody can move.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'if town gets any more crowded we are all becoming one penguin.' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'hat boxes are in town. thats why no one moves.' } }] },
 );
 GRUMPY.onPlayerJoin[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'welcome to the mob scene. hat boxes are in town.' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'congrats, you joined on the busiest day possible.' } }] },
 );
 GRUMPY.onPlayerChat.push(
   {
@@ -2659,36 +2656,57 @@ GRUMPY.onPlayerChat.push(
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'yeah. too many penguins, not enough island.' } }] },
       { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'party day means town is basically impassable.' } }] },
       { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'party was yesterday. its done.' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the only thing left is people bragging about the hat.' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'only thing left is folks bragging about hat.' } }] },
     ],
   },
   {
     keywords: ['rsnail', 'billybob', 'gizmo', 'screenhog', 'dev', 'developer', 'team'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'yes, screenhog. what now.' } }] },
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'dev team is around. probably trying to make sure this all survives the crowd.' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'devs are around making sure this survives crowd' } }] },
     ],
   },
   {
     keywords: ['bug', 'glitch', 'broken', 'report'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 1000, action: { type: 'chat', message: 'if its broken, tell us exactly what you did.' } }] },
       { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 900, action: { type: 'chat', message: 'beta test means bugs happen. details help.' } }] },
     ],
   },
 );
 
 EXCITABLE.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THERE ARE PENGUINS EVERYWHERE THIS IS THE BEST DAY EVER' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE BETA TEST PARTY MAKES THE WHOLE ISLAND FEEL NEW AGAIN' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'I KEEP SEEING PARTY HATS IN EVERY SINGLE ROOM AHHH' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'screenhog here! turn the music up eh! :D' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'thanks so much for testing with us everyone! :D' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'PENGUINS EVERYWHERE THIS IS THE BEST DAY EVER!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'BETA PARTY MAKES THE WHOLE ISLAND FEEL NEW!!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'SEEING PARTY HATS IN EVERY SINGLE ROOM AHHH!!' } }] },
+);
+EXCITABLE.onPlayerJoin = EXCITABLE.onPlayerJoin || {};
+EXCITABLE.onPlayerJoin[100] = EXCITABLE.onPlayerJoin[100] || [];
+EXCITABLE.onPlayerJoin[100].push(
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'welcome to the party eh! grab a hat in town! :D' } }] },
+);
+EXCITABLE.onPlayerChat.push(
+  {
+    keywords: ['rsnail', 'billybob', 'gizmo', 'screenhog', 'dev', 'developer', 'team'],
+    cooldownMs: 25_000,
+    responses: [
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'screenhog here! having a blast making the art! :D' } }] },
+    ],
+  },
+  {
+    keywords: ['bug', 'glitch', 'broken', 'report'],
+    cooldownMs: 25_000,
+    responses: [
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 900, action: { type: 'chat', message: 'thanks for the report eh! we will fix it up! :)' } }] },
+    ],
+  },
 );
 EXCITABLE.onIdle.any?.push(
-  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'THE PARTY IS OVER BUT THE HATS ARE STILL EVERYWHERE!!!' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'PARTY OVER BUT THE HATS ARE STILL EVERYWHERE!' } }] },
   { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.5, steps: [{ delayMs: 0, action: { type: 'chat', message: 'I CANT BELIEVE I GOT THE EXCLUSIVE PARTY HAT!!!' } }] },
-  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'IF YOU MISSED IT... THATS SO SAD... IT WAS AWESOME!!!' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.25, steps: [{ delayMs: 0, action: { type: 'chat', message: 'MISSED IT? THATS SO SAD! IT WAS AWESOME!!' } }] },
 );
 EXCITABLE.onIdle[100]?.push(
   { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'TOWN IS ABSOLUTELY POPPING OFF TODAY!!!' } }] },
@@ -2705,48 +2723,48 @@ EXCITABLE.onPlayerChat.push({
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'YES!!! THIS PARTY IS MASSIVE!!!' } }] },
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 400, action: { type: 'chat', message: 'I KNOW RIGHT?? THE WHOLE ISLAND IS FULL!!!' } }] },
     { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 300, action: { type: 'chat', message: 'EVERY ROOM FEELS ALIVE TODAY!!!' } }] },
-    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 400, action: { type: 'chat', message: 'PARTY WAS YESTERDAY!!! YOU SHOULD HAVE BEEN THERE!!!' } }] },
+    { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 400, action: { type: 'chat', message: 'PARTY WAS YESTERDAY! YOU SHOULD HAVE BEEN THERE!' } }] },
     { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.5, steps: [{ delayMs: 400, action: { type: 'chat', message: 'IM STILL WEARING MY PARTY HAT!!!' } }] },
   ],
 });
 
 CURIOUS.onIdle.any?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder if the party is why there are so many penguins online at once' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'do the dev penguins spread out on purpose so everyone can find one?' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'interesting that almost everyone picked up a party hat immediately' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'im billybob. im mostly watching how everyone explores the island today' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'the beta test party is a good way to see where penguins naturally gather' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder if party brought so many online at once' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'do devs spread out so everyone can find one?' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'interesting that all grabbed party hats at once' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'im billybob. watching how all explore today!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta party shows where penguins gather naturally' } }] },
 );
 CURIOUS.onIdle.any?.push(
-  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party was yesterday, but the hats are still sticking around' } }] },
-  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder how long it takes before party hats become really rare' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party was yesterday, but hats are still around!' } }] },
+  { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder how long until party hats become rare..' } }] },
   { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.2, steps: [{ delayMs: 0, action: { type: 'chat', message: 'missing the party hat seems like instant regret' } }] },
 );
 CURIOUS.onIdle[100]?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town seems to be the center of the whole party today' } }] },
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'i wonder how many hats came out of the town boxes already' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'watching the flow through town is actually pretty useful' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town seems to be center of the party today!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wonder how many hats came out of town boxes!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'watching flow through town is pretty useful!' } }] },
 );
 CURIOUS.onPlayerJoin[100]?.push(
-  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'hey! if you are here for the party hat, the boxes are in town' } }] },
-  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 1000, action: { type: 'chat', message: 'welcome! let us know what you think of everything' } }] },
+  { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'hey! if here for party hat, boxes are in town!' } }] },
+  { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 1000, action: { type: 'chat', message: 'welcome! let us know what you think of it all!' } }] },
 );
 CURIOUS.onPlayerChat.push(
   {
     keywords: ['party', 'beta party', 'beta test party', 'crowded', 'busy'],
     cooldownMs: 20_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'yeah, it seems like every room got busier all at once' } }] },
-      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the party is a good excuse to study how people move around the island' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is done now. i guess the island is back to normal' } }] },
-      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'the interesting part is how many penguins are still wearing the hat' } }] },
+      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'seems like every room got busier all at once!' } }] },
+      { gate: BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is great to see how folks move on island' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, steps: [{ delayMs: 900, action: { type: 'chat', message: 'party is done now. island is back to normal.' } }] },
+      { gate: POST_BETA_TEST_PARTY_GATE, chance: 0.35, steps: [{ delayMs: 900, action: { type: 'chat', message: 'neat seeing how many still wear the party hat!' } }] },
     ],
   },
   {
     keywords: ['rsnail', 'billybob', 'gizmo', 'screenhog', 'dev', 'developer', 'team'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 900, action: { type: 'chat', message: 'yep, billybob here. just hanging around and watching the party' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 900, action: { type: 'chat', message: 'yep, billybob here. hanging around the party!' } }] },
       { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'the dev team is roaming around the island today' } }] },
     ],
   },
@@ -2754,8 +2772,8 @@ CURIOUS.onPlayerChat.push(
     keywords: ['bug', 'glitch', 'broken', 'report', 'feedback'],
     cooldownMs: 25_000,
     responses: [
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 900, action: { type: 'chat', message: 'feedback is useful, especially when lots of penguins are online' } }] },
-      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'if you find something weird, tell us what happened and where' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 900, action: { type: 'chat', message: 'feedback is useful when so many are online!' } }] },
+      { gate: BETA_TEST_PARTY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 1000, action: { type: 'chat', message: 'find something weird? tell us what and where!' } }] },
     ],
   },
 );
@@ -2767,8 +2785,8 @@ FRIENDLY.npcExchanges.push(
     chance: 0.14,
     condition: (_npc, other) => other.isDev,
     steps: [
-      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'is the party this crowded because you announced it in the newspaper?' } } },
-      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'pretty much yeah, everyone showed up for the hats and the crowd' } } },
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'party crowded from newspaper announcement?' } } },
+      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'pretty much, everyone came for hats and crowd!' } } },
       { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'well it worked!! the island feels amazing today' } } },
     ],
   },
@@ -2790,8 +2808,8 @@ SHY.npcExchanges.push({
   chance: 0.12,
   condition: (_npc, other) => other.isDev,
   steps: [
-    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'does the island always get this crowded during parties..?' } } },
-    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'not always, but everyone definitely came out for this one' } } },
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'does island always get this crowded at parties?' } } },
+    { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'not always, but all came out for this one!' } } },
     { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'oh.. okay. i might hide in the book room then' } } },
   ],
 });
@@ -2801,7 +2819,7 @@ GRUMPY.npcExchanges.push({
   chance: 0.12,
   condition: (_npc, other) => other.isDev,
   steps: [
-    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'so which one of you decided one hat box wasnt enough chaos' } } },
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'which dev decided one hat box wasnt enough?' } } },
     { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'hey, at least everyone found the hats' } } },
     { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'yeah because the whole town turned into a queue' } } },
   ],
@@ -2812,7 +2830,7 @@ EXCITABLE.npcExchanges.push({
   chance: 0.16,
   condition: (_npc, other) => other.isDev,
   steps: [
-    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'THIS PARTY IS SO GOOD DID YOU EXPECT THIS MANY PENGUINS?!' } } },
+    { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'THIS PARTY IS SO GOOD! EXPECT THIS MANY?!' } } },
     { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'honestly? not this many lol' } } },
     { who: 'a', step: { delayMs: 2400, action: { type: 'chat', message: 'THAT MAKES IT EVEN BETTER!!!' } } },
   ],
@@ -2824,8 +2842,8 @@ CURIOUS.npcExchanges.push(
     chance: 0.14,
     condition: (_npc, other) => other.isDev,
     steps: [
-      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'are the party hats only in town to make everyone pass through there?' } } },
-      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'partly, yeah. it helps bring the whole island together' } } },
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'are hats only in town so folks pass through?' } } },
+      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'partly, yeah. helps bring island together!' } } },
       { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'interesting. that actually makes a lot of sense' } } },
     ],
   },
@@ -2835,9 +2853,304 @@ CURIOUS.npcExchanges.push(
     chance: 0.14,
     condition: (_npc, other) => other.isDev,
     steps: [
-      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'does seeing this many penguins help you test the game better?' } } },
-      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'definitely. crowded days show us what still needs work' } } },
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'does seeing this many penguins test game better?' } } },
+      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'definitely. crowded days show what needs work' } } },
       { who: 'a', step: { delayMs: 2600, action: { type: 'chat', message: 'so the party is fun AND useful. neat' } } },
+    ],
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// 2005-10-24: Official Launch Day Dialogue & Secret Agent HQ
+// ─────────────────────────────────────────────────────────────
+
+const LAUNCH_DAY_GATE = { after: '2005-10-24', before: '2005-10-27' } as const;
+
+function hasEquippedClothes(npc: any): boolean {
+  const items = npc.items ?? npc.penguin?.items ?? npc._penguin?.items ?? npc.equipped;
+  if (!items) return false;
+  if (items.head && items.head !== 0 && items.head !== 413) return true;
+  if (items.face && items.face !== 0) return true;
+  if (items.neck && items.neck !== 0) return true;
+  if (items.body && items.body !== 0) return true;
+  if (items.hand && items.hand !== 0) return true;
+  if (items.feet && items.feet !== 0) return true;
+  return false;
+}
+
+function isMemberNpc(npc: any): boolean {
+  if (npc.isDev) return true;
+  if (hasEquippedClothes(npc)) return true;
+  return npc.membership?.isMember === true;
+}
+
+function isNonMemberNpc(npc: any): boolean {
+  if (npc.isDev) return false;
+  if (hasEquippedClothes(npc)) return false;
+  return npc.membership?.isMember === false;
+}
+
+function isTesterNpc(npc: any): boolean {
+  if (npc.isDev) return true;
+  if (npc.penguin?.inventory?.has?.(413) || npc.inventory?.head === 413 || npc.penguin?.head === 413) return true;
+  const reg = npc.penguin?.virtualRegistrationDate || npc.penguin?.virtual_registration_date;
+  if (reg && isLower(reg, '2005-10-24')) return true;
+  return false;
+}
+
+function isNonTesterNpc(npc: any): boolean {
+  if (npc.isDev) return false;
+  return !isTesterNpc(npc);
+}
+
+function isAgentNpc(npc: any): boolean {
+  if (npc.isDev) return true;
+  if (npc.penguin?.inventory?.has?.(800) || npc.penguin?.psa?.isAgent) return true;
+  return false;
+}
+
+// FRIENDLY — Launch Day
+FRIENDLY.onIdle.any?.push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'cp is out of beta! welcome all joining today :)' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'so happy to see so many new penguins waddling!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'look under your feet! penguins have shadows :)' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'newspaper #1 is out! halloween party oct 27th!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'weather in newspaper says cold with sunshine!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'button for playercard is on top bar now :)' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'check catalog, there is a secret item hidden!' } }] },
+  // Member vs Non-Member dialogue
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'love catalog clothes! so many cute outfits :)' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'membership is great, get all in gift shop!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wish i could buy clothes.. but not a member :(' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'cool outfits in gift shop, wish i could wear!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'plenty of coins, if only i had membership!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'asking parents for membership for clothes :)' } }] },
+  // Beta Tester vs Non-Beta Tester dialogue
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta testers got free month + 2000 coins! :)' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wearing beta party hat to welcome newcomers!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'island has changed so much since beta started!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'first day on club penguin! game is so fun :)' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'see so many party hats, wish i was in beta!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'checked mod badge, account too new for quiz :(' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'no 2000 coin bonus, gotta play minigames!' } }] },
+  // Devs & Agents
+  { gate: LAUNCH_DAY_GATE, condition: isAgentNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'my spy phone is neat! can teleport anytime :)' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'welcome to launch! thanks all for joining us!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'excited to finally release game to the world!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'happy launch day! hope all have a blast!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'thanks to all beta testers who helped us!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'official release live! servers holding nicely.' } }] },
+);
+
+FRIENDLY.onIdle[100] = FRIENDLY.onIdle[100] || [];
+FRIENDLY.onIdle[100].push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'town full of life today! welcome to cp all!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'devs are hanging around to celebrate launch!' } }] },
+);
+
+FRIENDLY.onIdle[110] = FRIENDLY.onIdle[110] || [];
+FRIENDLY.onIdle[110].push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'reading newspaper with coffee :) party in 3 days' } }] },
+);
+
+FRIENDLY.onIdle[803] = [
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'secret agent HQ! pretty empty right now haha' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'passed quiz, got spy phone! secret business :)' } }] },
+];
+
+FRIENDLY.onPlayerJoin.any?.push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 600, action: { type: 'chat', message: 'welcome to club penguin! happy launch day :)' } }] },
+);
+
+// SHY — Launch Day
+SHY.onIdle.any?.push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'so many new penguins.. launch day is crowded..' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'look under your feet.. we have shadows now..' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'newspaper has actual news.. party on oct 27..' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'secret item in clothing catalog.. look closely..' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'bought a scarf from the catalog.. keeps me warm' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wish i could buy clothes.. not a member..' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'clothes in catalog look nice.. wish i had them..' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta testers got free month + 2000 coins.. neat' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'just joined today.. folks all know each other' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'party hats look nice.. wish i played earlier..' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'secret agent quiz said account not old enough..' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 0, action: { type: 'chat', message: 'hello! thanks for playing cp on launch day..' } }] },
+);
+
+SHY.onIdle[803] = [
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'anyone here..? completely quiet in this room..' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'answered mod badge questions.. got spy phone..' } }] },
+];
+
+// GRUMPY — Launch Day
+GRUMPY.onIdle.any?.push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta is over, island is flooded with newcomers.' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'everyone stares at floor since we have shadows.' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'finally replaced latin text in newspaper!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'halloween party in 3 days. get ready for chaos.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'half the items in catalog are overpriced anyway.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'cant buy simple hat without membership. great.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'thousands of coins with zero clothes to buy.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wish non-members could buy, not just stare.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'at least beta testers got 2000 coins & a month.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta testers get free coins while i get nothing.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'cant take agent test because account is new.' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'everyone brags about their party hat. we get it.' } }] },
+);
+
+GRUMPY.onIdle[803] = [
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'got a spy phone to teleport to an empty room.' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'secret agent HQ? not even a bench to sit on.' } }] },
+];
+
+// EXCITABLE — Launch Day
+EXCITABLE.onIdle.any?.push(
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 0, action: { type: 'chat', message: 'chris / screenhog here, so happy for launch! :D' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'CLUB PENGUIN RELEASED TODAY AAAAAAHHH!!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'WE ARE OUT OF BETA! SO MANY NEW PENGUINS!!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'LOOK AT OUR FEET WE HAVE SHADOWS NOW! COOL!!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'NEWSPAPER SAYS HALLOWEEN PARTY OCT 27TH WOO!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'PLAYERCARD BUTTON ON THE TOP BAR NOW! LOOK!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'BOUGHT SO MANY CLOTHES FROM THE NEW CATALOG!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'MEMBERSHIP IS THE BEST! DRESSED TO THE MAX!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'WISH I COULD BUY CLOTHES CATALOG IS AMAZING!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'NEED A MEMBERSHIP SO BAD! WANNA WEAR HATS!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'GOT 2000 COINS AND FREE MONTH FOR BETA!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'MY VERY FIRST DAY ON CLUB PENGUIN HI ALL!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'YOUR PARTY HAT IS COOL WISH I WAS IN BETA!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'ACCOUNT TOO NEW FOR SPY QUIZ WAIT 30 DAYS!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'NO 2000 COIN BONUS GOTTA EARN FROM GAMES!!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isAgentNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'PASSED QUIZ AND GOT SPY PHONE! SECRET AGENT!' } }] },
+);
+
+EXCITABLE.onIdle[803] = [
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'I AM A SECRET AGENT! SPY PHONE IS SO COOL!!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'AGENT HQ IS EMPTY BUT FEELS SO CLASSIFIED!!' } }] },
+];
+
+// CURIOUS — Launch Day
+CURIOUS.onIdle.any?.push(
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'transition out of beta brought so many players' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'notice shadows under penguins? looks cleaner!' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'playercard on top bar, news on top left now' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'newspaper #1 has town center lore on page 2' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'forecast predicts cold with sunshine this week' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'account 30 days old? check badge for quiz!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'clothing catalog has neat item color options' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'wish non-members had more catalog clothes' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'plenty of coins, no membership to spend on!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'beta testers got free month plus 2000 coins!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'as a newcomer, neat seeing beta tester hats' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 0, action: { type: 'chat', message: 'agent test needs 30 days age, gotta wait!' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 0, action: { type: 'chat', message: 'launch day feedback is super valuable to us' } }] },
+  { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 0, action: { type: 'chat', message: 'welcome all! thanks for making cp possible!' } }] },
+);
+
+CURIOUS.onIdle[803] = [
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'room is bare now, wonder what gadgets come?' } }] },
+  { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 0, action: { type: 'chat', message: 'teleporting with spy phone is so convenient!' } }] },
+];
+
+// Launch Day Player Chat Triggers
+FRIENDLY.onPlayerChat.push(
+  {
+    keywords: ['launch', 'official', 'beta', 'release', 'out of beta', 'newcomer'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'official launch day! cp is fully released :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 800, action: { type: 'chat', message: 'here during beta, but now everyone plays!' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 800, action: { type: 'chat', message: 'just joined for official launch! having fun :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev, steps: [{ delayMs: 900, action: { type: 'chat', message: 'thanks for celebrating launch! worked hard!' } }] },
+    ],
+  },
+  {
+    keywords: ['clothes', 'shirt', 'hat', 'buy', 'shop', 'catalog'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 700, action: { type: 'chat', message: 'love buying new catalog clothes! what you got?' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 700, action: { type: 'chat', message: 'wish i could buy clothes, but not a member :(' } }] },
+    ],
+  },
+  {
+    keywords: ['shadow', 'shadows'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 600, action: { type: 'chat', message: 'shadows added under our penguins today! look :)' } }] },
+    ],
+  },
+  {
+    keywords: ['newspaper', 'paper', 'issue 1', 'forecast', 'halloween'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 700, action: { type: 'chat', message: 'issue #1 out today! halloween party oct 27th!!' } }] },
+      { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'click news in top left! no more latin text haha' } }] },
+    ],
+  },
+  {
+    keywords: ['agent', 'spy phone', 'hq', 'quiz', 'secret agent'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, steps: [{ delayMs: 800, action: { type: 'chat', message: 'penguin 30 days old? check mod badge button!' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isNonTesterNpc, steps: [{ delayMs: 800, action: { type: 'chat', message: 'account too new for quiz, gotta wait 30 days!' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isAgentNpc, steps: [{ delayMs: 900, action: { type: 'chat', message: 'shhh! agent business! spy phone is awesome :)' } }] },
+    ],
+  },
+  {
+    keywords: ['membership', 'member', 'coins', 'free month'],
+    cooldownMs: 20_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, condition: isTesterNpc, steps: [{ delayMs: 700, action: { type: 'chat', message: 'beta testers got a free month and 2000 coins :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isMemberNpc, steps: [{ delayMs: 700, action: { type: 'chat', message: 'memberships launched! having one is great :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: isNonMemberNpc, steps: [{ delayMs: 700, action: { type: 'chat', message: 'wish i had membership for catalog clothes :(' } }] },
+    ],
+  },
+  {
+    keywords: ['dev', 'devs', 'billybob', 'rsnail', 'gizmo', 'screenhog'],
+    cooldownMs: 25_000,
+    responses: [
+      { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Billybob', steps: [{ delayMs: 800, action: { type: 'chat', message: 'billybob here! welcome to launch everyone! :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Rsnail', steps: [{ delayMs: 800, action: { type: 'chat', message: 'rsnail here! thanks for joining launch day eh!' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Gizmo', steps: [{ delayMs: 800, action: { type: 'chat', message: 'hi! gizmo here, thanks so much for playing! :)' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: npc => npc.isDev && npc.name === 'Screenhog', steps: [{ delayMs: 800, action: { type: 'chat', message: 'screenhog here! happy official launch eh! :D' } }] },
+      { gate: LAUNCH_DAY_GATE, condition: npc => !npc.isDev, steps: [{ delayMs: 800, action: { type: 'chat', message: 'devs are in town and coffee shop today!' } }] },
+    ],
+  },
+);
+
+// Launch Day NPC Exchanges
+FRIENDLY.npcExchanges.push(
+  {
+    gate: LAUNCH_DAY_GATE,
+    cooldownMs: 160_000,
+    chance: 0.18,
+    condition: (_npc, other) => other.isDev,
+    steps: [
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'congrats on officially launching club penguin!!' } } },
+      { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'thank you! thrilled to have everyone here' } } },
+      { who: 'a', step: { delayMs: 2400, action: { type: 'chat', message: 'the new shadows and newspaper look great :)' } } },
+    ],
+  },
+  {
+    gate: LAUNCH_DAY_GATE,
+    cooldownMs: 180_000,
+    chance: 0.15,
+    condition: (npc, other) => isTesterNpc(npc) && !isTesterNpc(other),
+    steps: [
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'welcome! is today your first day on island?' } } },
+      { who: 'b', step: { delayMs: 2200, action: { type: 'chat', message: 'joined today! what party hat are you wearing?' } } },
+      { who: 'a', step: { delayMs: 2500, action: { type: 'chat', message: 'from beta test! hope you love the island :)' } } },
+    ],
+  },
+  {
+    gate: LAUNCH_DAY_GATE,
+    cooldownMs: 180_000,
+    chance: 0.15,
+    condition: (npc, other) => isAgentNpc(npc) && isAgentNpc(other),
+    steps: [
+      { who: 'a', step: { delayMs: 0, action: { type: 'chat', message: 'fellow secret agent! check out the hq yet?' } } },
+      { who: 'b', step: { delayMs: 2000, action: { type: 'chat', message: 'yeah! pretty empty now, but phone is cool' } } },
+      { who: 'a', step: { delayMs: 2400, action: { type: 'chat', message: 'keep it classified ;) agent work ahead' } } },
     ],
   },
 );

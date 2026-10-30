@@ -3,7 +3,7 @@
  */
 import { Worker } from 'worker_threads';
 
-import { PenguinJson } from '@server/database/database';
+import { PenguinJson, PenguinRepository } from '@server/database/database';
 import { SettingsManager } from '@server/settings';
 import { GameData } from '@server/timelines/game-data';
 import { World } from './world';
@@ -13,8 +13,11 @@ import { choose, clamp, randomInt, shuffleArray } from '@common/utils';
 import { Bot, BotAttributes, getRandomPointInRoom, WriteFunction } from './bot';
 import { FindFourTable } from './find-four';
 import { MancalaTable } from './mancala';
+import { CardJitsu } from './card';
+import { SledRace } from './sled';
 import { XtMessenger } from '../xt-messenger';
 import { joinWaddle } from '../handlers/room';
+import { isNewBuddyProtocol, getPenguinString } from '../handlers/join';
 import { getNameFromId, IGLOO_ROOM_BASE, ROOMS } from '@server/game-data/rooms';
 import path from 'path';
 import { generateBots, generateRandomBot } from './bot-generation';
@@ -24,6 +27,13 @@ import { getRoomWeightMap, pickFromPool, SNOW_FORTS_ROOM_ID } from '@server/npc/
 import { isRareItem } from '@server/npc/npc-clothing';
 import { isGreaterOrEqual } from '@server/routes/versions';
 import { BOT_ID_BASE, isBot } from './world-penguin';
+import {
+  AMBIENT_PLAYER_CHAT_TRIGGERS,
+  getEligibleDialogueChains,
+  getAmbientPlayerChatResponse,
+  sampleRandomAgeGroup,
+  DialogueChain
+} from '@server/npc/ambient-dialogue';
 export { BOT_ID_BASE, isBot };
 
 
@@ -89,6 +99,7 @@ const TIMELINE_POPULATIONS: Record<string, number> = {
   '2005-09-21': 150, // Beta Test Party
   '2005-09-22': 50,
   '2005-10-20': 50,
+  '2005-10-24': 140, // Club Penguin Official Launch
 };
 
 
@@ -116,6 +127,13 @@ export class BotManager {
   private _pendingGeneration = false;
   private _chatCooldowns = new Map<string, number>();
   private _roomRecentKeywords = new Map<number, Set<string>>();
+  private _friendGreetingCooldowns = new Map<string, number>();
+  private _playerAskFriendsCooldown = new Map<number, number>();
+  private _lastRoomRepopulated = new Map<number, number>();
+  private _savedBotNames = new Map<number, string>();
+  private _roomLastExchange = new Map<number, number>();
+  private _activeExchangeBots = new Set<number>();
+  private _ambientChatCooldowns = new Map<string, number>();
 
   constructor(
     private _world: World,
@@ -123,9 +141,29 @@ export class BotManager {
     private _data: GameData,
     private _appSettings: SettingsManager,
     private _writeFn: WriteFunction,
-    private disconnect: (b: Bot) => void
+    private disconnect: (b: Bot) => void,
+    private _db?: PenguinRepository
   ) {
-    this.syncTimelineDate();
+    this.initSavedBots().then(() => {
+      this.syncTimelineDate();
+    });
+  }
+
+  private async initSavedBots(): Promise<void> {
+    if (!this._db) return;
+    try {
+      const saved = await this._db.getSavedBots();
+      for (const [id, json] of saved) {
+        if (id >= this._nextId) {
+          this._nextId = id + 1;
+        }
+        if (json.name) {
+          this._savedBotNames.set(id, json.name);
+        }
+      }
+    } catch {
+      // Ignore
+    }
   }
 
   public syncTimelineDate(): void {
@@ -207,6 +245,172 @@ export class BotManager {
     };
   }
 
+  public recordSavedBotName(id: number, name: string): void {
+    this._savedBotNames.set(id, name);
+  }
+
+  /**
+   * Checks whether the real player is buddies with any bot/player sharing `name` (case-insensitive).
+   */
+  public playerHasBuddyNamed(player: WorldPenguin, name: string): boolean {
+    const nameLower = name.toLowerCase();
+    for (const buddyId of player.buddy.buddies) {
+      const buddyBot = this._bots.get(buddyId);
+      if (buddyBot?.name?.toLowerCase() === nameLower) {
+        return true;
+      }
+      const worldPenguin = this._world.getById(buddyId);
+      if (worldPenguin?.name?.toLowerCase() === nameLower) {
+        return true;
+      }
+      const savedName = this._savedBotNames.get(buddyId);
+      if (savedName && savedName.toLowerCase() === nameLower) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns the buddy ID corresponding to a buddy named `name` (case-insensitive) for `player`.
+   */
+  public getBuddyIdByName(player: WorldPenguin, name: string): number | undefined {
+    const nameLower = name.toLowerCase();
+    for (const buddyId of player.buddy.buddies) {
+      const buddyBot = this._bots.get(buddyId);
+      if (buddyBot?.name?.toLowerCase() === nameLower) {
+        return buddyId;
+      }
+      const worldPenguin = this._world.getById(buddyId);
+      if (worldPenguin?.name?.toLowerCase() === nameLower) {
+        return buddyId;
+      }
+      const savedName = this._savedBotNames.get(buddyId);
+      if (savedName && savedName.toLowerCase() === nameLower) {
+        return buddyId;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Checks if `botPenguin` sharing a name with a real player's buddy (different ID)
+   * would cause a conflict in `room` (or with `extraPlayer`).
+   */
+  public hasBuddyNameConflictForBot(
+    room: WorldRoom,
+    botPenguin: WorldPenguin,
+    extraPlayer?: WorldPenguin
+  ): boolean {
+    const playersToCheck = room.players.filter(p => !isBot(p) && !p.deadInternet);
+    if (extraPlayer && !isBot(extraPlayer) && !extraPlayer.deadInternet && !playersToCheck.includes(extraPlayer)) {
+      playersToCheck.push(extraPlayer);
+    }
+
+    for (const player of playersToCheck) {
+      if (!player.buddy.isBuddy(botPenguin.id) && this.playerHasBuddyNamed(player, botPenguin.name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Scans all bots in `room` for name conflicts with real players in `room` (and `visitor`).
+   * If an impostor bot is present:
+   * - If the player's real buddy bot is online, free, and in another room, swaps them.
+   * - Otherwise, evicts the impostor bot to a non-conflicting room.
+   */
+  public resolveBuddyNameConflicts(room: WorldRoom, visitor?: WorldPenguin): void {
+    if (this._bots.size === 0) return;
+
+    const realPlayers = room.players.filter(p => !isBot(p) && !p.deadInternet);
+    if (visitor && !isBot(visitor) && !visitor.deadInternet && !realPlayers.includes(visitor)) {
+      realPlayers.push(visitor);
+    }
+    if (realPlayers.length === 0) return;
+
+    const botsInRoom = room.players.filter(p => isBot(p));
+    for (const botPenguin of botsInRoom) {
+      const botObj = this._bots.get(botPenguin.id);
+      if (!botObj) continue;
+
+      let conflictingBuddyId: number | undefined;
+      for (const rp of realPlayers) {
+        if (!rp.buddy.isBuddy(botPenguin.id) && this.playerHasBuddyNamed(rp, botPenguin.name)) {
+          conflictingBuddyId = this.getBuddyIdByName(rp, botPenguin.name);
+          break;
+        }
+      }
+
+      if (conflictingBuddyId === undefined) {
+        continue;
+      }
+
+      // Conflict found! Attempt swap with real buddy if available, otherwise evict impostor
+      const realBuddyBot = this._bots.get(conflictingBuddyId);
+      const realBuddyRoom = realBuddyBot ? this._world.getPenguinRoom(realBuddyBot.penguin) : undefined;
+      const canSwap =
+        realBuddyBot !== undefined &&
+        !realBuddyBot.busy &&
+        realBuddyRoom !== undefined &&
+        realBuddyRoom.id !== room.id &&
+        !this.isPenguinSeated(realBuddyRoom, realBuddyBot.penguin) &&
+        !this.hasBuddyNameConflictForBot(room, realBuddyBot.penguin, visitor);
+
+      if (canSwap && realBuddyBot && realBuddyRoom) {
+        const impostorState = room.getState(botPenguin);
+        const ix = impostorState?.x ?? 0;
+        const iy = impostorState?.y ?? 0;
+
+        // 1. Remove impostor from room
+        room.removePenguin(botPenguin);
+        if (room.hasRealPlayers) {
+          this._msg.send(room.players, 'rp', botPenguin.id);
+        }
+
+        // 2. Remove real buddy from realBuddyRoom
+        realBuddyRoom.removePenguin(realBuddyBot.penguin);
+        if (realBuddyRoom.hasRealPlayers) {
+          this._msg.send(realBuddyRoom.players, 'rp', realBuddyBot.penguin.id);
+        }
+
+        // 3. Put impostor into realBuddyRoom
+        const [dx, dy] = getRandomPointInRoom(realBuddyRoom);
+        realBuddyRoom.addPenguin(botPenguin, dx, dy);
+        this._world.enterState(botPenguin, { room: realBuddyRoom });
+        botObj.teleportTo(realBuddyRoom, dx, dy);
+        if (realBuddyRoom.hasRealPlayers) {
+          this._msg.send(realBuddyRoom.players, 'ap', getPenguinString(this._data, botPenguin, { x: dx, y: dy, frame: 1 }));
+        }
+
+        // 4. Put real buddy into room at impostor's former spot
+        room.addPenguin(realBuddyBot.penguin, ix, iy);
+        this._world.enterState(realBuddyBot.penguin, { room });
+        realBuddyBot.teleportTo(room, ix, iy);
+        if (room.hasRealPlayers) {
+          this._msg.send(room.players, 'ap', getPenguinString(this._data, realBuddyBot.penguin, { x: ix, y: iy, frame: 1 }));
+        }
+      } else {
+        // Cannot swap -> Evict impostor to a safe alternative room
+        room.removePenguin(botPenguin);
+        if (room.hasRealPlayers) {
+          this._msg.send(room.players, 'rp', botPenguin.id);
+        }
+
+        const altRoomId = botObj.chooseRoom();
+        const altRoom = this._world.getRoom(altRoomId);
+        const [ax, ay] = getRandomPointInRoom(altRoom);
+        altRoom.addPenguin(botPenguin, ax, ay);
+        this._world.enterState(botPenguin, { room: altRoom });
+        botObj.teleportTo(altRoom, ax, ay);
+        if (altRoom.hasRealPlayers) {
+          this._msg.send(altRoom.players, 'ap', getPenguinString(this._data, botPenguin, { x: ax, y: ay, frame: 1 }));
+        }
+      }
+    }
+  }
+
   /**
    * Called right before a human player enters a public room.
    * If the room has no other human players, checks if we currently have the suitable
@@ -246,6 +450,7 @@ export class BotManager {
       for (const bot of this._bots.values()) {
         if (bot.busy) continue;
         if (isMemberRoom && !bot.penguin.membership.isMember) continue;
+        if (this.hasBuddyNameConflictForBot(room, bot.penguin, visitor)) continue;
 
         const donorRoom = this._world.getPenguinRoom(bot.penguin);
         if (!donorRoom || donorRoom.id === room.id || donorRoom.id >= IGLOO_ROOM_BASE) continue;
@@ -327,6 +532,134 @@ export class BotManager {
   }
 
   /**
+   * Checks if any bots in the room are friends with the entering visitor,
+   * and triggers greeting lines and wave frames.
+   */
+  private greetFriendsIfPresent(room: WorldRoom, visitor: WorldPenguin): boolean {
+    const friendBots = room.players
+      .filter(p => isBot(p) && visitor.buddy.isBuddy(p.id))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (friendBots.length === 0) {
+      return false;
+    }
+
+    const now = Date.now();
+    const available = friendBots.filter(b => {
+      const key = `${b.penguin.id}:${visitor.id}`;
+      const last = this._friendGreetingCooldowns.get(key) ?? 0;
+      return (now - last) >= 45_000;
+    });
+
+    if (available.length === 0) {
+      return false;
+    }
+
+    // Pick 1 or up to 2 friend bots to greet
+    const shuffled = shuffleArray(available);
+    const count = (shuffled.length > 1 && Math.random() < 0.5) ? 2 : 1;
+    const toGreet = shuffled.slice(0, count);
+
+    const isIgloo = room.id >= IGLOO_ROOM_BASE;
+
+    toGreet.forEach((bot, idx) => {
+      const key = `${bot.penguin.id}:${visitor.id}`;
+      this._friendGreetingCooldowns.set(key, now);
+
+      const delayMs = idx === 0 ? randomInt(800, 1500) : randomInt(2400, 3400);
+
+      setTimeout(() => {
+        const curRoom = this._world.getPenguinRoom(bot.penguin);
+        const curVisitorRoom = this._world.getPenguinRoom(visitor);
+        if (curRoom?.id !== room.id || curVisitorRoom?.id !== room.id) return;
+
+        const trait = bot.personalityTrait;
+        let line: string;
+
+        if (isIgloo && (room.id - IGLOO_ROOM_BASE === bot.penguin.id)) {
+          // This bot is the owner of the igloo welcoming their friend
+          const iglooGreetings: Record<string, string[]> = {
+            friendly: [
+              `hey ${visitor.name}! welcome to my igloo!`,
+              `hey ${visitor.name}! make yourself at home!`,
+              `yay ${visitor.name}! glad you came by! :)`,
+              `hey buddy! welcome!`
+            ],
+            excitable: [
+              `yay ${visitor.name}!! welcome to my igloo!!`,
+              `omg ${visitor.name} you're here!! make yourself at home!`,
+              `welcome welcome ${visitor.name}!! :D`
+            ],
+            curious: [
+              `hey ${visitor.name}, thanks for visiting!`,
+              `hi ${visitor.name}! check out my igloo!`,
+              `what do you think of my igloo ${visitor.name}?`
+            ],
+            shy: [
+              `hi ${visitor.name}... welcome to my igloo :)`,
+              `thanks for visiting ${visitor.name}...`,
+              `hey ${visitor.name}, make yourself comfortable...`
+            ],
+            grumpy: [
+              `hey ${visitor.name}. wipe your flippers.`,
+              `oh, hey ${visitor.name}. welcome.`,
+              `hey ${visitor.name}. don't break anything.`
+            ]
+          };
+          const lines = iglooGreetings[trait] ?? iglooGreetings.friendly;
+          line = choose(lines);
+        } else {
+          // Public room (or other igloo) greeting
+          const greetings: Record<string, string[]> = {
+            friendly: [
+              `hey ${visitor.name}!`,
+              `hey ${visitor.name}! :D`,
+              `hi ${visitor.name}!`,
+              `wb ${visitor.name}!`,
+              `good to see you ${visitor.name}!`,
+              `heyy ${visitor.name}!`,
+              `hey buddy!`
+            ],
+            excitable: [
+              `${visitor.name}!! :D`,
+              `hey ${visitor.name}!!`,
+              `yay ${visitor.name} is here!`,
+              `yo ${visitor.name}! :D`,
+              `omg hey ${visitor.name}!`
+            ],
+            curious: [
+              `hey ${visitor.name}, what are you up to?`,
+              `hi ${visitor.name}!`,
+              `hey ${visitor.name}, welcome!`,
+              `what's up ${visitor.name}?`
+            ],
+            shy: [
+              `hi ${visitor.name}...`,
+              `hey ${visitor.name} :)`,
+              `welcome back ${visitor.name}`,
+              `oh hi ${visitor.name}!`
+            ],
+            grumpy: [
+              `hey ${visitor.name}.`,
+              `yo ${visitor.name}.`,
+              `oh, hey ${visitor.name}.`,
+              `what's up.`
+            ]
+          };
+          const lines = greetings[trait] ?? greetings.friendly;
+          line = choose(lines);
+        }
+
+        bot.doFrame(25); // wave
+        bot.sendMessage(line);
+      }, delayMs);
+    });
+
+    return true;
+  }
+
+  /**
    * Called right after a human player enters a room.
    * If they entered a bot's igloo and the owner is present, trigger the unannounced arrival reaction.
    * If they entered a public room, bots can greet or compliment rare items.
@@ -342,8 +675,12 @@ export class BotManager {
       }
     }
 
+    const greetedByFriends = this.greetFriendsIfPresent(room, visitor);
+
     if (room.id < IGLOO_ROOM_BASE) {
-      this.onPlayerJoinPublicRoom(room, visitor);
+      if (!greetedByFriends) {
+        this.onPlayerJoinPublicRoom(room, visitor);
+      }
       return;
     }
 
@@ -356,7 +693,9 @@ export class BotManager {
     const currentRoom = this._world.getPenguinRoom(bot.penguin);
     if (currentRoom?.id !== room.id) return;
 
-    bot.reactToIglooVisitor(visitor, room);
+    if (!greetedByFriends) {
+      bot.reactToIglooVisitor(visitor, room);
+    }
   }
 
   private onPlayerJoinPublicRoom(room: WorldRoom, visitor: WorldPenguin): void {
@@ -425,11 +764,234 @@ export class BotManager {
     }
   }
 
+  /**
+   * If a player asks for friends in room chat, nearby bots may respond and send friend requests.
+   */
+  private handlePlayerAskingForFriends(room: WorldRoom, player: WorldPenguin, message: string): boolean {
+    const ASK_FRIENDS_REGEX = /(?:\b(add me|friend me|buddy me|be my (friend|buddy)|who wants to be (my )?(friend|buddy|friends|buddies)|anyone (wants?|wanna) (to )?be (my )?(friend|buddy|friends|buddies)|anybody (wants?|wanna) (to )?be (my )?(friend|buddy|friends|buddies)|need (a )?(friend|buddy|friends|buddies)|looking for (a )?(friend|buddy|friends|buddies)|(?:can|will) someone (?:add|buddy) me|want to be (friends|buddies)|wanna be (friends|buddies))\b|\b(?:friends|buddies)\s*\?)/i;
+
+    if (!ASK_FRIENDS_REGEX.test(message)) {
+      return false;
+    }
+
+    const now = Date.now();
+    const lastAsk = this._playerAskFriendsCooldown.get(player.id) ?? 0;
+    if (now - lastAsk < 20_000) {
+      return true; // Still considered handled during cooldown
+    }
+    this._playerAskFriendsCooldown.set(player.id, now);
+
+    // Find candidate bots in this room who aren't buddies with player yet, don't share a name with existing buddies, and aren't busy
+    const candidateBots = room.players
+      .filter(p => isBot(p) && !player.buddy.isBuddy(p.id) && !this.playerHasBuddyNamed(player, p.name))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.busy);
+
+    if (candidateBots.length === 0) {
+      return false;
+    }
+
+    // Shuffle and pick 1 or 2 bots
+    const shuffled = shuffleArray(candidateBots);
+    const count = (shuffled.length > 1 && Math.random() < 0.45) ? 2 : 1;
+    const selected = shuffled.slice(0, count);
+
+    selected.forEach((bot, idx) => {
+      const delayMs = idx === 0 ? randomInt(900, 1600) : randomInt(2600, 3600);
+      setTimeout(() => {
+        const curRoom = this._world.getPenguinRoom(bot.penguin);
+        const playerRoom = this._world.getPenguinRoom(player);
+        if (curRoom?.id !== room.id || playerRoom?.id !== room.id) return;
+        if (player.buddy.isBuddy(bot.penguin.id)) return;
+
+        const trait = bot.personalityTrait;
+        const chatResponses: Record<string, string[]> = {
+          friendly: [
+            "i'll be your friend!",
+            "i'll add you! :)",
+            "sure, let's be buddies!",
+            "i sent you a request! :D",
+            "i'd love to be buddies!"
+          ],
+          excitable: [
+            "me!! i want to be friends!",
+            "adding you right now!! :D",
+            "let's be buddies!!",
+            "i sent a request! :D",
+            "me me me! adding you!"
+          ],
+          curious: [
+            "i'll add you!",
+            "sure, let's be friends!",
+            "sent you a buddy request!",
+            "i can be your buddy!"
+          ],
+          shy: [
+            "i can be your friend... if you want!",
+            "i sent a request... :)",
+            "i'll add you... :)",
+            "we can be buddies..."
+          ],
+          grumpy: [
+            "fine, i'll add you.",
+            "sure, whatever.",
+            "sent you a request."
+          ]
+        };
+
+        const lines = chatResponses[trait] ?? chatResponses.friendly;
+        const line = (idx === 1)
+          ? choose(["me too!", "i added you too!", "sent you one as well! :D", "i'll be your buddy too!"])
+          : choose(lines);
+
+        bot.doFrame(25); // wave
+        bot.sendMessage(line);
+
+        // Send the buddy request packet to the human player shortly after the chat bubble
+        setTimeout(() => {
+          const curRoom2 = this._world.getPenguinRoom(bot.penguin);
+          const playerRoom2 = this._world.getPenguinRoom(player);
+          if (curRoom2?.id !== room.id || playerRoom2?.id !== room.id) return;
+          if (player.buddy.isBuddy(bot.penguin.id)) return;
+
+          if (isNewBuddyProtocol(this._data)) {
+            this._msg.send(player, 'br', bot.penguin.id, bot.penguin.name);
+          } else {
+            this._msg.send(player, 'bq', bot.penguin.id, bot.penguin.name);
+          }
+        }, 500);
+      }, delayMs);
+    });
+
+    return true;
+  }
+
+  /**
+   * Attempts to initiate a natural multi-bot dialogue chain in `room`.
+   * Returns true if an exchange was successfully scheduled.
+   */
+  public tryTriggerDialogueChain(room: WorldRoom, initiator?: Bot): boolean {
+    if (!room.hasRealPlayers) return false;
+    if (this._bots.size < 2) return false;
+    if (initiator?.isDev) return false;
+
+    const now = Date.now();
+    const lastExchange = this._roomLastExchange.get(room.id) ?? 0;
+    // Keep a natural gap (~24 seconds) between multi-bot dialogue chains in the same room
+    if (now - lastExchange < 24_000) return false;
+
+    // Find available bots in the room
+    const eligibleBots = room.players
+      .filter(p => isBot(p) && !this._activeExchangeBots.has(p.id))
+      .map(p => this._bots.get(p.id))
+      .filter((b): b is Bot => b !== undefined && !b.isDev && !b.busy && !b.isHostingIgloo && !this.isPenguinSeated(room, b.penguin));
+
+    if (eligibleBots.length < 2) return false;
+
+    let botA: Bot;
+    let botB: Bot;
+    if (initiator && eligibleBots.includes(initiator)) {
+      botA = initiator;
+      const otherBots = eligibleBots.filter(b => b.penguin.id !== initiator.penguin.id);
+      if (otherBots.length === 0) return false;
+      botB = choose(otherBots);
+    } else {
+      const shuffled = shuffleArray(eligibleBots);
+      botA = shuffled[0];
+      botB = shuffled[1];
+    }
+
+    const currentDate = this._data.getDate();
+    let eligibleChains = getEligibleDialogueChains(
+      currentDate,
+      botA.ageGroup,
+      botB.ageGroup,
+      botA.personalityTrait,
+      botB.personalityTrait
+    );
+    if (eligibleChains.length === 0) {
+      eligibleChains = getEligibleDialogueChains(currentDate, botA.ageGroup, botB.ageGroup);
+    }
+    if (eligibleChains.length === 0) {
+      eligibleChains = getEligibleDialogueChains(currentDate);
+    }
+    if (eligibleChains.length === 0) return false;
+
+    const chain = choose(eligibleChains);
+    this._roomLastExchange.set(room.id, now);
+    this._activeExchangeBots.add(botA.penguin.id);
+    this._activeExchangeBots.add(botB.penguin.id);
+
+    let cumulativeDelay = 0;
+    chain.steps.forEach((step, idx) => {
+      const delay = idx === 0 ? (step.delayMs ?? 0) : (step.delayMs ?? randomInt(2400, 3400));
+      cumulativeDelay += delay;
+
+      setTimeout(() => {
+        // Confirm bots and room are still valid
+        const curRoomA = this._world.getPenguinRoom(botA.penguin);
+        const curRoomB = this._world.getPenguinRoom(botB.penguin);
+        if (curRoomA?.id !== room.id || curRoomB?.id !== room.id) {
+          this._activeExchangeBots.delete(botA.penguin.id);
+          this._activeExchangeBots.delete(botB.penguin.id);
+          return;
+        }
+
+        const speaker = step.who === 'a' ? botA : botB;
+        if (step.text) {
+          speaker.sendMessage(step.text);
+        }
+        if (step.emoteId !== undefined) {
+          speaker.doEmote(step.emoteId);
+        }
+        if (step.frame !== undefined) {
+          speaker.doFrame(step.frame);
+        }
+
+        if (idx === chain.steps.length - 1) {
+          // Release bots after a short buffer
+          setTimeout(() => {
+            this._activeExchangeBots.delete(botA.penguin.id);
+            this._activeExchangeBots.delete(botB.penguin.id);
+          }, 2000);
+        }
+      }, cumulativeDelay);
+    });
+
+    return true;
+  }
+
+  /**
+   * Periodically checks active rooms with real human players and multiple bots.
+   * If the room has been quiet, spontaneously starts an ambient dialogue chain.
+   */
+  private tickAmbientExchanges(): void {
+    if (this._bots.size < 2) return;
+    const now = Date.now();
+
+    const activeRooms = this.humanRooms().filter(r => r.id < IGLOO_ROOM_BASE);
+    for (const room of activeRooms) {
+      const lastExchange = this._roomLastExchange.get(room.id) ?? 0;
+      if (now - lastExchange < 35_000) continue;
+
+      const botsInRoom = room.players.filter(p => isBot(p));
+      if (botsInRoom.length < 2) continue;
+
+      if (Math.random() < 0.50) {
+        this.tryTriggerDialogueChain(room);
+      }
+    }
+  }
+
   public onPlayerChat(room: WorldRoom, player: WorldPenguin, message: string): void {
     if (isBot(player) || player.deadInternet) return;
     const currentDate = this._data.getDate();
     const lower = message.toLowerCase();
     const now = Date.now();
+
+    if (this.handlePlayerAskingForFriends(room, player, message)) {
+      return;
+    }
 
     const botsInRoom = room.players
       .filter(p => isBot(p))
@@ -438,9 +1000,60 @@ export class BotManager {
 
     if (botsInRoom.length === 0) return;
 
+    // Check ambient non-Club-Penguin conversation topics
+    const nonDevBots = botsInRoom.filter(b => !b.isDev);
+    if (nonDevBots.length > 0) {
+      for (let i = 0; i < AMBIENT_PLAYER_CHAT_TRIGGERS.length; i++) {
+        const trigger = AMBIENT_PLAYER_CHAT_TRIGGERS[i];
+        const matchedKws = trigger.keywords.filter(kw => lower.includes(kw));
+        if (matchedKws.length === 0) continue;
+
+        const cooldownKey = `ambient:${room.id}:${i}`;
+        const lastFired = this._ambientChatCooldowns.get(cooldownKey) ?? 0;
+        const cooldown = trigger.cooldownMs ?? 20_000;
+        if (now - lastFired < cooldown) continue;
+
+        const availableBots = shuffleArray(nonDevBots);
+        const primaryBot = availableBots[0];
+        if (!primaryBot) continue;
+
+        this._ambientChatCooldowns.set(cooldownKey, now);
+
+        // Primary bot responds
+        const primaryMsg = getAmbientPlayerChatResponse(trigger, primaryBot.ageGroup);
+        setTimeout(() => {
+          const curRoom = this._world.getPenguinRoom(primaryBot.penguin);
+          if (curRoom?.id === room.id) {
+            primaryBot.sendMessage(primaryMsg);
+          }
+        }, randomInt(900, 1600));
+
+        // If a second bot is present and follow-up responses exist, form a dialogue chain!
+        const followUpBot = availableBots[1];
+        if (followUpBot && trigger.followUpResponses && trigger.followUpResponses.length > 0) {
+          const followUpMsg = choose(trigger.followUpResponses);
+          setTimeout(() => {
+            const curRoom = this._world.getPenguinRoom(followUpBot.penguin);
+            if (curRoom?.id === room.id) {
+              followUpBot.sendMessage(followUpMsg);
+            }
+          }, randomInt(3200, 4400));
+        }
+
+        return;
+      }
+    }
+
     let respondents = 0;
     for (const bot of shuffleArray(botsInRoom)) {
       if (respondents >= 2) break;
+      if (bot.isDev) {
+        // Dev bots only respond to messages explicitly mentioning developers or their names
+        const devKeywords = ['dev', 'devs', 'developer', 'rsnail', 'billybob', 'gizmo', 'screenhog', 'lance', 'lane', 'chris', 'dave'];
+        if (!devKeywords.some(kw => lower.includes(kw))) {
+          continue;
+        }
+      }
       const dialogue = PERSONALITY_DIALOGUE[bot.personalityTrait];
 
       for (let i = 0; i < dialogue.onPlayerChat.length; i++) {
@@ -661,6 +1274,60 @@ export class BotManager {
     if (this._pendingGeneration) {
       return;
     }
+    // Prioritize re-spawning any saved bot buddies that aren't currently active
+    if (this._db) {
+      try {
+        const saved = await this._db.getSavedBots();
+        for (const [id, json] of saved) {
+          if (json.name) {
+            this._savedBotNames.set(id, json.name);
+          }
+          if (!this._bots.has(id)) {
+            // If at population capacity, despawn a non-saved/non-buddy bot to prioritize saved buddies
+            if (this._bots.size >= this._settings.population && this._settings.population > 0) {
+              const idleCandidate = [...this._bots.entries()].find(
+                ([botId, b]) => !b.busy && !saved.some(([sId]) => sId === botId)
+              );
+              if (idleCandidate) {
+                this.despawn(idleCandidate[0]);
+              }
+            }
+
+            if (this._bots.size < this._settings.population || this._settings.population === 0) {
+              const attrs: BotAttributes = {
+                personalityTrait: 'friendly',
+                ageGroup: sampleRandomAgeGroup(),
+                danceFan: Math.random(),
+                snowballFan: Math.random(),
+                waveFan: Math.random(),
+                sitFan: Math.random(),
+                chatFan: Math.random(),
+                emoteFan: Math.random(),
+                walkFan: Math.random(),
+                emptyRoomTolerance: Math.random(),
+                roomDistraction: Math.random(),
+                iglooFan: Math.random(),
+                secretsFan: Math.random(),
+                followability: Math.random(),
+                mythsFan: Math.random(),
+                stampsFan: Math.random(),
+                musicFan: Math.random(),
+                collectorMania: Math.random(),
+                tester: Math.random(),
+                ninjaFan: Math.random(),
+                exploreFan: Math.random(),
+                transferFan: Math.random(),
+                agentFan: Math.random()
+              };
+              this.spawn({ id, info: [attrs, json] });
+            }
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
     const botsToSpawn = this._settings.population - this._bots.size;
     if (botsToSpawn > 0) {
       this._pendingGeneration = true;
@@ -684,11 +1351,15 @@ export class BotManager {
   }
 
   public spawn(
-    { roomId, info }: {
+    { roomId, info, id: forcedId }: {
       roomId?: number;
-      info?: [BotAttributes, PenguinJson]
+      info?: [BotAttributes, PenguinJson];
+      id?: number;
     } = {}): Bot {
-    const id = this._nextId++;
+    const id = forcedId ?? this._nextId++;
+    if (id >= this._nextId) {
+      this._nextId = id + 1;
+    }
     const [attrs,json] = info === undefined ? generateRandomBot(this._data) : info;
     const penguin = new WorldPenguin(id, json, this._appSettings, this._data);
     this._world.addPenguin(penguin);
@@ -698,7 +1369,8 @@ export class BotManager {
       this._world,
       Date.now() + this.delay(),
       this._writeFn,
-      attrs
+      attrs,
+      this
     )
     this._msg.linkClient(bot, bot.penguin);
     this._bots.set(id, bot);
@@ -804,19 +1476,22 @@ export class BotManager {
       }
 
       this._waddleLastSeat.set(id, now);
-      joinWaddle({ msg: this._msg, world: this._world, data: this._data }, room, waddle, bot.penguin);
+      bot.stopAllActions();
+      const game = joinWaddle({ msg: this._msg, world: this._world, data: this._data }, room, waddle, bot.penguin);
 
-      const ctx = this._world.getContext(bot.penguin);
-      if ('card' in ctx) {
-        bot.joinCard(ctx.card);
-      } else if ('sled' in ctx) {
-        bot.joinSled(ctx.sled);
-      }
-
-      // starting the game empties the waddle
-      if (waddle.isFull()) {
+      if (game !== undefined) {
         this._waddleSeen.delete(id);
         this._waddleLastSeat.delete(id);
+        for (const p of game.players) {
+          const b = this._bots.get(p.id);
+          if (b !== undefined) {
+            if (game instanceof SledRace) {
+              b.joinSled(game);
+            } else if (game instanceof CardJitsu) {
+              b.joinCard(game);
+            }
+          }
+        }
       }
     }
   }
@@ -879,12 +1554,75 @@ export class BotManager {
     });
   }
 
+  /**
+   * Periodically checks rooms where human players are currently present.
+   * If a room's bot population has thinned out over time, gently guides
+   * eligible donor bots from unpopulated rooms to waddle in and replace them.
+   */
+  private tickRoomRepopulation(): void {
+    if (this._bots.size === 0) return;
+    const now = Date.now();
+
+    // Find all public rooms with real human players
+    const activeRooms = this.humanRooms().filter(r => r.id < IGLOO_ROOM_BASE);
+
+    for (const room of activeRooms) {
+      const lastRepop = this._lastRoomRepopulated.get(room.id) ?? 0;
+      // Stagger repopulation so bots trickle in naturally every 12-18 seconds
+      if (now - lastRepop < 14_000) continue;
+
+      const currentBots = room.players.filter(p => isBot(p)).length;
+      const { target, minSuitable } = this.getRoomTargetBots(room.id);
+
+      if (target === 0 || currentBots >= target) continue;
+
+      // The room is below target bot population! Find an eligible donor bot
+      const roomName = getNameFromId(room.id);
+      const isMemberRoom = roomName ? this._data.isRoomMember(roomName) : false;
+
+      const candidates: { bot: Bot; donorScore: number }[] = [];
+
+      for (const bot of this._bots.values()) {
+        if (bot.busy || bot.isHostingIgloo || bot.isPartyHomie) continue;
+        if (isMemberRoom && !bot.penguin.membership.isMember) continue;
+        if (this.hasBuddyNameConflictForBot(room, bot.penguin)) continue;
+
+        const donorRoom = this._world.getPenguinRoom(bot.penguin);
+        if (!donorRoom || donorRoom.id === room.id || donorRoom.id >= IGLOO_ROOM_BASE) continue;
+        if (this.isPenguinSeated(donorRoom, bot.penguin)) continue;
+
+        const donorHumans = donorRoom.players.filter(p => !isBot(p) && !p.deadInternet).length;
+        // Don't pull bots from rooms that also have real players
+        if (donorHumans > 0) continue;
+
+        const donorBots = donorRoom.players.filter(p => isBot(p)).length;
+        const donorTargets = this.getRoomTargetBots(donorRoom.id);
+        const donorSurplus = donorBots - donorTargets.target;
+
+        // Score based on surplus in donor room
+        const score = 100 + donorSurplus * 10 + donorBots;
+        candidates.push({ bot, donorScore: score });
+      }
+
+      if (candidates.length === 0) continue;
+
+      candidates.sort((a, b) => b.donorScore - a.donorScore);
+      const chosen = candidates[0].bot;
+
+      this._lastRoomRepopulated.set(room.id, now);
+      // The donor bot naturally enters the active room through door/spawn
+      chosen.enter(room.id);
+    }
+  }
+
   private tick(): void {
     const now = Date.now();
     this.syncPopulation();
     if (this._settings.playGames) {
       this.tickGames();
     }
+    this.tickRoomRepopulation();
+    this.tickAmbientExchanges();
 
     // 1. Process active open igloo sessions
     for (const [hostId, session] of this._openBotSessions) {

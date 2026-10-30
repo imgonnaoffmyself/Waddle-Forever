@@ -6,8 +6,6 @@ import { CARDS } from "@server/game-logic/cards";
 import { PenguinContext, RoomContext } from "@server/socket-server/handlers/handlers";
 import { BotManager } from "@server/socket-server/world/bots";
 import { clamp } from "@common/utils";
-import { calculateMembershipDurationMs, MIN_MEMBERSHIP_COINS, BETA_CUTOFF_DATE } from "@server/auth/membership";
-import { isLower } from "@server/routes/versions";
 
 type CommandContext = (PenguinContext | RoomContext) & {
   bot: BotManager
@@ -241,33 +239,10 @@ const handleAddCard: CommandHandler<[number, number]> = ({ penguin, prst }, card
   return `Added ${amount} of card ID ${card}`;
 }
 
-const handleBuyMembership: CommandHandler<[number]> = ({ msg, penguin, prst, data }, coins) => {
-  if (isLower(data.getDate(), BETA_CUTOFF_DATE)) {
-    return 'Membership is not available prior to October 24, 2005.';
-  }
-  const coinsToSpend = typeof coins === 'number' && !Number.isNaN(coins) ? coins : 500;
-  if (coinsToSpend < MIN_MEMBERSHIP_COINS) {
-    return `Minimum amount to buy membership is ${MIN_MEMBERSHIP_COINS} coins.`;
-  }
-  if (penguin.currency.coins < coinsToSpend) {
-    return `You need ${coinsToSpend} coins, but only have ${penguin.currency.coins} coins.`;
-  }
-
-  const addedMs = calculateMembershipDurationMs(coinsToSpend);
-  const now = Date.now();
-  const currentExpiry = penguin.membership.membershipExpires;
-  const baseTime = (currentExpiry !== null && currentExpiry > now) ? currentExpiry : now;
-  const newExpiry = baseTime + addedMs;
-
-  penguin.currency.discount(coinsToSpend);
-  penguin.membership.setMembershipExpires(newExpiry);
-  prst(penguin, true);
-
-  msg.send(penguin, 'ai', -1, penguin.currency.coins);
-
-  const days = (addedMs / (1000 * 60 * 60 * 24)).toFixed(1);
-  const expDate = new Date(newExpiry).toISOString().split('T')[0];
-  return `Purchased ${days} days of membership for ${coinsToSpend} coins! Expiry: ${expDate}`;
+const handleMembershipNotice: CommandHandler<any[]> = ({ settings }) => {
+  const ip = settings.targetIP || '127.0.0.1';
+  const port = settings.targetPort || 24105;
+  return `Membership cannot be purchased via in-game chat commands. Please visit http://${ip}:${port}/membership to purchase a membership package with coins.`;
 };
 
 const handleBanPlayer: CommandHandler<[string, number, string]> = ({ db, world, msg, prst }, targetName, hours, reason) => {
@@ -468,11 +443,11 @@ const generators: CommandsGenerator = [
   ],
   [
     'member',
-    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
+    [c('string', handleMembershipNotice), c('number', handleMembershipNotice), c([], handleMembershipNotice)],
     {
-      argNames: ['coins?'],
-      description: "Buy membership time with coins (defaults to 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
-      examples: ['member', 'member 500', 'member 2500', 'member 8000', 'member 50000']
+      argNames: [],
+      description: "Directs to the membership web portal at http://<server-ip>:24105/membership where membership packs can be purchased with coins.",
+      examples: ['member']
     }
   ],
   [
@@ -585,20 +560,20 @@ const generators: CommandsGenerator = [
   ],
   [
     'membership',
-    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
+    [c('string', handleMembershipNotice), c('number', handleMembershipNotice), c([], handleMembershipNotice)],
     {
-      argNames: ['coins?'],
-      description: "Buy membership time with coins (defaults to 500 coins). Larger purchases grant exponential bulk discounts up to 50,000 coins for 12 months.",
-      examples: ['membership', 'membership 500', 'membership 2500', 'membership 8000', 'membership 50000']
+      argNames: [],
+      description: "Directs to the membership web portal at http://<server-ip>:24105/membership where membership packs can be purchased with coins.",
+      examples: ['membership']
     }
   ],
   [
     'buy',
-    [c(['number'], handleBuyMembership), c([], (ctx) => handleBuyMembership(ctx, 500))],
+    [c('string', handleMembershipNotice), c('number', handleMembershipNotice), c([], handleMembershipNotice)],
     {
-      argNames: ['coins?'],
-      description: "Alias for membership command (defaults to 500 coins).",
-      examples: ['buy', 'buy 500', 'buy 2500', 'buy 50000']
+      argNames: [],
+      description: "Directs to the membership web portal at http://<server-ip>:24105/membership where membership packs can be purchased with coins.",
+      examples: ['buy']
     }
   ],
   [

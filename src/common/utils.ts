@@ -9,11 +9,19 @@ import { IpcRenderer } from 'electron';
 /** Side-effect: Bind service to a port */
 export type EffectService<T> = T;
 
-type MultiplayerSettings = { type: 'local'; } | {
+export type MultiplayerSettings = {
+  type: 'local';
+  ip?: string;
+  port?: number;
+} | {
   type: 'guest';
   ip: string;
   port?: number;
-} | { type: 'host' };
+} | {
+  type: 'host';
+  ip?: string;
+  port?: number;
+};
 
 export type GlobalSettings = {
   multiplayer: MultiplayerSettings;

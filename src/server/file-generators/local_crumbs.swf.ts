@@ -78,7 +78,7 @@ function getLinkPaths(isNewShell2009: boolean) {
       connection_web: "http://support.clubpenguin.com/help/technical/lost_connection.htm",
       cant_connect_web: "http://support.clubpenguin.com/help/technical/cant_connect_server.htm",
       support_web: "http://support.clubpenguin.com/help/",
-      member_web: "http://www.clubpenguin.com/membership/",
+      member_web: "/membership",
       manage_web: "https://secure.clubpenguin.com/manage_account/login.php",
       community_web: "http://community.clubpenguin.com/",
       guide_web: "http://www.clubpenguin.com/parents/club_penguin_guide.htm",

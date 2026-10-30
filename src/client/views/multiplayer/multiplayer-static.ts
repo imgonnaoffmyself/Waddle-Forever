@@ -9,11 +9,20 @@ const info = document.getElementById('info-input')! as HTMLDivElement;
 const sendButton = document.getElementById('send')! as HTMLButtonElement;
 
 function getPort(port: string): number | undefined {
-  return port === '' ? undefined : Number(port);
+  if (port === '' || port === undefined || port === null) return undefined;
+  const num = Number(port);
+  return isNaN(num) ? undefined : num;
 }
 
 window.addEventListener('get-info', (e: any) => {
   const detail = e.detail;
+  if (detail.ip) {
+    ipInput.value = detail.ip;
+  }
+  if (detail.port !== undefined && detail.port !== null && !isNaN(detail.port)) {
+    portInput.value = String(detail.port);
+  }
+
   switch (detail.type) {
     case 'local':
       localButton.checked = true;
@@ -21,14 +30,10 @@ window.addEventListener('get-info', (e: any) => {
     case 'host':
       hostButton.checked = true;
       info.style.visibility = 'visible';
-      ipInput.value = detail.ip;
-      portInput.value = detail.port;
       break;
     case 'guest':
       guestButton.checked = true;
       info.style.visibility = 'visible';
-      ipInput.value = detail.ip;
-      portInput.value = detail.port;
       break;
   }
 });

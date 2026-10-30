@@ -40,7 +40,7 @@ let mainWindow: BrowserWindow;
 
 /** An object to keep global variables in memory across windows */
 let globalSettings: GlobalSettings = {
-  multiplayer: { type: 'local' }
+  multiplayer: settingsManager.settings.multiplayer ?? { type: 'local' }
 };
 
 const popups: Popups = new Map<string, BrowserWindow>();

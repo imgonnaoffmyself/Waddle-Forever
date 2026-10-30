@@ -36,10 +36,17 @@ export function createMultiplayerSettings(globalSettings: GlobalSettings, server
   multiplayerWindow.loadFile(path.join(__dirname, 'multiplayer.html'));
 
   multiplayerWindow.webContents.on('did-finish-load', () => {
-    const multiplayerSettings: { type: string; ip?: string; port?: number } = globalSettings.multiplayer;
+    const multiplayerSettings: { type: string; ip?: string; port?: number } = { ...globalSettings.multiplayer };
     if (multiplayerSettings.type === 'host') {
       multiplayerSettings.ip = serverSettings.targetIP;
       multiplayerSettings.port = serverSettings.targetPort;
+    } else if (multiplayerSettings.type === 'local') {
+      if (!multiplayerSettings.ip && serverSettings.targetIP && serverSettings.targetIP !== '127.0.0.1') {
+        multiplayerSettings.ip = serverSettings.targetIP;
+      }
+      if (multiplayerSettings.port === undefined && serverSettings.targetPort && serverSettings.targetPort !== HTTP_PORT) {
+        multiplayerSettings.port = serverSettings.targetPort;
+      }
     }
     multiplayerWindow?.webContents.send('get-info', multiplayerSettings);
   });
@@ -51,20 +58,37 @@ export function createMultiplayerSettings(globalSettings: GlobalSettings, server
 
   ipcMain.on('update', (_, arg) => {
     const { ip, port, type } = arg;
-    globalSettings.multiplayer = { ip, port, type };
+    const prevIp = ('ip' in globalSettings.multiplayer) ? globalSettings.multiplayer.ip : undefined;
+    const prevPort = ('port' in globalSettings.multiplayer) ? globalSettings.multiplayer.port : undefined;
+    const rememberedIp = ip ?? prevIp ?? (serverSettings.targetIP !== '127.0.0.1' ? serverSettings.targetIP : undefined);
+    const rememberedPort = port ?? prevPort ?? (serverSettings.targetPort !== HTTP_PORT ? serverSettings.targetPort : undefined);
+
     switch (type) {
       case 'guest':
-        globalSettings.multiplayer = { ip, port, type};
+        globalSettings.multiplayer = { type: 'guest', ip: ip ?? rememberedIp ?? '', port };
+        serverSettings.updateSettings({
+          multiplayer: globalSettings.multiplayer
+        });
         break;
       case 'local':
         serverSettings.targetPort = HTTP_PORT;
         serverSettings.targetIP = '127.0.0.1';
-        globalSettings.multiplayer = { type };
+        globalSettings.multiplayer = { type: 'local', ip: rememberedIp, port: rememberedPort };
+        serverSettings.updateSettings({
+          multiplayer: globalSettings.multiplayer,
+          targetIP: '127.0.0.1',
+          targetPort: HTTP_PORT
+        });
         break;
       case 'host':
-        serverSettings.targetIP = ip;
-        serverSettings.targetPort = port;
-        globalSettings.multiplayer = { type };
+        serverSettings.targetIP = ip ?? '127.0.0.1';
+        serverSettings.targetPort = port ?? HTTP_PORT;
+        globalSettings.multiplayer = { type: 'host', ip, port };
+        serverSettings.updateSettings({
+          multiplayer: globalSettings.multiplayer,
+          targetIP: serverSettings.targetIP,
+          targetPort: serverSettings.targetPort
+        });
         break;
       default:
         throw new Error(`Unknown type in update: ${type}`);

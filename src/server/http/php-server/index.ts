@@ -2,7 +2,7 @@ import express from 'express';
 
 import { SettingsManager } from "@server/settings";
 import { Router } from "express";
-import { processVersion } from '@server/routes/versions';
+import { isGreaterOrEqual, isLower, processVersion } from '@server/routes/versions';
 import { getDateString, randomUUID } from '@common/utils';
 import { getDefaultPenguin, PenguinJson, PenguinRepository } from '@server/database/database';
 import { filterItems } from '@server/socket-server/handlers/join';
@@ -11,6 +11,7 @@ import { hashPassword, verifyPassword, verifyPenguinPassword } from '@server/aut
 import { evaluateMembership } from '@server/auth/membership';
 import { getBanStatus } from '@server/moderation/filter';
 import { logverbose } from '@server/logger';
+import { getPreCpipWorldPopulations } from '@server/servers';
 
 interface Ctx {
   settings: SettingsManager;
@@ -224,6 +225,20 @@ const POST_LISTENERS: Record<string, PostCallback> = {
 
     logverbose(`PHP login success for [${Username}] (ID: ${id})`);
 
+    // 2000 coin bonus for penguins predating 2005-10-24 once timeline reaches 2005-10-24
+    let regDate = penguinData.virtual_registration_date;
+    if (!regDate && penguinData.virtualRegistrationTimestamp) {
+      const d = new Date(penguinData.virtualRegistrationTimestamp);
+      regDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    }
+    if (regDate && isLower(regDate, '2005-10-24') && isGreaterOrEqual(data.getDate(), '2005-10-24')) {
+      if (!penguinData.beta_bonus_coins) {
+        penguinData.coins = (penguinData.coins ?? 0) + 2000;
+        penguinData.beta_bonus_coins = true;
+        await db.update(id, penguinData);
+      }
+    }
+
     // Evaluate membership
     const memEval = evaluateMembership(
       penguinData,
@@ -238,6 +253,8 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       db.get(id).then(p => {
         if (p !== null) {
           res([id, p.name]);
+        } else if (id >= 9_000_000) {
+          res([id, `Penguin ${id % 1000}`]);
         } else {
           res(null);
         }
@@ -262,7 +279,7 @@ const POST_LISTENERS: Record<string, PostCallback> = {
       jd: getDateString(Date.now() - (settings.getVirtualDate(0).getTime() - penguinData.virtualRegistrationTimestamp)),
       ed: memEval.expiryDateString,
       h: '',
-      w: '100|0',
+      w: getPreCpipWorldPopulations(data.getChatVersion() ?? 291),
       m: '', // Alert / message list (empty when no alerts; non-empty string triggers client alert modal)
       bl: buddies.map(([id, name]) => `${id}|${name}`).join(','),
       nl: ignored.map(([id, name]) => `${id}|${name}`).join(','),

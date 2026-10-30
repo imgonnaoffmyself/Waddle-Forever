@@ -2,10 +2,11 @@ import { getPenguinString } from "./join";
 import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import { WorldTable } from "@server/socket-server/world/world-table";
 import { ROOMS } from "@server/game-data/rooms";
-import { RoomContext, RoomGuard, RoomHandler } from "./handlers";
+import { PenguinHandler, RoomContext, RoomGuard, RoomHandler } from "./handlers";
 import { isLower } from "@server/routes/versions";
 import { WorldRoom } from "@server/socket-server/world/world-room";
 import { WaddleRoom } from "@server/socket-server/world/waddle-room";
+import { WaddleGame } from "@server/socket-server/world/waddle-game";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
 import { checkProfanity } from "@server/moderation/filter";
@@ -178,7 +179,7 @@ export const joinWaddle = (
   room: WorldRoom,
   waddle: WaddleRoom,
   penguin: WorldPenguin
-): void => {
+): WaddleGame | undefined => {
   const seat = room.enterWaddleRoom(waddle, penguin);
   msg.send(penguin, 'jw', seat);
   msg.send(room.players, 'uw', waddle.getId(), seat, penguin.name, penguin.id);
@@ -189,13 +190,22 @@ export const joinWaddle = (
     });
     const game = world.getWaddleGame(waddle.getGame(), players);
     waddle.reset();
-    msg.send(players, 'jg', game.roomId);
 
     // 2006 sled race notification for starting the game
     if (waddle.getGame() === 'sled' && data.isPreCpip()) {
       msg.send(players, 'sw', waddle.getId(), room.id, players.length);
+    } else {
+      msg.send(players, 'jg', game.roomId);
     }
+    return game;
   }
+  return undefined;
+}
+
+export const handleJoinWaddleGame: PenguinHandler<number[]> = (ctx) => {
+  const { penguin, msg } = ctx;
+  const gameRoomId = 'sled' in ctx ? ctx.sled.roomId : ('card' in ctx ? ctx.card.roomId : 999);
+  msg.send(penguin, 'jx', gameRoomId);
 }
 
 export const handleJoinWaddle: RoomHandler<[number]> = (ctx, waddleId) => {

@@ -3,6 +3,57 @@ import { isLower } from "@server/routes/versions";
 
 export const BETA_CUTOFF_DATE = '2005-10-24';
 export const BETA_MEMBERSHIP_EXPIRY_DATE = '2005-12-01';
+export const PRICE_INCREASE_DATE = '2011-07-13';
+
+export type MembershipPackId = '1_month' | '6_months' | '12_months';
+
+export interface MembershipPack {
+  id: MembershipPackId;
+  name: string;
+  months: number;
+  days: number;
+  durationMs: number;
+  cadPrice: number;
+  coins: number;
+}
+
+export function getMembershipPacks(timelineDate: string): MembershipPack[] {
+  const isPostIncrease = !isLower(timelineDate, PRICE_INCREASE_DATE);
+
+  return [
+    {
+      id: '1_month',
+      name: '1 Month',
+      months: 1,
+      days: 30,
+      durationMs: 30 * 86_400_000,
+      cadPrice: isPostIncrease ? 7.95 : 5.95,
+      coins: isPostIncrease ? 795 : 595
+    },
+    {
+      id: '6_months',
+      name: '6 Months',
+      months: 6,
+      days: 180,
+      durationMs: 180 * 86_400_000,
+      cadPrice: isPostIncrease ? 39.95 : 29.95,
+      coins: isPostIncrease ? 3995 : 2995
+    },
+    {
+      id: '12_months',
+      name: '12 Months',
+      months: 12,
+      days: 365,
+      durationMs: 365 * 86_400_000,
+      cadPrice: isPostIncrease ? 59.95 : 57.95,
+      coins: isPostIncrease ? 5995 : 5795
+    }
+  ];
+}
+
+export function getMembershipPack(packId: string, timelineDate: string): MembershipPack | undefined {
+  return getMembershipPacks(timelineDate).find(p => p.id === packId);
+}
 
 export const MIN_MEMBERSHIP_COINS = 500;
 export const MAX_MEMBERSHIP_COINS = 50_000;
@@ -50,11 +101,16 @@ export function evaluateMembership(
     return { isMember: true, expiryDateString: expStr };
   }
 
-  // 2. Evaluate historical beta grandfathering
+  // 2. During beta (strictly before Oct 24, 2005), all penguins have full membership access
+  if (isLower(currentTimelineDate, BETA_CUTOFF_DATE)) {
+    return { isMember: true, expiryDateString: BETA_CUTOFF_DATE };
+  }
+
+  // 3. On or after Oct 24, 2005: evaluate historical beta grandfathering
   let regDate = penguin.virtual_registration_date;
   if (!regDate && penguin.virtualRegistrationTimestamp) {
     const d = new Date(penguin.virtualRegistrationTimestamp);
-    regDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    regDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   if (regDate && isLower(regDate, BETA_CUTOFF_DATE)) {

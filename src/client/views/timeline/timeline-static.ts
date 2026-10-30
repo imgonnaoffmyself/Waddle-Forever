@@ -238,7 +238,7 @@ function createCalendar(
   // to also have every day in between those
   const daysToUse: DateInfo[] = [];
 
-  const endDate = new Date(2013, 0, 1);
+  const endDate = new Date(2017, 4, 1);
   // iterating through every day between start and end
 
   let partyCount = 0;

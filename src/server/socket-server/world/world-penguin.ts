@@ -1043,6 +1043,10 @@ class UserPreference {
     this._save = false;
   }
 
+  public setCanSave(val: boolean) {
+    this._save = val;
+  }
+
   public enableSave() {
     this._save = true;
   }
@@ -1099,6 +1103,7 @@ export class WorldPenguin implements UserPenguin {
   private _passwordHash?: string;
   private _accountCreated?: number;
   private _virtualRegistrationDate?: string;
+  private _betaBonusCoins: boolean;
   public deadInternet: boolean = false;
 
   constructor(
@@ -1113,6 +1118,7 @@ export class WorldPenguin implements UserPenguin {
     this._passwordHash = json.password_hash;
     this._accountCreated = json.account_created ?? json.registration_date;
     this._virtualRegistrationDate = json.virtual_registration_date;
+    this._betaBonusCoins = json.beta_bonus_coins ?? false;
     this._psa = new PSA(json);
     this._inventory = new Inventory(json);
     this._currency = new Currency(json);
@@ -1250,6 +1256,18 @@ export class WorldPenguin implements UserPenguin {
     return this._virtualRegistrationDate;
   }
 
+  public get betaBonusCoins() {
+    return this._betaBonusCoins;
+  }
+
+  public setBetaBonusCoins(val: boolean) {
+    this._betaBonusCoins = val;
+  }
+
+  public setCanSave(val: boolean) {
+    this._preference.setCanSave(val);
+  }
+
   public getJSON(): PenguinJson {
     return {
       name: this._profile.name,
@@ -1279,6 +1297,7 @@ export class WorldPenguin implements UserPenguin {
       inventory: this._inventory.items,
 
       coins: this._currency.coins,
+      beta_bonus_coins: this._betaBonusCoins,
 
       registration_date: this._meta.registrationTime,
 

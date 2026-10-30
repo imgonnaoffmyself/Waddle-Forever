@@ -7,11 +7,11 @@ import { WorldServer } from '@server/socket-server/world-server';
 import { verifyPenguinPassword } from '@server/auth/password';
 import {
   BETA_CUTOFF_DATE,
-  calculateMembershipDays,
-  calculateMembershipDurationMs,
   evaluateMembership,
-  MIN_MEMBERSHIP_COINS,
-  MAX_MEMBERSHIP_COINS
+  getMembershipPacks,
+  getMembershipPack,
+  MembershipPack,
+  PRICE_INCREASE_DATE
 } from '@server/auth/membership';
 import { isLower } from '@server/routes/versions';
 
@@ -30,11 +30,12 @@ export function createMembershipRouter(
   router.get('/api/membership/status', (_req, res) => {
     const currentDate = gameData.getDate();
     const betaDisabled = isLower(currentDate, BETA_CUTOFF_DATE);
+    const packs = getMembershipPacks(currentDate);
     res.json({
       timelineDate: currentDate,
       betaDisabled,
-      minCoins: MIN_MEMBERSHIP_COINS,
-      maxCoins: MAX_MEMBERSHIP_COINS
+      isPriceIncrease: !isLower(currentDate, PRICE_INCREASE_DATE),
+      packages: packs
     });
   });
 
@@ -73,6 +74,7 @@ export function createMembershipRouter(
 
     const currentDate = gameData.getDate();
     const betaDisabled = isLower(currentDate, BETA_CUTOFF_DATE);
+    const packs = getMembershipPacks(currentDate);
 
     res.json({
       success: true,
@@ -85,7 +87,8 @@ export function createMembershipRouter(
         membershipExpires: membershipExpires ?? null,
       },
       timelineDate: currentDate,
-      betaDisabled
+      betaDisabled,
+      packages: packs
     });
   });
 
@@ -97,9 +100,20 @@ export function createMembershipRouter(
       return;
     }
 
-    const { username, password, coins: rawCoins } = req.body ?? {};
+    const { username, password, packageId } = req.body ?? {};
     if (!username || typeof username !== 'string') {
       res.status(400).json({ error: 'Username is required.' });
+      return;
+    }
+
+    if (!packageId || typeof packageId !== 'string') {
+      res.status(400).json({ error: 'Please select a membership package.' });
+      return;
+    }
+
+    const pack = getMembershipPack(packageId, currentDate);
+    if (!pack) {
+      res.status(400).json({ error: 'Invalid membership package selected.' });
       return;
     }
 
@@ -116,26 +130,16 @@ export function createMembershipRouter(
       return;
     }
 
-    const coinsToSpend = typeof rawCoins === 'number' && !Number.isNaN(rawCoins)
-      ? Math.floor(rawCoins)
-      : (parseInt(rawCoins, 10) || 500);
-
-    if (coinsToSpend < MIN_MEMBERSHIP_COINS) {
-      res.status(400).json({ error: `Minimum purchase is ${MIN_MEMBERSHIP_COINS} coins.` });
-      return;
-    }
-
     const online = worldServer?.world.getById(id);
     const currentCoins = online ? online.currency.coins : penguinJson.coins;
 
-    if (currentCoins < coinsToSpend) {
+    if (currentCoins < pack.coins) {
       res.status(400).json({
-        error: `Insufficient coins. You have ${currentCoins.toLocaleString()} coins, but need ${coinsToSpend.toLocaleString()}.`
+        error: `Insufficient coins. You have ${currentCoins.toLocaleString()} coins, but the ${pack.name} package costs ${pack.coins.toLocaleString()} coins.`
       });
       return;
     }
 
-    const addedMs = calculateMembershipDurationMs(coinsToSpend);
     const now = Date.now();
     const currentExpiry = online
       ? online.membership.membershipExpires
@@ -144,12 +148,12 @@ export function createMembershipRouter(
     const baseTime = (currentExpiry !== null && currentExpiry !== undefined && currentExpiry > now)
       ? currentExpiry
       : now;
-    const newExpiry = baseTime + addedMs;
+    const newExpiry = baseTime + pack.durationMs;
 
     let remainingCoins: number;
 
     if (online) {
-      online.currency.discount(coinsToSpend);
+      online.currency.discount(pack.coins);
       online.membership.setMembershipExpires(newExpiry);
       worldServer?.persister(online, true);
       remainingCoins = online.currency.coins;
@@ -158,19 +162,21 @@ export function createMembershipRouter(
         worldServer?.msg.send(online, 'ai', -1, online.currency.coins);
       } catch {}
     } else {
-      penguinJson.coins -= coinsToSpend;
+      penguinJson.coins -= pack.coins;
       penguinJson.membership_expires = newExpiry;
       await db.update(id, penguinJson);
       remainingCoins = penguinJson.coins;
     }
 
-    const days = (addedMs / 86_400_000).toFixed(1);
     const expDate = new Date(newExpiry).toISOString().split('T')[0];
 
     res.json({
       success: true,
-      coinsSpent: coinsToSpend,
-      daysAdded: Number(days),
+      packageId: pack.id,
+      packageName: pack.name,
+      cadPrice: pack.cadPrice,
+      coinsSpent: pack.coins,
+      daysAdded: pack.days,
       newExpiry: expDate,
       remainingCoins
     });
@@ -180,9 +186,10 @@ export function createMembershipRouter(
   const renderWebpage = (_req: express.Request, res: express.Response) => {
     const currentDate = gameData.getDate();
     const betaDisabled = isLower(currentDate, BETA_CUTOFF_DATE);
+    const packs = getMembershipPacks(currentDate);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(generateHtmlPage(currentDate, betaDisabled));
+    res.send(generateHtmlPage(currentDate, betaDisabled, packs));
   };
 
   router.get('/membership', renderWebpage);
@@ -196,7 +203,9 @@ export function createMembershipRouter(
   return router;
 }
 
-function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
+function generateHtmlPage(timelineDate: string, betaDisabled: boolean, packs: MembershipPack[]): string {
+  const isPostIncrease = !isLower(timelineDate, PRICE_INCREASE_DATE);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,7 +253,7 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
     .card {
       background: #ffffff;
       width: 100%;
-      max-width: 540px;
+      max-width: 580px;
       border-radius: 16px;
       box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
       padding: 30px;
@@ -264,6 +273,16 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
       display: block;
       margin-bottom: 4px;
       color: #6c5200;
+    }
+    .price-notice {
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      color: #0369a1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      line-height: 1.4;
     }
     .form-group {
       margin-bottom: 18px;
@@ -390,74 +409,129 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
       background: #f5f5f5;
       color: #757575;
     }
-    /* Package buttons */
+    /* Package cards */
     .packages-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #555;
-      margin-bottom: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 12px;
     }
-    .packages-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
+    .packages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
     }
-    .package-btn {
+    .package-card {
       background: #ffffff;
       border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px 10px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .package-btn:hover {
-      border-color: #0084ff;
-      background: #f5faff;
-    }
-    .package-btn.active {
-      border-color: #0084ff;
-      background: #ebf5ff;
-      box-shadow: 0 0 0 1px #0084ff;
-    }
-    .package-coins {
-      font-weight: 800;
-      color: #b78103;
-      font-size: 16px;
-    }
-    .package-days {
-      font-size: 13px;
-      color: #4b5563;
-      margin-top: 2px;
-    }
-    .package-discount {
-      font-size: 11px;
-      color: #059669;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    .duration-preview {
-      background: #f9fafb;
-      border: 1px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 18px;
-      font-size: 14px;
-      color: #334155;
+      border-radius: 12px;
+      padding: 16px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
     }
-    .duration-preview strong {
-      color: #005a9c;
+    .package-card:hover {
+      border-color: #0084ff;
+      background: #f8fbff;
+      transform: translateY(-1px);
+    }
+    .package-card.selected {
+      border-color: #0084ff;
+      background: #ebf5ff;
+      box-shadow: 0 0 0 1px #0084ff, 0 4px 12px rgba(0, 132, 255, 0.15);
+    }
+    .package-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .package-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #003366;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .package-duration {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .package-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-best {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    .badge-popular {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+    .badge-starter {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .package-right {
+      text-align: right;
+    }
+    .package-coins {
+      font-size: 18px;
+      font-weight: 800;
+      color: #b78103;
+    }
+    .package-cad {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .summary-box {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .summary-row:last-child {
+      margin-bottom: 0;
+      padding-top: 6px;
+      border-top: 1px solid #e2e8f0;
+      font-weight: 700;
+    }
+    .summary-label {
+      color: #64748b;
+    }
+    .summary-val {
+      color: #1e293b;
+    }
+    .text-insufficient {
+      color: #dc2626 !important;
     }
   </style>
 </head>
 <body>
   <div class="header-banner">
     <h1>Club Penguin Membership</h1>
-    <p>Upgrade your penguin with coins to unlock member igloos, outfits, and access!</p>
+    <p>Upgrade your penguin with coins to unlock member igloos, exclusive items, and adventures!</p>
     <div class="timeline-badge">Timeline Date: ${timelineDate}</div>
   </div>
 
@@ -466,6 +540,12 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
     <div class="beta-warning">
       <strong>Membership Unavailable During Beta Testing</strong>
       Club Penguin is currently in its pre-launch Beta period (prior to October 24, 2005). Paid memberships have not been introduced yet, and all beta testing penguins enjoy open access!
+    </div>
+    ` : ''}
+
+    ${isPostIncrease ? `
+    <div class="price-notice">
+      <strong>July 13, 2011 Pricing Update:</strong> Official Club Penguin membership packages are updated to the 2011 revised rates.
     </div>
     ` : ''}
 
@@ -501,37 +581,48 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
         </div>
       </div>
 
-      <div class="packages-title">Select a Coin Package:</div>
-      <div class="packages-grid">
-        <div class="package-btn active" onclick="selectPackage(500, this)">
-          <div class="package-coins">500 Coins</div>
-          <div class="package-days">1 Day</div>
-        </div>
-        <div class="package-btn" onclick="selectPackage(2500, this)">
-          <div class="package-coins">2,500 Coins</div>
-          <div class="package-days">~7.8 Days</div>
-          <div class="package-discount">Bulk Discount</div>
-        </div>
-        <div class="package-btn" onclick="selectPackage(8000, this)">
-          <div class="package-coins">8,000 Coins</div>
-          <div class="package-days">~34.6 Days</div>
-          <div class="package-discount">Popular</div>
-        </div>
-        <div class="package-btn" onclick="selectPackage(50000, this)">
-          <div class="package-coins">50,000 Coins</div>
-          <div class="package-days">365 Days (1 Year)</div>
-          <div class="package-discount">Max Discount!</div>
-        </div>
+      <div class="packages-title">Choose a Membership Package:</div>
+      <div class="packages-container" id="packagesContainer">
+        ${packs.map((p, idx) => {
+          let badgeHtml = '';
+          if (p.id === '12_months') {
+            badgeHtml = '<span class="package-badge badge-best">Best Value</span>';
+          } else if (p.id === '6_months') {
+            badgeHtml = '<span class="package-badge badge-popular">Popular</span>';
+          } else {
+            badgeHtml = '<span class="package-badge badge-starter">Standard</span>';
+          }
+          return `
+          <div class="package-card ${idx === 0 ? 'selected' : ''}" data-id="${p.id}" onclick="selectPackage('${p.id}')">
+            <div class="package-left">
+              <div class="package-name">
+                ${p.name}
+                ${badgeHtml}
+              </div>
+              <div class="package-duration">${p.days} Days of Full Membership Access</div>
+            </div>
+            <div class="package-right">
+              <div class="package-coins">${p.coins.toLocaleString()} Coins</div>
+              <div class="package-cad">$${p.cadPrice.toFixed(2)} CAD</div>
+            </div>
+          </div>
+          `;
+        }).join('')}
       </div>
 
-      <div class="form-group">
-        <label for="customCoins">Or Enter Custom Coin Amount (Min. 500):</label>
-        <input type="number" id="customCoins" min="500" value="500" step="50" oninput="updateDurationPreview()">
-      </div>
-
-      <div class="duration-preview">
-        <span>Duration Added:</span>
-        <strong id="previewDuration">1.0 Day</strong>
+      <div class="summary-box">
+        <div class="summary-row">
+          <span class="summary-label">Selected Package:</span>
+          <span class="summary-val" id="summaryPackageName">${packs[0]?.name ?? '1 Month'}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Cost:</span>
+          <span class="summary-val" id="summaryCost">${packs[0]?.coins.toLocaleString() ?? '595'} Coins ($${packs[0]?.cadPrice.toFixed(2) ?? '5.95'} CAD)</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Coins Remaining:</span>
+          <span class="summary-val" id="summaryRemaining">-</span>
+        </div>
       </div>
 
       <button class="btn" id="buyBtn" onclick="handleBuy()" ${betaDisabled ? 'disabled' : ''}>
@@ -544,20 +635,10 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
 
   <script>
     const BETA_DISABLED = ${betaDisabled};
+    const PACKAGES = ${JSON.stringify(packs)};
+    let selectedPackageId = '${packs[0]?.id ?? '1_month'}';
     let currentUser = null;
     let savedPassword = '';
-
-    const DISCOUNT_EXPONENT = 1.281145;
-    const MIN_COINS = 500;
-    const MAX_COINS = 50000;
-
-    function calcDays(coins) {
-      if (coins < MIN_COINS) return 0;
-      if (coins > MAX_COINS) {
-        return 365 + (coins - MAX_COINS) * (365 / MAX_COINS);
-      }
-      return Math.pow(coins / MIN_COINS, DISCOUNT_EXPONENT);
-    }
 
     function showAlert(msg, isSuccess = false) {
       const box = document.getElementById('alertBox');
@@ -629,21 +710,49 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
         expiryRow.style.display = 'none';
       }
 
-      updateDurationPreview();
+      updateSummary();
     }
 
-    function selectPackage(coins, el) {
-      document.querySelectorAll('.package-btn').forEach(btn => btn.classList.remove('active'));
-      if (el) el.classList.add('active');
-      document.getElementById('customCoins').value = coins;
-      updateDurationPreview();
+    function selectPackage(packageId) {
+      selectedPackageId = packageId;
+      document.querySelectorAll('.package-card').forEach(el => {
+        if (el.getAttribute('data-id') === packageId) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+      updateSummary();
     }
 
-    function updateDurationPreview() {
-      const val = parseInt(document.getElementById('customCoins').value, 10) || 500;
-      const days = calcDays(val);
-      const text = days >= 1 ? days.toFixed(1) + ' Days' : (days * 24).toFixed(0) + ' Hours';
-      document.getElementById('previewDuration').textContent = text;
+    function updateSummary() {
+      const pack = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
+      if (!pack) return;
+
+      document.getElementById('summaryPackageName').textContent = pack.name + ' (' + pack.days + ' Days)';
+      document.getElementById('summaryCost').textContent = pack.coins.toLocaleString() + ' Coins ($' + pack.cadPrice.toFixed(2) + ' CAD)';
+
+      const remainingEl = document.getElementById('summaryRemaining');
+      const buyBtn = document.getElementById('buyBtn');
+
+      if (currentUser) {
+        const remaining = currentUser.coins - pack.coins;
+        if (remaining < 0) {
+          remainingEl.textContent = remaining.toLocaleString() + ' (Need ' + Math.abs(remaining).toLocaleString() + ' more coins)';
+          remainingEl.className = 'summary-val text-insufficient';
+          if (!BETA_DISABLED) {
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'Insufficient Coins';
+          }
+        } else {
+          remainingEl.textContent = remaining.toLocaleString() + ' Coins';
+          remainingEl.className = 'summary-val';
+          if (!BETA_DISABLED) {
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'Buy ' + pack.name + ' (' + pack.coins.toLocaleString() + ' Coins)';
+          }
+        }
+      }
     }
 
     async function handleBuy() {
@@ -653,13 +762,14 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
       }
 
       hideAlert();
-      const coins = parseInt(document.getElementById('customCoins').value, 10) || 500;
-      if (coins < MIN_COINS) {
-        showAlert('Minimum purchase is 500 coins.');
+      const pack = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
+      if (!pack) {
+        showAlert('Please select a membership package.');
         return;
       }
-      if (currentUser.coins < coins) {
-        showAlert('You do not have enough coins! You have ' + currentUser.coins.toLocaleString() + ' coins.');
+
+      if (currentUser.coins < pack.coins) {
+        showAlert('You do not have enough coins! You have ' + currentUser.coins.toLocaleString() + ' coins, but need ' + pack.coins.toLocaleString() + '.');
         return;
       }
 
@@ -674,7 +784,7 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
           body: JSON.stringify({
             username: currentUser.name,
             password: savedPassword,
-            coins: coins
+            packageId: pack.id
           })
         });
         const data = await res.json();
@@ -688,12 +798,11 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
         currentUser.expiryDateString = data.newExpiry;
         renderProfile();
 
-        showAlert('Successfully purchased ' + data.daysAdded + ' days of membership for ' + data.coinsSpent.toLocaleString() + ' coins! Expiry: ' + data.newExpiry, true);
+        showAlert('Successfully purchased ' + data.packageName + ' (' + data.daysAdded + ' days) for ' + data.coinsSpent.toLocaleString() + ' coins ($' + data.cadPrice.toFixed(2) + ' CAD)! Expiry: ' + data.newExpiry, true);
       } catch (e) {
         showAlert('Error communicating with server.');
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Buy Membership';
+        updateSummary();
       }
     }
 
@@ -705,9 +814,6 @@ function generateHtmlPage(timelineDate: string, betaDisabled: boolean): string {
       document.getElementById('purchaseSection').style.display = 'none';
       document.getElementById('loginSection').style.display = 'block';
     }
-
-    // Initialize
-    updateDurationPreview();
   </script>
 </body>
 </html>`;

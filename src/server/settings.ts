@@ -3,7 +3,7 @@ import { SETTINGS_PATH } from '../common/paths';
 import { isLower, isVersionValid, processVersion, Version } from './routes/versions';
 import { HTTP_PORT } from '../common/constants';
 import { LOGIN_DELTA, SNOW_DELTA, WORLD_DELTA } from './servers';
-import { EventListener } from '@common/utils';
+import { EventListener, MultiplayerSettings } from '@common/utils';
 
 const COIN_MULTIPLIER_CHANGE_DATE = '2005-11-16';
 
@@ -33,6 +33,9 @@ export type Settings = {
   answered_packages: string
   ignored_version: string
   coin_multiplier: number
+  multiplayer: MultiplayerSettings
+  targetIP: string
+  targetPort: number
 } & Record<BooleanSettingKey, boolean>;
 
 type PartialSettings = Partial<Settings>
@@ -50,6 +53,9 @@ export class SettingsManager {
 
   set targetPort(port: number | undefined) {
     this._targetPort = port;
+    if (this.settings) {
+      this.settings.targetPort = this.targetPort;
+    }
   }
 
   get targetPort(): number {
@@ -69,6 +75,22 @@ export class SettingsManager {
       typeof storedMultiplier === 'number' && storedMultiplier !== 2
         ? storedMultiplier
         : defaultCoinMultiplier(version);
+
+    const multiplayer = this.readMultiplayer(settingsJson);
+    const storedTargetIP = this.readString(settingsJson, 'targetIP');
+    const storedTargetPort = this.readNumber(settingsJson, 'targetPort', HTTP_PORT);
+
+    if (multiplayer.type === 'host' && multiplayer.ip) {
+      this.targetIP = multiplayer.ip;
+      this.targetPort = multiplayer.port ?? HTTP_PORT;
+    } else if (storedTargetIP) {
+      this.targetIP = storedTargetIP;
+      this.targetPort = storedTargetPort;
+    } else {
+      this.targetIP = '127.0.0.1';
+      this.targetPort = HTTP_PORT;
+    }
+
     this.settings = {
       fps30: this.readBoolean(settingsJson, 'fps30', false),
       thin_ice_igt: this.readBoolean(settingsJson, 'thin_ice_igt', false),
@@ -87,13 +109,28 @@ export class SettingsManager {
       coin_multiplier: coinMultiplier,
       medieval_sound_fix: this.readBoolean(settingsJson, 'medieval_sound_fix', true),
       inventory_accuracy: this.readBoolean(settingsJson, 'inventory_accuracy', true),
-      faq_warning: this.readBoolean(settingsJson, 'faq_warning', false)
+      faq_warning: this.readBoolean(settingsJson, 'faq_warning', false),
+      multiplayer,
+      targetIP: this.targetIP,
+      targetPort: this.targetPort
     };
 
     this.updateSettings({});
+  }
 
-    this.targetIP = '127.0.0.1';
-    this.targetPort = HTTP_PORT;
+  readMultiplayer(object: any): MultiplayerSettings {
+    const val = object['multiplayer'];
+    if (val && typeof val === 'object') {
+      const type = val.type;
+      if (type === 'local' || type === 'guest' || type === 'host') {
+        return {
+          type,
+          ip: typeof val.ip === 'string' ? val.ip : undefined,
+          port: typeof val.port === 'number' && !isNaN(val.port) ? val.port : undefined
+        } as MultiplayerSettings;
+      }
+    }
+    return { type: 'local' };
   }
 
   readString(object: any, property: string): string {
@@ -143,6 +180,18 @@ export class SettingsManager {
       if (previousMultiplier === previousDefault || previousMultiplier === 2) {
         next.coin_multiplier = nextDefault;
       }
+    }
+
+    if (partial.targetIP !== undefined) {
+      this.targetIP = partial.targetIP;
+      next.targetIP = partial.targetIP;
+    }
+    if (partial.targetPort !== undefined) {
+      this.targetPort = partial.targetPort;
+      next.targetPort = partial.targetPort;
+    }
+    if (partial.multiplayer !== undefined) {
+      next.multiplayer = partial.multiplayer;
     }
 
     this.settings = next;

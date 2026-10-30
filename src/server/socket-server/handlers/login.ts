@@ -1,7 +1,7 @@
 import { XtMessenger } from "../xt-messenger";
 import { ClientSocket } from "@server/socket-server/socket-server";
 import { getDefaultPenguin } from "@server/database/database";
-import { isLower } from "@server/routes/versions";
+import { isGreaterOrEqual, isLower } from "@server/routes/versions";
 import { logdebug } from "@server/logger";
 import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import serverList, { getServerPopulation } from "@server/servers";
@@ -138,6 +138,21 @@ export const login: LoginHandler = async (ctx, message: string) => {
         client.end();
         return;
       }
+
+      // 2000 coin bonus for penguins predating 2005-10-24 once timeline reaches 2005-10-24
+      let regDate = offlineJson.virtual_registration_date;
+      if (!regDate && offlineJson.virtualRegistrationTimestamp) {
+        const d = new Date(offlineJson.virtualRegistrationTimestamp);
+        regDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      }
+      if (regDate && isLower(regDate, '2005-10-24') && isGreaterOrEqual(data.getDate(), '2005-10-24')) {
+        if (!offlineJson.beta_bonus_coins) {
+          offlineJson.coins = (offlineJson.coins ?? 0) + 2000;
+          offlineJson.beta_bonus_coins = true;
+          await ctx.db.write(id, offlineJson);
+        }
+      }
+
       const p = new WorldPenguin(id, offlineJson, settings, data);
       ctx.off.removePenguin(offline.id);
       ctx.world.addPenguin(p);

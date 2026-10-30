@@ -1,8 +1,10 @@
 import { SledGuard, SledHandler } from "./handlers";
+import { joinRoom } from "./join";
 
 export const isSledGuard: SledGuard = (ctx) => ctx.sled !== undefined;
 
 export const handleJoinSled: SledHandler<[]> = ({ sled, penguin, msg, data }) => {
+  sled.startCountdown();
   msg.send(penguin, 'uz', sled.getPlayerCount(), ...sled.players.map((p) => {
     return (data.isPreCpip() ? [p.name, p.inventory.color] : [p.name, p.inventory.color, p.inventory.hand, p.name]).join('|');
   }));
@@ -13,7 +15,8 @@ export const handleMoveSled: SledHandler<[number, number, number, number]> = ({ 
 }
 
 export const handleEndSled: SledHandler<[number]> = ({ msg, penguin, prst, data }, standing) => {
-  const coins = [20, 10, 5, 5][standing - 1];
+  const place = Math.min(4, Math.max(1, standing || 1));
+  const coins = [20, 10, 5, 5][place - 1];
 
   const total = penguin.currency.add(coins);
   if (data.isPreCpip()) {
@@ -22,4 +25,8 @@ export const handleEndSled: SledHandler<[number]> = ({ msg, penguin, prst, data 
     msg.send(penguin, 'zo', total, '', 0, 0);
   }
   prst(penguin);
+}
+
+export const handleLeaveSled: SledHandler<[]> = (ctx) => {
+  joinRoom(ctx, 230, 166, 281);
 }
