@@ -137,6 +137,8 @@ export const login: LoginHandler = async (ctx, message: string) => {
           if (banStatus.banned) {
             if (banStatus.isInappropriateName) {
               sendError(msg, client, 603);
+            } else if (banStatus.isPermanent) {
+              sendError(msg, client, 680);
             } else {
               msg.send(client, 'e', 600, banStatus.expiryDateString);
             }
@@ -163,7 +165,13 @@ export const login: LoginHandler = async (ctx, message: string) => {
       const offlineJson = offline.getJSON();
       const banStatus = getBanStatus(offlineJson);
       if (banStatus.banned) {
-        msg.send(client, 'e', banStatus.isInappropriateName ? 603 : 600, banStatus.expiryDateString);
+        if (banStatus.isInappropriateName) {
+          msg.send(client, 'e', 603);
+        } else if (banStatus.isPermanent) {
+          msg.send(client, 'e', 680);
+        } else {
+          msg.send(client, 'e', 600, banStatus.expiryDateString);
+        }
         setTimeout(() => client.end(), 700);
         return;
       }

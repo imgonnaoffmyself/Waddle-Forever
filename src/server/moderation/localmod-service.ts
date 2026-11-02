@@ -53,10 +53,7 @@ export function isLocalModRunning(url = 'http://127.0.0.1:8000'): Promise<boolea
         if (res.statusCode !== 200) return resolve(false);
         try {
           const parsed = JSON.parse(data);
-          const required = ['toxicity', 'spam', 'pii'];
-          const loaded = parsed.models_loaded || [];
-          const allLoaded = required.every((m: string) => loaded.includes(m));
-          resolve(allLoaded);
+          resolve(parsed.status === 'healthy');
         } catch {
           resolve(false);
         }

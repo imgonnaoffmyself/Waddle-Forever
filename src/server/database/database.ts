@@ -72,6 +72,7 @@ export interface PenguinJson {
 // MODERATION
   banned_until?: number | null
   ban_reason?: string
+  filter_warned?: boolean
 
 // MEMBERSHIP
   is_member: boolean
@@ -226,6 +227,7 @@ export function getDefaultPenguin(name: string, color: number, member: boolean, 
     is_member: initialMember,
     membership_expires: null,
     banned_until: null,
+    filter_warned: false,
     is_agent: false,
 
     color: color,

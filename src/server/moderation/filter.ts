@@ -147,11 +147,26 @@ export function checkPII(text: string): { hasPII: boolean; reason?: string } {
   return { hasPII: false };
 }
 
+export const PERMANENT_BAN_HOURS = 876000; // 100 years
+export const PERMANENT_BAN_MS = PERMANENT_BAN_HOURS * 60 * 60 * 1000;
+
+/**
+ * Returns true if the ban expiry indicates a permanent ban (> 50 years into the future).
+ */
+export function isPermanentBan(bannedUntil: number, now: number = Date.now()): boolean {
+  return (bannedUntil - now) > 50 * 365 * 24 * 60 * 60 * 1000;
+}
+
 /**
  * Formats a ban expiry timestamp into Pacific Time (PST/PDT)
- * e.g. "October 31, 2026 9:55 AM" as expected by the Flash client ban UI.
+ * e.g. "October 31, 2026 9:55 AM" as expected by the Flash client ban UI,
+ * or "Forever" for permanent bans.
  */
-export function formatBanExpiry(ms: number): string {
+export function formatBanExpiry(ms: number, now: number = Date.now()): string {
+  if (isPermanentBan(ms, now)) {
+    return 'Forever';
+  }
+
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles',
     month: 'long',
@@ -175,24 +190,28 @@ export function getBanStatus(penguin: PenguinJson, now: number = Date.now()): {
   expiryDateString: string;
   reason?: string;
   isInappropriateName?: boolean;
+  isPermanent?: boolean;
 } {
   if (penguin.banned_until !== null && penguin.banned_until !== undefined && penguin.banned_until > now) {
     const diffMs = penguin.banned_until - now;
     const remainingHours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
-    const expiryDateString = formatBanExpiry(penguin.banned_until);
+    const permanent = isPermanentBan(penguin.banned_until, now);
+    const expiryDateString = permanent ? 'Forever' : formatBanExpiry(penguin.banned_until, now);
     const isInappropriateName = Boolean(penguin.ban_reason?.toLowerCase().includes('inappropriate username'));
     return {
       banned: true,
       remainingHours,
       expiryDateString,
       reason: penguin.ban_reason,
-      isInappropriateName
+      isInappropriateName,
+      isPermanent: permanent
     };
   }
 
   return {
     banned: false,
     remainingHours: 0,
-    expiryDateString: ''
+    expiryDateString: '',
+    isPermanent: false
   };
 }

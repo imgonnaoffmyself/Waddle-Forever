@@ -118,10 +118,20 @@ class Moderation {
   private _mutedUntil: number | null = null;
   private _strikes: number = 0;
   private _warnings: string[] = [];
+  private _filterWarned: boolean = false;
 
   constructor(data: PenguinJson) {
     this._bannedUntil = data.banned_until ?? null;
     this._banReason = data.ban_reason;
+    this._filterWarned = Boolean(data.filter_warned);
+  }
+
+  public get filterWarned(): boolean {
+    return this._filterWarned;
+  }
+
+  public set filterWarned(value: boolean) {
+    this._filterWarned = value;
   }
 
   public get bannedUntil() {
@@ -140,6 +150,7 @@ class Moderation {
   public unban() {
     this._bannedUntil = null;
     this._banReason = undefined;
+    this._filterWarned = false;
   }
 
   public isBanned(now: number = Date.now()): boolean {
@@ -1319,6 +1330,7 @@ export class WorldPenguin implements UserPenguin {
 
       banned_until: this._moderation.bannedUntil,
       ban_reason: this._moderation.banReason,
+      filter_warned: this._moderation.filterWarned,
 
       is_member: this._membership.isMember,
       membership_expires: this._membership.membershipExpires,

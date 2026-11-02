@@ -80,6 +80,40 @@ const SEVERE_TOXICITY_PATTERNS: RegExp[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────
+// 2b. Hate Groups, KKK & White Supremacist Extremism
+// ─────────────────────────────────────────────────────────────
+const EXTREMISM_CRITICAL_PATTERNS: RegExp[] = [
+  // Klan / KKK salvation, glorification, heroism, defense of atrocities
+  /\b(?:honestly\s+|tbh\s+)?(?:the\s+)?(?:klan|kkk|ku\s*klux\s*klan)\s+(?:could(?:'ve|\s+have)|would(?:'ve|\s+have)|will|can|should(?:'ve|\s+have)?)\s+(?:saved?|have\s+saved|fix|rescue)\b/i,
+  /\b(?:the\s+)?(?:kkk|klan|ku\s*klux\s*klan)\s+(?:are|is|were|was)\s+(?:heroes|heroic|based|right|saviors?|great|awesome|righteous)\b/i,
+  /\b(?:join|support|praise|hail|cheer\s+for)\s+(?:the\s+)?(?:kkk|klan|ku\s*klux\s*klan)\b/i,
+  /\b(?:the\s+)?(?:kkk|klan|ku\s*klux\s*klan)\s+(?:did\s+nothing\s+wrong|did\s+what\s+had\s+to\s+be\s+done|was\s+good|is\s+good)\b/i,
+  /\b(?:i\s+am|i'm)\s+(?:in\s+the\s+klan|a\s+klansm[ae]n|a\s+member\s+of\s+the\s+kkk)\b/i,
+  // White supremacist slogans and codes
+  /\b(?:14\s*words|1488|white\s*pride\s*world\s*wide|rahowa|sieg\s*heil)\b/i
+];
+
+const EXTREMISM_HIGH_PATTERNS: RegExp[] = [
+  // Normalization or defending the Klan / KKK
+  /\b(?:the\s+)?(?:kkk|klan|ku\s*klux\s*klan)\s+(?:are|is|were|was)\s+(?:fine|okay|ok|alright|not\s+(?:that\s+)?bad|misunderstood|good\s+people|not\s+wrong)\b/i,
+  /\bi\s+(?:like|love|agree\s+with|stand\s+with)\s+(?:the\s+)?(?:kkk|klan|ku\s*klux\s*klan)\b/i,
+  // Full explicit hate group name / title
+  /\bku\s*klux\s*klan\b/i,
+  /\bklansm[ae]n\b/i
+];
+
+const EXTREMISM_MEDIUM_PATTERNS: RegExp[] = [
+  // Explicitly referencing "the kkk" or "the klan" as a collective entity
+  /\bthe\s+kkk\b/i,
+  /\bthe\s+klan\b/i
+];
+
+const EXTREMISM_LOW_PATTERNS: RegExp[] = [
+  // Standalone "kkk" without "the" (ambiguous / low confidence: could be Portuguese laugh or typo)
+  /(?<![a-zA-Z0-9])kkk(?![a-zA-Z0-9])/i
+];
+
+// ─────────────────────────────────────────────────────────────
 // 3. NSFW, Explicit Sexual Conduct & Solicitation
 // ─────────────────────────────────────────────────────────────
 const NSFW_EXPLICIT_PATTERNS: RegExp[] = [
@@ -120,9 +154,13 @@ const HARASSMENT_PATTERNS: RegExp[] = [
  * Normalizes repeated punctuation or spacing to catch evasion like "s.u.c.k" or "f  u  c  k"
  */
 function normalizeEvasions(text: string): string {
-  // Collapse separated letters: "l i c k" -> "lick"
+  // Collapse separated letters: "l i c k" -> "lick", but preserve repeated 'k' with punctuation like "k. k. k."
   let norm = text.replace(/(?:^|\s)((?:[a-zA-Z][\s._\-*~]+)+[a-zA-Z])(?:\s|$)/g, (_m, g) => {
-    return ' ' + g.replace(/[\s._\-*~]+/g, '') + ' ';
+    const stripped = g.replace(/[\s._\-*~]+/g, '');
+    if (/^[kK]{2,}$/.test(stripped) && /[.,]/.test(g)) {
+      return ' ' + g + ' ';
+    }
+    return ' ' + stripped + ' ';
   });
   // Replace common leetspeak substitutions
   norm = norm
@@ -174,6 +212,42 @@ export function classifyLocally(message: string): ModerationEvaluation {
       toxicityScore = Math.max(toxicityScore, 0.96);
       if (!primaryReason) primaryReason = 'severe_toxicity_or_threats';
       break;
+    }
+  }
+
+  // 2b. Check hate group / KKK extremism
+  for (const pat of EXTREMISM_CRITICAL_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      toxicityScore = Math.max(toxicityScore, 0.98);
+      if (!primaryReason) primaryReason = 'hate_group_extremism';
+      break;
+    }
+  }
+
+  for (const pat of EXTREMISM_HIGH_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      toxicityScore = Math.max(toxicityScore, 0.85);
+      if (!primaryReason) primaryReason = 'hate_group_defense';
+      break;
+    }
+  }
+
+  for (const pat of EXTREMISM_MEDIUM_PATTERNS) {
+    if (pat.test(raw) || pat.test(normalized)) {
+      toxicityScore = Math.max(toxicityScore, 0.65);
+      if (!primaryReason) primaryReason = 'hate_group_mention';
+      break;
+    }
+  }
+
+  // Low confidence check for standalone "kkk" without "the" (exclude "k. k. k." and repeated laughs like "kkkk")
+  if (!/(?:^|\s)k[.,\s]+k[.,\s]+k(?:\s|[.,]|$)/i.test(raw) && !/k{4,}/i.test(raw)) {
+    for (const pat of EXTREMISM_LOW_PATTERNS) {
+      if (pat.test(raw) || pat.test(normalized)) {
+        toxicityScore = Math.max(toxicityScore, 0.45);
+        if (!primaryReason) primaryReason = 'suspicious_hate_group_acronym';
+        break;
+      }
     }
   }
 

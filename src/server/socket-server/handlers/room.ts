@@ -9,7 +9,7 @@ import { WaddleRoom } from "@server/socket-server/world/waddle-room";
 import { WaddleGame } from "@server/socket-server/world/waddle-game";
 import { GameData } from "@server/timelines/game-data";
 import { isBot } from "@server/socket-server/world/bots";
-import { checkProfanity, checkPII, formatBanExpiry } from "@server/moderation/filter";
+import { checkProfanity, checkPII, formatBanExpiry, PERMANENT_BAN_MS } from "@server/moderation/filter";
 import { evaluateMessage, classifyLocally, preBroadcastTracker, postBroadcastTracker, SEVERITY_RANK, ModerationSeverity } from "@server/moderation/localmod";
 import { getCommandsHandler } from "@server/commands/commands";
 
@@ -145,18 +145,45 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
       // - high: only take action after 2 highs in a row or 2 highs in 60 seconds
       // - critical: take action immediately
       if (takePreAction) {
-        const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
-        penguin.moderation.ban(banExpiry, `Moderator ban: ${preEval.reason}`);
-        prst(penguin, true);
+        const isCritical = preEval.severityLevel === 'critical';
 
-        // Display the ban screen with Pacific date/time as expected by the Flash client ban UI
-        msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+        if (isCritical) {
+          // Permanent ban: use 680
+          const banExpiry = Date.now() + PERMANENT_BAN_MS;
+          penguin.moderation.ban(banExpiry, `Moderator ban: ${preEval.reason}`);
+          prst(penguin, true);
 
-        // Allow the ban packet to be fully delivered so the client displays the ban modal
-        setTimeout(() => {
-          client.end();
-        }, 700);
-        return;
+          msg.send(penguin, 'e', 680);
+          setTimeout(() => {
+            client.end();
+          }, 700);
+          return;
+        }
+
+        // Non-critical pre-broadcast filter ban:
+        // Use 698 the first time someone triggers a pre-broadcast filter ban without banning them
+        // Use 699 the next time, showing what they said
+        if (!penguin.moderation.filterWarned) {
+          penguin.moderation.filterWarned = true;
+          prst(penguin, true);
+
+          msg.send(penguin, 'e', 698);
+          setTimeout(() => {
+            client.end();
+          }, 700);
+          return;
+        } else {
+          // 2nd+ time: 24h filter autoban with error 699 showing what they said
+          const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+          penguin.moderation.ban(banExpiry, `Filter autoban: ${preEval.reason}`);
+          prst(penguin, true);
+
+          msg.send(penguin, 'e', 699, message);
+          setTimeout(() => {
+            client.end();
+          }, 700);
+          return;
+        }
       }
     } else {
       preBroadcastTracker.recordSafeMessage(penguin.id);
@@ -219,10 +246,20 @@ export const handleSendMessage: RoomHandler<[string, string]> = async (ctx, _pen
         if (takeAction) {
           // If there was a moderator in the room at the time it was said, trigger a ban!
           if (hasModeratorInRoom) {
-            const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
-            penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
-            prst(penguin, true);
-            msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+            const isCritical = evalResult.severityLevel === 'critical';
+            if (isCritical) {
+              // Rule 4: Permanent bans use 680
+              const banExpiry = Date.now() + PERMANENT_BAN_MS;
+              penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
+              prst(penguin, true);
+              msg.send(penguin, 'e', 680);
+            } else {
+              // Rule 3: Temporary post-broadcast bans use 600
+              const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+              penguin.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
+              prst(penguin, true);
+              msg.send(penguin, 'e', 600, formatBanExpiry(banExpiry));
+            }
             setTimeout(() => {
               client.end();
             }, 700);

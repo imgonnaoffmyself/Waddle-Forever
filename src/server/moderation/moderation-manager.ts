@@ -3,7 +3,7 @@ import { WorldPenguin } from "@server/socket-server/world/world-penguin";
 import { Bot } from "@server/socket-server/world/bot";
 import { XtMessenger } from "@server/socket-server/xt-messenger";
 import { evaluateMessage, ModerationEvaluation, localModTracker } from "./localmod";
-import { formatBanExpiry } from "./filter";
+import { formatBanExpiry, PERMANENT_BAN_MS } from "./filter";
 import { randomInt } from "@common/utils";
 import { PenguinRepository } from "@server/database/database";
 import { isBot } from "@server/socket-server/world/bots";
@@ -149,14 +149,20 @@ export class ModerationManager {
 
     // Determine punishment escalation (silent actions to prevent exposing moderator bots)
     if (evalResult.flagged || evalResult.recommendedAction === 'ban' || strikes >= 4) {
-      // 24h Ban
-      const banExpiry = Date.now() + 24 * 60 * 60 * 1000;
+      const isCritical = evalResult.severityLevel === 'critical';
+      const banExpiry = isCritical
+        ? Date.now() + PERMANENT_BAN_MS
+        : Date.now() + 24 * 60 * 60 * 1000;
       target.moderation.ban(banExpiry, `Moderator ban: ${evalResult.reason}`);
       this.persistBan(target, banExpiry, `Moderator ban: ${evalResult.reason}`);
 
       // Swift disconnect within 650ms
       setTimeout(() => {
-        this._msg.send(target, 'e', 600, formatBanExpiry(banExpiry));
+        if (isCritical) {
+          this._msg.send(target, 'e', 680);
+        } else {
+          this._msg.send(target, 'e', 600, formatBanExpiry(banExpiry));
+        }
         const client = this._msg.getClient(target);
         if (client) client.end();
       }, 650);
